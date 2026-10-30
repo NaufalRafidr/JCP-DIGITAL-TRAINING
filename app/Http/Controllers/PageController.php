@@ -145,10 +145,7 @@ class PageController extends Controller
             $selectedArticle = Article::findOrFail(request()->integer('article_id'));
         }
 
-        $galleryCategories = Category::query()
-            ->where('is_gallery', true)
-            ->orderBy('id')
-            ->get();
+        $galleryCategories = $categories;
         $galleryFolders = GalleryFolder::with(['category', 'previewPhoto'])->withCount('photos')->latest()->get();
         $selectedGalleryFolder = null;
         $selectedGalleryPhotos = collect();

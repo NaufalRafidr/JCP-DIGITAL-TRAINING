@@ -840,10 +840,6 @@
                     <p class="text-sm text-slate-500 mt-2">Kelola folder album dan foto yang tampil di halaman Galeri.</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-3">
-                    <button type="button" onclick="openAddGalleryCategoryModal()" class="rounded-2xl border border-[#087F78]/30 bg-white px-5 py-3 text-sm font-bold text-[#087F78] transition-all hover:border-[#087F78] hover:bg-[#E2F6F2] focus:outline-none">
-                        <span class="text-base font-bold leading-none">+</span>
-                        <span>Tambah bidang</span>
-                    </button>
                     <button type="button" onclick="openAddGalleryFolderModal()" class="bg-[#087F78] hover:bg-[#066761] text-white px-6 py-3 rounded-2xl text-sm font-bold transition-all shadow-sm flex items-center gap-2 focus:outline-none cursor-pointer">
                         <span class="text-base font-bold leading-none">+</span>
                         <span>Buat folder</span>
@@ -1122,13 +1118,16 @@
                     </p>
                 </div>
 
-                <button 
-                    type="button" 
-                    onclick="openAddProgramModal()"
-                    class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[#087F78] px-7 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#066761] focus:outline-none sm:w-auto">
-                    <span class="text-base font-bold leading-none">+</span>
-                    <span>Tambah program</span>
-                </button>
+                <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+                    <button type="button" onclick="openAddCategoryModal()" class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-[#087F78]/30 bg-white px-6 py-3 text-sm font-bold text-[#087F78] transition-all hover:border-[#087F78] hover:bg-[#E2F6F2] focus:outline-none sm:w-auto">
+                        <span class="text-base font-bold leading-none">+</span>
+                        <span>Tambah bidang</span>
+                    </button>
+                    <button type="button" onclick="openAddProgramModal()" class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[#087F78] px-7 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#066761] focus:outline-none sm:w-auto">
+                        <span class="text-base font-bold leading-none">+</span>
+                        <span>Tambah program</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Table Header Labels -->
@@ -1296,35 +1295,35 @@
 
     </main>
 
-    <!-- Modal Tambah Bidang Galeri -->
-    <div id="addGalleryCategoryModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs flex">
+    <!-- Modal Tambah Bidang Pelatihan -->
+    <div id="addCategoryModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs flex">
         <div class="w-full max-w-xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
             <div class="space-y-6 p-6 sm:p-8">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-4">
                     <div>
-                        <h3 class="text-xl font-extrabold text-[#10243A]">Tambah bidang galeri</h3>
-                        <p class="mt-1 text-xs text-slate-500">Bidang baru akan tersedia saat membuat folder foto.</p>
+                        <h3 class="text-xl font-extrabold text-[#10243A]">Tambah bidang pelatihan</h3>
+                        <p class="mt-1 text-xs text-slate-500">Bidang baru akan tersedia di Program, Beranda, dan Galeri.</p>
                     </div>
-                    <button type="button" onclick="closeAddGalleryCategoryModal()" aria-label="Tutup" class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-lg font-bold leading-none text-slate-600 hover:bg-slate-200">&times;</button>
+                    <button type="button" onclick="closeAddCategoryModal()" aria-label="Tutup" class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-lg font-bold leading-none text-slate-600 hover:bg-slate-200">&times;</button>
                 </div>
 
-                <form action="{{ route('admin.gallery.categories.store') }}" method="POST" class="space-y-4">
+                <form action="{{ route('admin.categories.store') }}" method="POST" class="space-y-4">
                     @csrf
-                    <input type="hidden" name="_form_context" value="gallery_category">
+                    <input type="hidden" name="_form_context" value="program_category">
                     <div>
-                        <label for="gallery_category_name" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Nama bidang *</label>
-                        <input id="gallery_category_name" name="name" value="{{ old('_form_context') === 'gallery_category' ? old('name') : '' }}" required maxlength="100" placeholder="Contoh: Dokumentasi Event" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                        <label for="program_category_name" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Nama bidang *</label>
+                        <input id="program_category_name" name="name" value="{{ old('_form_context') === 'program_category' ? old('name') : '' }}" required maxlength="100" placeholder="Contoh: Dokumentasi Event" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                     </div>
                     <div>
-                        <label for="gallery_category_short_name" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Nama singkat</label>
-                        <input id="gallery_category_short_name" name="short_name" value="{{ old('_form_context') === 'gallery_category' ? old('short_name') : '' }}" maxlength="50" placeholder="Contoh: Event" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                        <label for="program_category_short_name" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Nama singkat</label>
+                        <input id="program_category_short_name" name="short_name" value="{{ old('_form_context') === 'program_category' ? old('short_name') : '' }}" maxlength="50" placeholder="Contoh: Event" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                     </div>
                     <div>
-                        <label for="gallery_category_description" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Deskripsi bidang</label>
-                        <textarea id="gallery_category_description" name="description" rows="3" maxlength="1000" placeholder="Deskripsi singkat bidang foto ini" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">{{ old('_form_context') === 'gallery_category' ? old('description') : '' }}</textarea>
+                        <label for="program_category_description" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Deskripsi bidang</label>
+                        <textarea id="program_category_description" name="description" rows="3" maxlength="1000" placeholder="Deskripsi singkat bidang pelatihan ini" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">{{ old('_form_context') === 'program_category' ? old('description') : '' }}</textarea>
                     </div>
                     <div class="flex justify-end gap-3 border-t border-slate-100 pt-4">
-                        <button type="button" onclick="closeAddGalleryCategoryModal()" class="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-100">Batal</button>
+                        <button type="button" onclick="closeAddCategoryModal()" class="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-100">Batal</button>
                         <button type="submit" class="rounded-xl bg-[#087F78] px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#066761]">Tambah bidang</button>
                     </div>
                 </form>
@@ -2402,11 +2401,11 @@
         function closeAddGalleryFolderModal() {
             document.getElementById('addGalleryFolderModal').classList.add('hidden');
         }
-        function openAddGalleryCategoryModal() {
-            document.getElementById('addGalleryCategoryModal').classList.remove('hidden');
+        function openAddCategoryModal() {
+            document.getElementById('addCategoryModal').classList.remove('hidden');
         }
-        function closeAddGalleryCategoryModal() {
-            document.getElementById('addGalleryCategoryModal').classList.add('hidden');
+        function closeAddCategoryModal() {
+            document.getElementById('addCategoryModal').classList.add('hidden');
         }
         function openGalleryFolderDeleteModal(button) {
             const modal = document.getElementById('galleryFolderDeleteModal');
@@ -2822,7 +2821,7 @@
                 closeAddSessionModal();
                 closeEditSessionModal();
                 closeAddGalleryFolderModal();
-                closeAddGalleryCategoryModal();
+                closeAddCategoryModal();
                 closeGalleryFolderDeleteModal();
                 closeGalleryFolderEditorDeleteModal();
                 closeGalleryPhotoDeleteModal();
@@ -2834,8 +2833,8 @@
 
         @if(old('_form_context') === 'gallery_folder')
             openAddGalleryFolderModal();
-        @elseif(old('_form_context') === 'gallery_category')
-            openAddGalleryCategoryModal();
+        @elseif(old('_form_context') === 'program_category')
+            openAddCategoryModal();
         @elseif(old('_form_context') === 'gallery_upload')
             openAddGalleryPhotosModal(@json(old('gallery_folder_id')));
         @endif

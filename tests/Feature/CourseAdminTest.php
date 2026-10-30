@@ -236,6 +236,31 @@ it('opens the selected program editor inside its dashboard card', function () {
         ->assertSee('data-close-editor', false);
 });
 
+it('creates a shared training field that is available on the homepage and gallery', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+
+    $response = $this->actingAs($admin)->post(route('admin.categories.store'), [
+        'name' => 'Data Science',
+        'short_name' => 'Data',
+        'description' => 'Pelatihan pengolahan dan analisis data.',
+        '_form_context' => 'program_category',
+    ]);
+
+    $category = Category::query()->where('slug', 'data-science')->firstOrFail();
+
+    $response->assertRedirect(route('admin.dashboard', ['tab' => 'program']))
+        ->assertSessionHas('success', 'Bidang pelatihan berhasil ditambahkan dan tersedia di Beranda serta Galeri.');
+    expect($category->is_gallery)->toBeTrue();
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('Data');
+
+    $this->get(route('gallery.index'))
+        ->assertOk()
+        ->assertSee('Data');
+});
+
 test('example', function () {
     $response = $this->get('/');
 

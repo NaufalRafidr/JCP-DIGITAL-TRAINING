@@ -53,6 +53,7 @@ Route::middleware('admin')->group(function () {
     Route::post('/admin/articles', [ArticleAdminController::class, 'store'])->name('admin.articles.store');
     Route::put('/admin/articles/{article}', [ArticleAdminController::class, 'update'])->name('admin.articles.update');
     Route::delete('/admin/articles/{article}', [ArticleAdminController::class, 'destroy'])->name('admin.articles.destroy');
+    Route::post('/admin/categories', [CourseAdminController::class, 'storeCategory'])->name('admin.categories.store');
     Route::post('/admin/courses', [CourseAdminController::class, 'store'])->name('admin.courses.store');
     Route::put('/admin/courses/{course}', [CourseAdminController::class, 'update'])->name('admin.courses.update');
     Route::delete('/admin/courses/{course}/image', [CourseAdminController::class, 'destroyImage'])->name('admin.courses.image.destroy');
@@ -61,7 +62,6 @@ Route::middleware('admin')->group(function () {
     Route::put('/admin/sessions/{session}', [CourseSessionAdminController::class, 'update'])->name('admin.sessions.update');
     Route::delete('/admin/sessions/{session}', [CourseSessionAdminController::class, 'destroy'])->name('admin.sessions.destroy');
     Route::put('/admin/registrations/{registration}', [RegistrationAdminController::class, 'update'])->name('admin.registrations.update');
-    Route::post('/admin/gallery/categories', [GalleryAdminController::class, 'storeCategory'])->name('admin.gallery.categories.store');
     Route::post('/admin/gallery/folders', [GalleryAdminController::class, 'storeFolder'])->name('admin.gallery.folders.store');
     Route::put('/admin/gallery/folders/{folder}', [GalleryAdminController::class, 'updateFolder'])->name('admin.gallery.folders.update');
     Route::delete('/admin/gallery/folders/{folder}', [GalleryAdminController::class, 'destroyFolder'])->name('admin.gallery.folders.destroy');

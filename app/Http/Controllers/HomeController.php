@@ -16,7 +16,6 @@ class HomeController extends Controller
     public function index(Request $request): View
     {
         $categories = Category::query()
-            ->whereHas('courses', fn ($query) => $query->where('status', 'Publish'))
             ->withCount(['courses' => fn ($query) => $query->where('status', 'Publish')])
             ->orderBy('id')
             ->get();

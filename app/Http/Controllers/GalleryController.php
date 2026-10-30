@@ -11,10 +11,7 @@ class GalleryController extends Controller
 {
     public function index(Request $request): View
     {
-        $categories = Category::query()
-            ->where('is_gallery', true)
-            ->orderBy('id')
-            ->get();
+        $categories = Category::query()->orderBy('id')->get();
         $requestedCategorySlug = $request->query('bidang');
         $selectedCategorySlug = is_string($requestedCategorySlug)
             && $categories->pluck('slug')->contains($requestedCategorySlug)

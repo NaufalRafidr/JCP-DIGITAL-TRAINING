@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Course;
 use Carbon\Carbon;
 use Closure;
@@ -12,9 +13,42 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class CourseAdminController extends Controller
 {
+    /**
+     * Simpan bidang pelatihan baru dari dashboard admin.
+     */
+    public function storeCategory(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:100', Rule::unique('categories', 'name')],
+            'short_name' => ['nullable', 'string', 'max:50'],
+            'description' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $baseSlug = Str::slug($validated['name']) ?: 'bidang-pelatihan';
+        $slug = $baseSlug;
+        $counter = 1;
+
+        while (Category::where('slug', $slug)->exists()) {
+            $slug = $baseSlug.'-'.$counter++;
+        }
+
+        Category::create([
+            'name' => $validated['name'],
+            'slug' => $slug,
+            'short_name' => $validated['short_name'] ?? null,
+            'description' => $validated['description'] ?? null,
+            'is_gallery' => true,
+        ]);
+
+        return redirect()
+            ->route('admin.dashboard', ['tab' => 'program'])
+            ->with('success', 'Bidang pelatihan berhasil ditambahkan dan tersedia di Beranda serta Galeri.');
+    }
+
     /**
      * Hitung durasi otomatis dari hari ini ke tanggal program berjalan.
      */

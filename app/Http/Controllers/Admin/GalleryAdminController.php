@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Category;
 use App\Models\GalleryFolder;
 use App\Models\GalleryPhoto;
 use App\Services\GalleryImageService;
@@ -17,34 +16,6 @@ use Illuminate\Validation\Rule;
 
 class GalleryAdminController extends Controller
 {
-    public function storeCategory(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:100', Rule::unique('categories', 'name')],
-            'short_name' => 'nullable|string|max:50',
-            'description' => 'nullable|string|max:1000',
-        ]);
-
-        $baseSlug = Str::slug($validated['name']) ?: 'bidang-galeri';
-        $slug = $baseSlug;
-        $counter = 1;
-        while (Category::where('slug', $slug)->exists()) {
-            $slug = $baseSlug.'-'.$counter++;
-        }
-
-        Category::create([
-            'name' => $validated['name'],
-            'slug' => $slug,
-            'short_name' => $validated['short_name'] ?? null,
-            'description' => $validated['description'] ?? null,
-            'is_gallery' => true,
-        ]);
-
-        return redirect()
-            ->route('admin.dashboard', ['tab' => 'galeri'])
-            ->with('success', 'Bidang galeri berhasil ditambahkan.');
-    }
-
     public function storeFolder(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -53,7 +24,7 @@ class GalleryAdminController extends Controller
             'category_id' => [
                 'required',
                 'integer',
-                Rule::exists('categories', 'id')->where('is_gallery', true),
+                'exists:categories,id',
             ],
         ]);
 
@@ -85,7 +56,7 @@ class GalleryAdminController extends Controller
             'category_id' => [
                 'required',
                 'integer',
-                Rule::exists('categories', 'id')->where('is_gallery', true),
+                'exists:categories,id',
             ],
             'status' => ['required', Rule::in(['Publish', 'Draft'])],
         ]);
