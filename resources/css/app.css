@@ -1,0 +1,38 @@
+@import 'tailwindcss';
+
+@theme {
+    --color-brand-navy: #10243A;
+    --color-brand-teal: #087F78;
+    --color-brand-teal-dark: #066761;
+    --color-brand-mint: #E2F6F2;
+    --color-brand-mint-light: #F2FAF8;
+    --color-brand-light: #F6F9FC;
+    --color-brand-ivory: #FAF8F1;
+    --color-brand-amber: #E5AD49;
+    --color-brand-amber-dark: #C99232;
+    --color-brand-gray-text: #4A5568;
+    --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+/* Custom utility styles matching the JCP Training design system */
+.bg-navy { background-color: #10243A; }
+.text-navy { color: #10243A; }
+.border-navy { border-color: #10243A; }
+
+.bg-teal { background-color: #087F78; }
+.hover-bg-teal-dark:hover { background-color: #066761; }
+.text-teal { color: #087F78; }
+.border-teal { border-color: #087F78; }
+
+.bg-mint { background-color: #E2F6F2; }
+.text-mint-dark { color: #066761; }
+
+.bg-brand-light { background-color: #F6F9FC; }
+.bg-brand-ivory { background-color: #FAF8F1; }
+.bg-amber-accent { background-color: #E5AD49; }
+.text-amber-accent { color: #C99232; }
+
+/* Smooth scrolling */
+html {
+    scroll-behavior: smooth;
+}
