@@ -152,7 +152,7 @@
          ======================================================== -->
     <main id="admin-main-content" class="h-screen min-w-0 w-full max-w-none flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 lg:max-w-6xl lg:p-14">
 
-        <div class="mb-6 flex items-center justify-between gap-3 lg:hidden">
+        <div class="sticky top-0 z-20 -mx-4 mb-6 flex items-center justify-between gap-3 bg-brand-ivory px-4 py-4 sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:hidden">
             <a href="{{ route('home') }}" class="text-lg font-black tracking-tight text-[#10243A]">JCP ADMIN</a>
             <button id="admin-sidebar-toggle" type="button" aria-controls="admin-sidebar" aria-expanded="false" class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[#10243A] text-white shadow-sm transition-colors hover:bg-[#087F78]" aria-label="Buka menu navigasi">
                 <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
