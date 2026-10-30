@@ -48,6 +48,30 @@ it('creates a program with detail content and a background image', function () {
         ->assertSee('Modul, Alat Praktik, Sertifikat');
 });
 
+it('creates a program with a background image URL', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+    $category = Category::create([
+        'name' => 'Digital URL',
+        'slug' => 'digital-url-course-admin',
+    ]);
+
+    $response = $this->actingAs($admin)->post(route('admin.courses.store'), [
+        'title' => 'Program Dengan URL Gambar',
+        'category_id' => $category->id,
+        'level' => 'Basic',
+        'format' => 'Online',
+        'description' => 'Program dengan gambar dari URL.',
+        'image_url' => 'https://example.com/course.jpg',
+        'status' => 'Publish',
+    ]);
+
+    $course = Course::query()->where('title', 'Program Dengan URL Gambar')->firstOrFail();
+
+    $response->assertRedirect(route('admin.dashboard', ['tab' => 'program']));
+    expect($course->image)->toBeNull()
+        ->and($course->image_url)->toBe('https://example.com/course.jpg');
+});
+
 it('replaces the existing program background image when editing', function () {
     Storage::fake('public');
     $admin = User::factory()->create(['is_admin' => true]);
@@ -243,14 +267,21 @@ it('creates a shared training field that is available on the homepage and galler
         'name' => 'Data Science',
         'short_name' => 'Data',
         'description' => 'Pelatihan pengolahan dan analisis data.',
-        '_form_context' => 'program_category',
+        '_form_context' => 'training_category',
     ]);
 
     $category = Category::query()->where('slug', 'data-science')->firstOrFail();
 
-    $response->assertRedirect(route('admin.dashboard', ['tab' => 'program']))
+    $response->assertRedirect(route('admin.dashboard', ['tab' => 'bidang']))
         ->assertSessionHas('success', 'Bidang pelatihan berhasil ditambahkan dan tersedia di Beranda serta Galeri.');
     expect($category->is_gallery)->toBeTrue();
+
+    $this->actingAs($admin)
+        ->get(route('admin.dashboard', ['tab' => 'bidang']))
+        ->assertOk()
+        ->assertSee('Data Science')
+        ->assertSee('Bidang Pelatihan')
+        ->assertSee('data-category-delete-name="Data Science"', false);
 
     $this->get(route('home'))
         ->assertOk()
@@ -259,6 +290,21 @@ it('creates a shared training field that is available on the homepage and galler
     $this->get(route('gallery.index'))
         ->assertOk()
         ->assertSee('Data');
+});
+
+it('deletes a training field from the field management page', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+    $category = Category::create([
+        'name' => 'Bidang Dihapus',
+        'slug' => 'bidang-dihapus',
+        'short_name' => 'Hapus',
+    ]);
+
+    $response = $this->actingAs($admin)->delete(route('admin.categories.destroy', $category));
+
+    $response->assertRedirect(route('admin.dashboard', ['tab' => 'bidang']))
+        ->assertSessionHas('success', 'Bidang pelatihan "Bidang Dihapus" berhasil dihapus.');
+    expect(Category::find($category->id))->toBeNull();
 });
 
 test('example', function () {

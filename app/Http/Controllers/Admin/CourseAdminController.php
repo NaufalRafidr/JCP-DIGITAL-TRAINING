@@ -45,8 +45,21 @@ class CourseAdminController extends Controller
         ]);
 
         return redirect()
-            ->route('admin.dashboard', ['tab' => 'program'])
+            ->route('admin.dashboard', ['tab' => 'bidang'])
             ->with('success', 'Bidang pelatihan berhasil ditambahkan dan tersedia di Beranda serta Galeri.');
+    }
+
+    /**
+     * Hapus bidang pelatihan beserta data program yang dimilikinya.
+     */
+    public function destroyCategory(Category $category): RedirectResponse
+    {
+        $name = $category->name;
+        $category->delete();
+
+        return redirect()
+            ->route('admin.dashboard', ['tab' => 'bidang'])
+            ->with('success', 'Bidang pelatihan "'.$name.'" berhasil dihapus.');
     }
 
     /**
@@ -87,6 +100,7 @@ class CourseAdminController extends Controller
             'outcome' => 'nullable|string',
             'syllabus' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,avif|max:10240',
+            'image_url' => 'nullable|url|max:2048',
             'image_position' => $this->imagePositionRules(),
             'remove_image' => ['nullable', 'boolean'],
             'status' => 'required|in:Publish,Draft',
@@ -124,6 +138,7 @@ class CourseAdminController extends Controller
             'outcome' => $validated['outcome'] ?? null,
             'syllabus' => $syllabusArray,
             'image' => $imagePath,
+            'image_url' => $imagePath !== null ? null : ($validated['image_url'] ?? null),
             'image_position' => $validated['image_position'] ?? 'center center',
             'status' => $validated['status'],
         ]);
@@ -160,6 +175,7 @@ class CourseAdminController extends Controller
             'outcome' => 'nullable|string',
             'syllabus' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,avif|max:10240',
+            'image_url' => 'nullable|url|max:2048',
             'image_position' => $this->imagePositionRules(),
             'remove_image' => ['nullable', 'boolean'],
             'status' => 'required|in:Publish,Draft',
@@ -172,13 +188,20 @@ class CourseAdminController extends Controller
 
         $oldImagePath = null;
         $imagePath = $course->image;
+        $imageUrl = $course->image_url;
         $hasNewImage = isset($validated['image']);
         if ($hasNewImage) {
             $oldImagePath = $course->image;
             $imagePath = $this->storeImage($validated['image']);
+            $imageUrl = null;
+        } elseif (array_key_exists('image_url', $validated) && $validated['image_url'] !== null) {
+            $oldImagePath = $course->image;
+            $imagePath = null;
+            $imageUrl = $validated['image_url'];
         } elseif ($request->boolean('remove_image') && $course->image !== null) {
             $oldImagePath = $course->image;
             $imagePath = null;
+            $imageUrl = null;
         }
         unset($validated['image']);
 
@@ -198,6 +221,7 @@ class CourseAdminController extends Controller
             'outcome' => $validated['outcome'] ?? null,
             'syllabus' => $syllabusArray,
             'image' => $imagePath,
+            'image_url' => $imageUrl,
             'image_position' => $hasNewImage
                 ? ($validated['image_position'] ?? '50% 50%')
                 : ($request->boolean('remove_image') ? '50% 50%' : ($validated['image_position'] ?? $course->image_position ?? '50% 50%')),
@@ -233,6 +257,7 @@ class CourseAdminController extends Controller
 
         $course->update([
             'image' => null,
+            'image_url' => null,
             'image_position' => '50% 50%',
         ]);
 

@@ -54,6 +54,7 @@ Route::middleware('admin')->group(function () {
     Route::put('/admin/articles/{article}', [ArticleAdminController::class, 'update'])->name('admin.articles.update');
     Route::delete('/admin/articles/{article}', [ArticleAdminController::class, 'destroy'])->name('admin.articles.destroy');
     Route::post('/admin/categories', [CourseAdminController::class, 'storeCategory'])->name('admin.categories.store');
+    Route::delete('/admin/categories/{category}', [CourseAdminController::class, 'destroyCategory'])->name('admin.categories.destroy');
     Route::post('/admin/courses', [CourseAdminController::class, 'store'])->name('admin.courses.store');
     Route::put('/admin/courses/{course}', [CourseAdminController::class, 'update'])->name('admin.courses.update');
     Route::delete('/admin/courses/{course}/image', [CourseAdminController::class, 'destroyImage'])->name('admin.courses.image.destroy');

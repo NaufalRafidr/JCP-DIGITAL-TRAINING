@@ -30,10 +30,10 @@
         'image' => asset('images/hero-bg-alt.jpg'),
         'position' => 'center',
     ];
-    $backgroundImage = $course->image
+    $backgroundImage = $course->image_url ?: ($course->image
         ? Storage::disk('public')->url($course->image)
-        : $titleArtwork['image'];
-    $backgroundPosition = $course->image && \App\Models\Course::isValidImagePosition($course->image_position)
+        : $titleArtwork['image']);
+    $backgroundPosition = ($course->image || $course->image_url) && \App\Models\Course::isValidImagePosition($course->image_position)
         ? $course->image_position
         : $titleArtwork['position'];
     $hasOpenSession = $course->sessions->contains('status', 'Buka');

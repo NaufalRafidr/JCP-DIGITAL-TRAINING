@@ -13,6 +13,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class GalleryAdminController extends Controller
 {
@@ -115,21 +116,44 @@ class GalleryAdminController extends Controller
 
         $request->files->set('photos', $photos);
 
+        $photoUrls = collect(preg_split('/\R/', (string) $request->input('photo_urls', '')) ?: [])
+            ->map(fn (string $url): string => trim($url))
+            ->filter()
+            ->values();
+
         $validated = $request->validate([
             'gallery_folder_id' => 'required|exists:gallery_folders,id',
-            'photos' => 'required|array|min:1|max:100',
+            'photos' => 'nullable|array|max:100',
             'photos.*' => 'required|image|mimes:jpg,jpeg,png,webp,avif|max:25600',
+            'photo_urls' => 'nullable|string|max:200000',
             'batch_count' => 'sometimes|integer|min:1|max:100',
         ]);
 
+        $photoUrls->each(function (string $url, int $index): void {
+            validator(['url' => $url], ['url' => 'url|max:2048'])
+                ->validateWithBag('default');
+        });
+
+        if (count($validated['photos'] ?? []) + $photoUrls->count() === 0) {
+            throw ValidationException::withMessages(['photos' => 'Pilih file foto atau masukkan minimal satu URL gambar.']);
+        }
+
+        if (count($validated['photos'] ?? []) + $photoUrls->count() > 100) {
+            throw ValidationException::withMessages(['photos' => 'Maksimal 100 gambar dapat diunggah sekaligus.']);
+        }
+
         $folder = GalleryFolder::findOrFail($validated['gallery_folder_id']);
-        foreach ($validated['photos'] as $photo) {
+        foreach ($validated['photos'] ?? [] as $photo) {
             $storedPhoto = $imageService->store($photo, 'gallery/'.$folder->id);
             $folder->photos()->create($storedPhoto);
         }
+        foreach ($photoUrls as $photoUrl) {
+            $folder->photos()->create(['image_url' => $photoUrl]);
+        }
         $folder->update(['status' => 'Draft']);
 
-        $message = ($validated['batch_count'] ?? count($validated['photos'])).' foto berhasil diunggah.';
+        $totalPhotoCount = count($validated['photos'] ?? []) + $photoUrls->count();
+        $message = $totalPhotoCount.' gambar berhasil diunggah.';
 
         if ($request->expectsJson()) {
             $request->session()->flash('success', $message);
@@ -176,6 +200,7 @@ class GalleryAdminController extends Controller
         $validated = $request->validate([
             'caption' => 'nullable|string|max:255',
             'photo' => 'sometimes|image|mimes:jpg,jpeg,png,webp,avif|max:25600',
+            'image_url' => 'nullable|url|max:2048',
         ]);
 
         $oldPath = null;
@@ -187,6 +212,13 @@ class GalleryAdminController extends Controller
 
             $photo->path = $storedPhoto['path'];
             $photo->thumbnail_path = $storedPhoto['thumbnail_path'];
+            $photo->image_url = null;
+        } elseif (array_key_exists('image_url', $validated) && $validated['image_url'] !== null) {
+            $oldPath = $photo->path;
+            $oldThumbnailPath = $photo->thumbnail_path;
+            $photo->path = null;
+            $photo->thumbnail_path = null;
+            $photo->image_url = $validated['image_url'];
         }
 
         $photo->caption = $validated['caption'] ?? $photo->caption;

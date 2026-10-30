@@ -10,10 +10,10 @@ use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
-it('creates a new gallery field from the admin dashboard', function () {
+it('creates a shared training field from the field management page', function () {
     $admin = User::factory()->create(['is_admin' => true]);
 
-    $response = $this->actingAs($admin)->post(route('admin.gallery.categories.store'), [
+    $response = $this->actingAs($admin)->post(route('admin.categories.store'), [
         'name' => 'Dokumentasi Event',
         'short_name' => 'Event',
         'description' => 'Dokumentasi kegiatan dan event JCP.',
@@ -21,15 +21,16 @@ it('creates a new gallery field from the admin dashboard', function () {
 
     $category = Category::query()->where('slug', 'dokumentasi-event')->firstOrFail();
 
-    $response->assertRedirect(route('admin.dashboard', ['tab' => 'galeri']));
+    $response->assertRedirect(route('admin.dashboard', ['tab' => 'bidang']));
     expect($category->is_gallery)->toBeTrue()
         ->and($category->short_name)->toBe('Event');
 
     $this->actingAs($admin)
-        ->get(route('admin.dashboard', ['tab' => 'galeri']))
+        ->get(route('admin.dashboard', ['tab' => 'bidang']))
         ->assertOk()
         ->assertSee('Dokumentasi Event')
-        ->assertSee('Tambah bidang galeri');
+        ->assertSee('Bidang Pelatihan')
+        ->assertSee('Tambah bidang');
 });
 
 it('creates a gallery folder under the selected category', function () {
@@ -229,6 +230,22 @@ it('creates a lightweight thumbnail when uploading a gallery photo', function ()
     Storage::disk('public')->assertExists($photo->path);
     Storage::disk('public')->assertExists($photo->thumbnail_path);
     $this->get(route('gallery.index'))->assertDontSee('Album Ringan');
+});
+
+it('creates a gallery photo from an image URL', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+    $folder = GalleryFolder::create(['name' => 'Album URL', 'slug' => 'album-url']);
+
+    $response = $this->actingAs($admin)->post(route('admin.gallery.photos.store'), [
+        'gallery_folder_id' => $folder->id,
+        'photo_urls' => 'https://example.com/gallery-photo.jpg',
+    ]);
+
+    $photo = $folder->photos()->firstOrFail();
+
+    $response->assertRedirect(route('admin.dashboard', ['tab' => 'galeri', 'folder_id' => $folder->id]));
+    expect($photo->path)->toBeNull()
+        ->and($photo->image_url)->toBe('https://example.com/gallery-photo.jpg');
 });
 
 it('paginates photos on the public gallery folder page', function () {

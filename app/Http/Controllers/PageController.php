@@ -9,6 +9,8 @@ use App\Models\CourseSession;
 use App\Models\GalleryFolder;
 use App\Models\JcpProfile;
 use App\Models\Registration;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class PageController extends Controller
@@ -91,14 +93,38 @@ class PageController extends Controller
     /**
      * Admin dashboard preview (Slide 16).
      */
-    public function admin(): View
+    public function admin(Request $request): View
     {
         $jcpProfile = JcpProfile::query()->firstOrFail();
-        $categories = Category::all();
+        $categories = Category::query()
+            ->withCount(['courses', 'galleryFolders'])
+            ->orderBy('name')
+            ->get();
         $totalCourses = Course::count();
         $totalSessions = CourseSession::count();
         $totalRegistrations = Registration::count();
-        $articles = Article::latest()->get();
+        $articleStatusFilter = request()->string('article_status')->toString();
+        $articleStatusFilter = in_array($articleStatusFilter, ['all', 'draft', 'scheduled', 'published'], true)
+            ? $articleStatusFilter
+            : 'all';
+        $articleSearch = mb_substr(trim(request()->string('article_search')->toString()), 0, 100);
+        $articles = Article::query()->latest()->get();
+        $articleCalendarMonth = $this->resolveArticleCalendarMonth();
+        $articleCalendarArticles = Article::query()
+            ->whereNotNull('published_at')
+            ->whereBetween('published_at', [
+                $articleCalendarMonth->toDateString(),
+                $articleCalendarMonth->copy()->endOfMonth()->toDateString(),
+            ])
+            ->orderBy('published_at')
+            ->orderBy('id')
+            ->get();
+        $articleCalendarLeadingDays = $articleCalendarMonth->dayOfWeekIso - 1;
+
+        if ($request->boolean('calendar_only')) {
+            return view('pages.partials.article-calendar', compact('articleCalendarMonth', 'articleCalendarArticles', 'articleCalendarLeadingDays'));
+        }
+
         $courses = Course::with('category')->latest()->get();
         $sessions = CourseSession::with('course')->latest()->get();
         $upcomingSessions = CourseSession::query()
@@ -161,6 +187,21 @@ class PageController extends Controller
                 ->withQueryString();
         }
 
-        return view('pages.admin', compact('jcpProfile', 'categories', 'totalCourses', 'totalSessions', 'totalRegistrations', 'articles', 'courses', 'sessions', 'upcomingSessions', 'recentRegistrations', 'selectedRegistrationCourseId', 'selectedRegistrationSessionId', 'selectedRegistration', 'selectedCourse', 'selectedSession', 'selectedArticle', 'galleryCategories', 'galleryFolders', 'selectedGalleryFolder', 'selectedGalleryPhotos'));
+        return view('pages.admin', compact('jcpProfile', 'categories', 'totalCourses', 'totalSessions', 'totalRegistrations', 'articles', 'articleStatusFilter', 'articleSearch', 'articleCalendarMonth', 'articleCalendarArticles', 'articleCalendarLeadingDays', 'courses', 'sessions', 'upcomingSessions', 'recentRegistrations', 'selectedRegistrationCourseId', 'selectedRegistrationSessionId', 'selectedRegistration', 'selectedCourse', 'selectedSession', 'selectedArticle', 'galleryCategories', 'galleryFolders', 'selectedGalleryFolder', 'selectedGalleryPhotos'));
+    }
+
+    private function resolveArticleCalendarMonth(): Carbon
+    {
+        $requestedMonth = request()->string('article_month')->toString();
+
+        if ($requestedMonth !== '') {
+            try {
+                return Carbon::createFromFormat('!Y-m', $requestedMonth)->startOfMonth();
+            } catch (\Throwable) {
+                // Fall back to the current month when the query string is invalid.
+            }
+        }
+
+        return now()->startOfMonth();
     }
 }

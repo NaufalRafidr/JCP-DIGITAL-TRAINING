@@ -35,12 +35,12 @@
                         class="gallery-photo-trigger group mb-4 block w-full break-inside-avoid overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-sm transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#087F78] focus:ring-offset-2 focus:ring-offset-brand-ivory"
                         data-gallery-photo
                         data-index="{{ $loop->index }}"
-                        data-full-url="{{ Storage::disk('public')->url($photo->path) }}"
+                        data-full-url="{{ $photo->image_url ?: Storage::disk('public')->url($photo->path) }}"
                         data-caption="{{ $photo->caption ?: 'Foto kegiatan '.$folder->name }}"
                         aria-label="Perbesar foto {{ $loop->iteration }}"
                     >
                         <span class="relative block overflow-hidden">
-                            <img src="{{ Storage::disk('public')->url($photo->thumbnail_path ?: $photo->path) }}" alt="{{ $photo->caption ?: 'Foto kegiatan '.$folder->name }}" loading="lazy" decoding="async" width="1600" height="1200" class="block h-auto w-full object-cover transition duration-500 group-hover:scale-[1.03]">
+                            <img src="{{ $photo->image_url ?: Storage::disk('public')->url($photo->thumbnail_path ?: $photo->path) }}" alt="{{ $photo->caption ?: 'Foto kegiatan '.$folder->name }}" loading="lazy" decoding="async" width="1600" height="1200" class="block h-auto w-full object-cover transition duration-500 group-hover:scale-[1.03]">
                             <span class="absolute inset-0 flex items-center justify-center bg-[#10243A]/0 transition-colors duration-300 group-hover:bg-[#10243A]/35">
                                 <span class="flex h-12 w-12 scale-90 items-center justify-center rounded-full bg-[#087F78] text-white opacity-0 shadow-xl transition duration-300 group-hover:scale-100 group-hover:opacity-100" aria-hidden="true">
                                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="6.5"></circle><path stroke-linecap="round" d="m16 16 4.5 4.5M11 8v6M8 11h6"></path></svg>

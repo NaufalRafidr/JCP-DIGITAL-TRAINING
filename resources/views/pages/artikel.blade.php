@@ -21,8 +21,8 @@
     <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
         @forelse($articles as $article)
             <a href="{{ route('artikel.show', ['article' => $article->slug]) }}" class="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all hover:-translate-y-1 hover:border-[#087F78]/50 hover:shadow-lg">
-                @if($article->image_path)
-                    <img src="{{ Storage::disk('public')->url($article->image_path) }}" alt="{{ $article->title }}" loading="lazy" class="aspect-video w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]">
+                @if($article->image_path || $article->image_url)
+                    <img src="{{ $article->image_url ?: Storage::disk('public')->url($article->image_path) }}" alt="{{ $article->title }}" loading="lazy" class="aspect-video w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]">
                 @else
                     <div class="flex aspect-video w-full items-center justify-center bg-[#10243A] px-6 text-center text-sm font-bold text-teal-100">JCP Training</div>
                 @endif
@@ -32,6 +32,9 @@
                     <p class="text-sm text-slate-600">{{ $article->excerpt }}</p>
                     <div class="mt-auto flex items-center justify-between gap-3 pt-2 text-xs text-slate-400">
                         <span>{{ ($article->published_at ?? $article->created_at)->format('d M Y') }}</span>
+                        @if($article->author)
+                            <span class="truncate">{{ $article->author }}</span>
+                        @endif
                         <span class="whitespace-nowrap font-bold text-[#087F78]">Baca &rarr;</span>
                     </div>
                 </div>

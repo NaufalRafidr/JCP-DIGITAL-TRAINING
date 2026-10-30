@@ -105,6 +105,11 @@
                     Program
                 </a>
 
+                <a href="{{ route('admin.dashboard', ['tab' => 'bidang']) }}"
+                   class="block rounded-xl px-4 py-2.5 transition-all {{ $activeTab === 'bidang' ? 'border border-[#087F78]/40 bg-[#087F78]/25 font-semibold text-white shadow-xs' : 'px-3 py-2 text-slate-300 hover:text-white' }}">
+                    Bidang Pelatihan
+                </a>
+
                 <!-- Active Menu: Jadwal / Batch (Sesuai Gambar Referensi) -->
                 <a href="{{ route('admin.dashboard', ['tab' => 'jadwal']) }}" 
                    class="block rounded-xl px-4 py-2.5 transition-all {{ $activeTab === 'jadwal' ? 'border border-[#087F78]/40 bg-[#087F78]/25 font-semibold text-white shadow-xs' : 'px-3 py-2 text-slate-300 hover:text-white' }}">
@@ -724,15 +729,128 @@
             <div class="flex flex-col justify-between gap-4 pb-8 sm:flex-row sm:items-end">
                 <div>
                     <h1 class="text-3xl font-extrabold tracking-tight text-[#10243A] sm:text-4xl">Kelola Artikel</h1>
-                    <p class="mt-2 text-sm text-slate-500">Tulis, edit, dan publikasikan artikel yang tampil di halaman Artikel pengguna.</p>
+                    <p class="mt-2 text-sm text-slate-500">Tulis, jadwalkan, dan publikasikan artikel yang tampil di halaman Artikel pengguna.</p>
                 </div>
-                <button type="button" onclick="openAddArticleModal()" class="flex items-center justify-center gap-2 rounded-2xl bg-[#087F78] px-6 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#066761]">
-                    <span class="text-base font-bold leading-none">+</span>
-                    <span>Tambah artikel</span>
-                </button>
             </div>
 
-            <div class="hidden grid-cols-12 px-8 py-3 text-sm font-bold tracking-tight text-[#10243A] md:grid">
+            <section class="mb-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+                <div class="mb-6 flex flex-col justify-between gap-3 border-b border-slate-100 pb-5 sm:flex-row sm:items-start">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wider text-[#087F78]">Editor artikel</p>
+                        <h2 class="mt-1 text-2xl font-extrabold tracking-tight text-[#10243A]">Tulis artikel baru.</h2>
+                        <p class="mt-1 text-sm text-slate-500">Simpan sebagai draft, jadwalkan, atau publikasikan sekarang.</p>
+                    </div>
+                    <span class="rounded-full bg-[#E2F6F2] px-3 py-1.5 text-xs font-bold text-[#087F78]">Maksimal 1 artikel per hari</span>
+                </div>
+
+                <form id="addArticleInlineForm" action="{{ route('admin.articles.store') }}" method="POST" enctype="multipart/form-data" onsubmit="return validateRichEditor(this)" class="space-y-5">
+                    @csrf
+                    <input id="add_article_inline_status" name="status" type="hidden" value="{{ old('status', 'Draft') }}">
+                    <div class="grid gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)]">
+                        <div class="space-y-5">
+                            <div>
+                                <label for="add_article_title_inline" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Judul artikel *</label>
+                                <input id="add_article_title_inline" name="title" type="text" value="{{ old('title') }}" required maxlength="255" placeholder="Contoh: Tips Memotret dengan Drone" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                            </div>
+                            <div class="grid gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label for="add_article_author_inline" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Penulis / tim *</label>
+                                    <input id="add_article_author_inline" name="author" type="text" value="{{ old('author') }}" required maxlength="100" placeholder="Contoh: Tim Media JCP" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                                </div>
+                                <div>
+                                    <label for="add_article_category_inline" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Bidang pelatihan *</label>
+                                    <select id="add_article_category_inline" name="category" required class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                                        <option value="">Pilih bidang pelatihan</option>
+                                        @foreach($categories as $category)
+                                            <option value="{{ $category->name }}" @selected(old('category') === $category->name)>{{ $category->name }}</option>
+                                        @endforeach
+                                        @if(old('category') && ! $categories->contains('name', old('category')))
+                                            <option value="{{ old('category') }}" selected>{{ old('category') }}</option>
+                                        @endif
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="add_article_excerpt_inline" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Ringkasan singkat *</label>
+                                <textarea id="add_article_excerpt_inline" name="excerpt" rows="3" maxlength="500" required placeholder="Tuliskan 2–3 kalimat ringkasan yang muncul pada kartu artikel." class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">{{ old('excerpt') }}</textarea>
+                            </div>
+                        </div>
+
+                        <div class="space-y-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-4 sm:p-5">
+                            <div>
+                                <label for="add_article_image_inline" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Gambar utama</label>
+                                <input id="add_article_image_inline" name="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-2 file:font-semibold file:text-[#087F78]">
+                                <p class="mt-1 text-xs text-slate-500">Pilih file gambar maksimal 10 MB.</p>
+                            </div>
+                            <div class="flex items-center gap-3 text-[10px] font-bold uppercase tracking-wider text-slate-400"><span class="h-px flex-1 bg-slate-200"></span>atau<span class="h-px flex-1 bg-slate-200"></span></div>
+                            <div>
+                                <label for="add_article_image_url_inline" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">URL gambar</label>
+                                <input id="add_article_image_url_inline" name="image_url" type="url" value="{{ old('image_url') }}" maxlength="2048" placeholder="https://contoh.com/gambar.jpg" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                                <p class="mt-1 text-xs text-slate-500">Jika file dan URL diisi, file akan digunakan.</p>
+                            </div>
+                            <div>
+                                <label for="add_article_published_at_inline" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Tanggal tayang / jadwal</label>
+                                <input id="add_article_published_at_inline" name="published_at" type="date" value="{{ old('published_at') }}" min="{{ now()->toDateString() }}" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                                <p class="mt-1 text-xs text-slate-500">Satu tanggal hanya dapat berisi satu artikel.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Isi artikel *</label>
+                        <div data-rich-editor class="overflow-hidden rounded-xl border border-slate-200 focus-within:border-[#087F78]">
+                            <div class="flex flex-wrap items-center gap-1 border-b border-slate-200 bg-slate-50 p-2">
+                                <button type="button" data-rich-command="bold" class="rounded-lg px-3 py-1.5 text-sm font-bold text-slate-700 hover:bg-white">B</button>
+                                <button type="button" data-rich-command="italic" class="rounded-lg px-3 py-1.5 text-sm italic text-slate-700 hover:bg-white">I</button>
+                                <button type="button" data-rich-command="underline" class="rounded-lg px-3 py-1.5 text-sm underline text-slate-700 hover:bg-white">U</button>
+                                <button type="button" data-rich-command="insertUnorderedList" class="rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-white">• List</button>
+                                <button type="button" data-rich-command="insertOrderedList" class="rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-white">1. List</button>
+                                <button type="button" data-rich-command="formatBlock" data-rich-value="blockquote" class="rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-white">Kutipan</button>
+                            </div>
+                            <div contenteditable="true" data-rich-surface data-placeholder="Tuliskan isi artikel dengan format yang Anda butuhkan..." oninput="this.nextElementSibling.value = this.innerHTML" class="min-h-56 px-4 py-4 text-sm leading-7 outline-none empty:before:text-slate-400 empty:before:content-[attr(data-placeholder)]">{{ old('content') }}</div>
+                            <input type="hidden" name="content" data-rich-value value="{{ old('content') }}">
+                        </div>
+                        <p class="mt-1 text-xs text-slate-500">Gunakan toolbar untuk bold, italic, garis bawah, daftar, dan kutipan.</p>
+                    </div>
+
+                    <div class="flex flex-wrap justify-end gap-3 border-t border-slate-100 pt-5">
+                        <button type="button" onclick="submitArticleAction('Draft', false)" class="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 transition-colors hover:border-[#10243A] hover:bg-slate-50">Simpan draft</button>
+                        <button type="button" onclick="submitArticleAction('Draft', true)" class="rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-white transition-colors hover:bg-amber-600">Jadwalkan</button>
+                        <button type="button" onclick="submitArticleAction('Publish', false)" class="rounded-xl bg-[#087F78] px-5 py-2.5 text-xs font-bold text-white transition-colors hover:bg-[#066761]">Publish sekarang</button>
+                    </div>
+                </form>
+            </section>
+
+            @include('pages.partials.article-calendar')
+
+            <section data-article-manager data-article-status-filter="{{ $articleStatusFilter }}" data-article-search="{{ $articleSearch }}" class="mb-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+                <div class="flex flex-col justify-between gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-center">
+                    <div>
+                        <h2 class="text-2xl font-extrabold uppercase tracking-tight text-[#10243A]">Daftar kelola artikel</h2>
+                        <p class="mt-1 text-sm text-slate-500">Filter dan kelola status artikel yang tersimpan di sistem.</p>
+                    </div>
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                        <nav class="flex items-center rounded-xl bg-slate-100 p-1 text-sm font-bold text-slate-600" aria-label="Filter status artikel">
+                            @foreach([
+                                'all' => 'Semua',
+                                'draft' => 'Draft',
+                                'scheduled' => 'Terjadwal',
+                                'published' => 'Published',
+                            ] as $statusValue => $statusLabel)
+                                <button type="button" data-article-filter="{{ $statusValue }}" onclick="filterArticleList(this.dataset.articleFilter)" class="rounded-lg px-4 py-2 transition-colors {{ $articleStatusFilter === $statusValue ? 'bg-[#10243A] text-white shadow-sm' : 'hover:bg-white hover:text-[#10243A]' }}">{{ $statusLabel }}</button>
+                            @endforeach
+                        </nav>
+                        <div data-article-search-form class="relative">
+                            <label for="article_search" class="sr-only">Cari judul artikel</label>
+                            <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            <input id="article_search" name="article_search" type="search" value="{{ $articleSearch }}" maxlength="100" placeholder="Cari judul..." oninput="filterArticleList()" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-[#10243A] outline-none transition-colors focus:border-[#087F78] sm:w-60">
+                        </div>
+                    </div>
+                </div>
+
+            <div class="hidden grid-cols-12 px-8 py-5 text-sm font-bold tracking-tight text-[#10243A] md:grid">
                 <div class="col-span-5">Artikel</div>
                 <div class="col-span-2">Kategori</div>
                 <div class="col-span-2">Tanggal tayang</div>
@@ -740,27 +858,40 @@
                 <div class="col-span-2" aria-hidden="true"></div>
             </div>
 
-            <div class="space-y-4">
+            <div data-article-list class="space-y-4">
                 @forelse($articles as $article)
                     @php
                         $articleEditorQuery = ['tab' => 'artikel', 'article_id' => $article->id];
+                        $articleStatusLabel = $article->status === 'Publish'
+                            ? 'Publish'
+                            : ($article->published_at !== null ? 'Terjadwalkan' : 'Draft');
+                        $articleStatusClasses = match ($articleStatusLabel) {
+                            'Publish' => 'bg-emerald-100 text-emerald-800',
+                            'Terjadwalkan' => 'bg-amber-100 text-amber-800',
+                            default => 'bg-slate-100 text-slate-600',
+                        };
+                        $articleFilterStatus = match ($articleStatusLabel) {
+                            'Publish' => 'published',
+                            'Terjadwalkan' => 'scheduled',
+                            default => 'draft',
+                        };
                     @endphp
-                    <article class="admin-editor-card cursor-pointer rounded-2xl border bg-white px-5 py-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] transition-all hover:border-[#087F78]/50 hover:shadow-md md:grid md:grid-cols-12 md:items-center md:px-8 {{ $selectedArticle?->id === $article->id ? 'border-[#087F78] ring-2 ring-[#087F78]/10' : 'border-slate-200/90' }}" data-editor-url="{{ route('admin.dashboard', $articleEditorQuery) }}" tabindex="0" role="button" aria-expanded="{{ $selectedArticle?->id === $article->id ? 'true' : 'false' }}" aria-label="Edit artikel {{ $article->title }}">
+                    <article data-article-card data-article-title="{{ $article->title }}" data-article-filter-status="{{ $articleFilterStatus }}" class="admin-editor-card cursor-pointer rounded-2xl border bg-white px-5 py-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] transition-all hover:border-[#087F78]/50 hover:shadow-md md:grid md:grid-cols-12 md:items-center md:px-8 {{ $selectedArticle?->id === $article->id ? 'border-[#087F78] ring-2 ring-[#087F78]/10' : 'border-slate-200/90' }}" data-editor-url="{{ route('admin.dashboard', $articleEditorQuery) }}" tabindex="0" role="button" aria-expanded="{{ $selectedArticle?->id === $article->id ? 'true' : 'false' }}" aria-label="Edit artikel {{ $article->title }}">
                         <div class="flex min-w-0 items-center gap-3 md:col-span-5 md:pr-4">
-                            @if($article->image_path)
-                                <img src="{{ Storage::disk('public')->url($article->image_path) }}" alt="{{ $article->title }}" class="h-14 w-20 shrink-0 rounded-xl object-cover">
+                            @if($article->image_path || $article->image_url)
+                                <img src="{{ $article->image_url ?: Storage::disk('public')->url($article->image_path) }}" alt="{{ $article->title }}" class="h-14 w-20 shrink-0 rounded-xl object-cover">
                             @else
                                 <div class="flex h-14 w-20 shrink-0 items-center justify-center rounded-xl bg-[#10243A] text-[10px] font-bold text-teal-100">JCP</div>
                             @endif
                             <div class="min-w-0">
                                 <h2 class="truncate font-bold text-slate-800">{{ $article->title }}</h2>
-                                <p class="mt-1 line-clamp-2 text-xs text-slate-500">{{ $article->excerpt }}</p>
+                                <p class="mt-1 line-clamp-2 text-xs text-slate-500">{{ $article->author ? $article->author.' · ' : '' }}{{ $article->excerpt }}</p>
                             </div>
                         </div>
                         <div class="mt-4 border-t border-slate-100 pt-4 text-sm text-slate-600 md:col-span-2 md:mt-0 md:border-t-0 md:pt-0">{{ $article->category }}</div>
                         <div class="mt-4 border-t border-slate-100 pt-4 text-sm text-slate-600 md:col-span-2 md:mt-0 md:border-t-0 md:pt-0">{{ $article->published_at?->format('d M Y') ?? 'Belum dijadwalkan' }}</div>
                         <div class="mt-4 border-t border-slate-100 pt-4 md:col-span-1 md:mt-0 md:border-t-0 md:pt-0">
-                            <span class="rounded-full px-3 py-1.5 text-xs font-extrabold {{ $article->status === 'Publish' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600' }}">{{ $article->status }}</span>
+                            <span class="rounded-full px-3 py-1.5 text-xs font-extrabold {{ $articleStatusClasses }}">{{ $articleStatusLabel }}</span>
                         </div>
                         <div class="mt-4 flex items-center justify-end gap-2 border-t border-slate-100 pt-4 md:col-span-2 md:mt-0 md:border-t-0 md:pt-0">
                             <form action="{{ route('admin.articles.destroy', $article) }}" method="POST">
@@ -784,7 +915,7 @@
                                     <a href="{{ route('admin.dashboard', ['tab' => 'artikel']) }}" data-close-editor class="inline-flex w-fit items-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:border-[#087F78]/40 hover:bg-[#E2F6F2] hover:text-[#087F78]">Tutup</a>
                                 </div>
 
-                                <form action="{{ route('admin.articles.update', $article) }}" method="POST" enctype="multipart/form-data" class="mt-5 space-y-5">
+                                <form action="{{ route('admin.articles.update', $article) }}" method="POST" enctype="multipart/form-data" onsubmit="return validateRichEditor(this)" class="mt-5 space-y-5">
                                     @csrf
                                     @method('PUT')
                                     <div class="grid gap-4 sm:grid-cols-2">
@@ -793,23 +924,39 @@
                                             <input id="inline_article_title_{{ $article->id }}" name="title" type="text" value="{{ $article->title }}" required maxlength="255" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                                         </div>
                                         <div>
-                                            <label for="inline_article_category_{{ $article->id }}" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Kategori *</label>
-                                            <input id="inline_article_category_{{ $article->id }}" name="category" type="text" value="{{ $article->category }}" required maxlength="100" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                                            <label for="inline_article_author_{{ $article->id }}" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Penulis / tim</label>
+                                            <input id="inline_article_author_{{ $article->id }}" name="author" type="text" value="{{ $article->author }}" maxlength="100" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                                        </div>
+                                        <div>
+                                            <label for="inline_article_category_{{ $article->id }}" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Bidang pelatihan *</label>
+                                            <select id="inline_article_category_{{ $article->id }}" name="category" required class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                                                @if(! $categories->contains('name', $article->category))
+                                                    <option value="{{ $article->category }}" selected>{{ $article->category }}</option>
+                                                @endif
+                                                @foreach($categories as $category)
+                                                    <option value="{{ $category->name }}" @selected($article->category === $category->name)>{{ $category->name }}</option>
+                                                @endforeach
+                                            </select>
                                         </div>
                                         <div>
                                             <label for="inline_article_status_{{ $article->id }}" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Status *</label>
                                             <select id="inline_article_status_{{ $article->id }}" name="status" required class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                                                 <option value="Publish" @selected($article->status === 'Publish')>Publish</option>
-                                                <option value="Draft" @selected($article->status === 'Draft')>Draft</option>
+                                                <option value="Draft" @selected($article->status === 'Draft' && $article->published_at === null)>Draft</option>
+                                                <option value="Terjadwalkan" @selected($article->status === 'Draft' && $article->published_at !== null)>Terjadwalkan</option>
                                             </select>
                                         </div>
                                         <div>
-                                            <label for="inline_article_published_at_{{ $article->id }}" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Tanggal tayang</label>
-                                            <input id="inline_article_published_at_{{ $article->id }}" name="published_at" type="date" value="{{ $article->published_at?->format('Y-m-d') }}" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                                            <label for="inline_article_published_at_{{ $article->id }}" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Tanggal publish / jadwal</label>
+                                            <input id="inline_article_published_at_{{ $article->id }}" name="published_at" type="date" value="{{ $article->published_at?->format('Y-m-d') }}" min="{{ now()->toDateString() }}" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                                         </div>
                                         <div>
                                             <label for="inline_article_image_{{ $article->id }}" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Ganti foto utama</label>
                                             <input id="inline_article_image_{{ $article->id }}" name="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-2 file:font-semibold file:text-[#087F78]">
+                                        </div>
+                                        <div>
+                                            <label for="inline_article_image_url_{{ $article->id }}" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">URL gambar</label>
+                                            <input id="inline_article_image_url_{{ $article->id }}" name="image_url" type="url" value="{{ $article->image_url }}" maxlength="2048" placeholder="https://contoh.com/gambar.jpg" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                                         </div>
                                     </div>
                                     <div>
@@ -817,11 +964,23 @@
                                         <textarea id="inline_article_excerpt_{{ $article->id }}" name="excerpt" rows="3" maxlength="500" required class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">{{ $article->excerpt }}</textarea>
                                     </div>
                                     <div>
-                                        <label for="inline_article_content_{{ $article->id }}" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Isi artikel *</label>
-                                        <textarea id="inline_article_content_{{ $article->id }}" name="content" rows="10" required class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">{{ $article->content }}</textarea>
+                                        <label class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Isi artikel *</label>
+                                        <div data-rich-editor class="overflow-hidden rounded-xl border border-slate-200 focus-within:border-[#087F78]">
+                                            <div class="flex flex-wrap items-center gap-1 border-b border-slate-200 bg-slate-50 p-2">
+                                                <button type="button" data-rich-command="bold" class="rounded-lg px-3 py-1.5 text-sm font-bold text-slate-700 hover:bg-white">B</button>
+                                                <button type="button" data-rich-command="italic" class="rounded-lg px-3 py-1.5 text-sm italic text-slate-700 hover:bg-white">I</button>
+                                                <button type="button" data-rich-command="underline" class="rounded-lg px-3 py-1.5 text-sm underline text-slate-700 hover:bg-white">U</button>
+                                                <button type="button" data-rich-command="insertUnorderedList" class="rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-white">• List</button>
+                                                <button type="button" data-rich-command="insertOrderedList" class="rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-white">1. List</button>
+                                                <button type="button" data-rich-command="formatBlock" data-rich-value="blockquote" class="rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-white">Kutipan</button>
+                                            </div>
+                                            <div contenteditable="true" data-rich-surface oninput="this.nextElementSibling.value = this.innerHTML" class="min-h-56 px-4 py-4 text-sm leading-7 outline-none">{!! $article->content !!}</div>
+                                            <input type="hidden" name="content" data-rich-value value="{{ $article->content }}">
+                                        </div>
                                     </div>
                                     <div class="flex justify-end gap-3 border-t border-slate-100 pt-5">
                                         <a href="{{ route('admin.dashboard', ['tab' => 'artikel']) }}" data-close-editor class="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-100">Batal</a>
+                                        <button type="button" onclick="publishArticleNow(this)" class="rounded-xl bg-[#087F78] px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#066761]">Publish sekarang</button>
                                         <button type="submit" class="rounded-xl bg-[#087F78] px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#066761]">Simpan artikel</button>
                                     </div>
                                 </form>
@@ -831,7 +990,9 @@
                 @empty
                     <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center text-sm text-slate-500">Belum ada artikel. Klik &quot;Tambah artikel&quot; untuk membuat artikel pertama.</div>
                 @endforelse
+                <div data-article-filter-empty class="hidden rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center text-sm text-slate-500">Tidak ada artikel yang sesuai dengan filter.</div>
             </div>
+            </section>
 
         @elseif($activeTab === 'galeri')
             <div class="flex flex-col justify-between gap-4 pb-8 sm:flex-row sm:items-center">
@@ -908,11 +1069,11 @@
                         @foreach($selectedGalleryPhotos as $photo)
                             <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                                 <div class="relative aspect-square bg-slate-100">
-                                    <img src="{{ Storage::disk('public')->url($photo->thumbnail_path ?: $photo->path) }}" alt="Foto dari {{ $selectedGalleryFolder->name }}" loading="lazy" decoding="async" width="640" height="640" class="h-full w-full object-cover">
+                                    <img src="{{ $photo->image_url ?: Storage::disk('public')->url($photo->thumbnail_path ?: $photo->path) }}" alt="Foto dari {{ $selectedGalleryFolder->name }}" loading="lazy" decoding="async" width="640" height="640" class="h-full w-full object-cover">
                                     <label class="absolute left-3 top-3 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg bg-white/95 shadow-sm" aria-label="Pilih foto">
                                         <input type="checkbox" class="gallery-photo-select h-4 w-4 rounded border-slate-300 text-[#087F78] focus:ring-[#087F78]" value="{{ $photo->id }}" aria-label="Pilih foto {{ $photo->id }}">
                                     </label>
-                                    <a href="{{ Storage::disk('public')->url($photo->path) }}" target="_blank" rel="noopener" class="absolute bottom-3 right-3 rounded-lg bg-white/95 px-2.5 py-1.5 text-xs font-bold text-slate-700 shadow-sm hover:text-[#087F78]">Buka foto ↗</a>
+                                    <a href="{{ $photo->image_url ?: Storage::disk('public')->url($photo->path) }}" target="_blank" rel="noopener" class="absolute bottom-3 right-3 rounded-lg bg-white/95 px-2.5 py-1.5 text-xs font-bold text-slate-700 shadow-sm hover:text-[#087F78]">Buka foto ↗</a>
                                 </div>
                                 <div class="space-y-3 p-4">
                                     <form id="galleryPhotoDeleteForm_{{ $photo->id }}" action="{{ route('admin.gallery.photos.destroy') }}" method="POST">
@@ -934,6 +1095,10 @@
                                             <div>
                                                 <label for="gallery_file_{{ $photo->id }}" class="mb-1 block text-xs font-semibold text-slate-600">Ganti file (opsional)</label>
                                                 <input id="gallery_file_{{ $photo->id }}" name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/avif" class="w-full text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-teal-50 file:px-2 file:py-1.5 file:font-semibold file:text-[#087F78]">
+                                            </div>
+                                            <div>
+                                                <label for="gallery_image_url_{{ $photo->id }}" class="mb-1 block text-xs font-semibold text-slate-600">Atau URL gambar</label>
+                                                <input id="gallery_image_url_{{ $photo->id }}" name="image_url" type="url" value="{{ $photo->image_url }}" maxlength="2048" placeholder="https://contoh.com/foto.jpg" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:border-[#087F78] focus:outline-none">
                                             </div>
                                             <button type="submit" class="w-full rounded-lg bg-[#087F78] px-3 py-2 text-xs font-bold text-white hover:bg-[#066761]">Simpan perubahan</button>
                                         </form>
@@ -1025,7 +1190,7 @@
                         <a href="{{ route('admin.dashboard', ['tab' => 'galeri', 'folder_id' => $folder->id]) }}" aria-label="Buka pengaturan folder {{ $folder->name }}" class="contents">
                         <div class="md:col-span-2">
                             @if($folder->previewPhoto)
-                                <img src="{{ Storage::disk('public')->url($folder->previewPhoto->thumbnail_path ?: $folder->previewPhoto->path) }}" alt="Pratinjau {{ $folder->name }}" class="h-16 w-20 rounded-xl object-cover">
+                                <img src="{{ $folder->previewPhoto->image_url ?: Storage::disk('public')->url($folder->previewPhoto->thumbnail_path ?: $folder->previewPhoto->path) }}" alt="Pratinjau {{ $folder->name }}" class="h-16 w-20 rounded-xl object-cover">
                             @else
                                 <div class="flex h-16 w-20 items-center justify-center rounded-xl bg-slate-100 text-slate-400">📁</div>
                             @endif
@@ -1103,6 +1268,76 @@
             </div>
             @endif
 
+        @elseif($activeTab === 'bidang')
+            <div class="flex flex-col items-stretch justify-between gap-4 pb-8 sm:flex-row sm:items-center">
+                <div>
+                    <h1 class="text-3xl font-extrabold tracking-tight text-[#10243A] sm:text-4xl">Bidang Pelatihan</h1>
+                    <p class="mt-1 text-sm text-slate-500">Kelola bidang yang digunakan oleh Program, Beranda, dan Galeri.</p>
+                </div>
+
+                <button type="button" onclick="openAddCategoryModal()" class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[#087F78] px-7 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#066761] focus:outline-none sm:w-auto">
+                    <span class="text-base font-bold leading-none">+</span>
+                    <span>Tambah bidang</span>
+                </button>
+            </div>
+
+            <div class="mb-2 hidden grid-cols-12 px-8 py-3 text-sm font-bold tracking-tight text-[#10243A] md:grid">
+                <div class="col-span-5">Nama bidang</div>
+                <div class="col-span-2">Nama singkat</div>
+                <div class="col-span-2">Program</div>
+                <div class="col-span-2">Folder galeri</div>
+                <div class="col-span-1" aria-hidden="true"></div>
+            </div>
+
+            <div class="space-y-4">
+                @forelse($categories as $category)
+                    <article class="rounded-2xl border border-slate-200/90 bg-white px-5 py-5 text-sm shadow-[0_1px_3px_rgba(0,0,0,0.03)] transition-all hover:border-[#087F78]/50 hover:shadow-md md:grid md:grid-cols-12 md:items-center md:px-8">
+                        <div class="min-w-0 md:col-span-5 md:pr-4">
+                            <p class="font-bold text-[#10243A]">{{ $category->name }}</p>
+                            @if($category->description)
+                                <p class="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-500">{{ $category->description }}</p>
+                            @endif
+                        </div>
+
+                        <div class="mt-3 text-slate-500 md:col-span-2 md:mt-0">
+                            <p class="text-xs font-bold uppercase tracking-wider text-slate-400 md:hidden">Nama singkat</p>
+                            <p class="font-semibold">{{ $category->short_name ?: '—' }}</p>
+                        </div>
+
+                        <div class="mt-3 text-slate-500 md:col-span-2 md:mt-0">
+                            <p class="text-xs font-bold uppercase tracking-wider text-slate-400 md:hidden">Program</p>
+                            <p class="font-semibold">{{ $category->courses_count }} program</p>
+                        </div>
+
+                        <div class="mt-3 text-slate-500 md:col-span-2 md:mt-0">
+                            <p class="text-xs font-bold uppercase tracking-wider text-slate-400 md:hidden">Folder galeri</p>
+                            <p class="font-semibold">{{ $category->gallery_folders_count }} folder</p>
+                        </div>
+
+                        <div class="mt-3 flex items-center justify-end gap-2 md:col-span-1 md:mt-0">
+                            <form action="{{ route('admin.categories.destroy', $category) }}" method="POST" class="inline">
+                                @csrf
+                                @method('DELETE')
+                                <button type="button"
+                                        data-category-delete-url="{{ route('admin.categories.destroy', $category) }}"
+                                        data-category-delete-name="{{ $category->name }}"
+                                        data-category-course-count="{{ $category->courses_count }}"
+                                        data-category-folder-count="{{ $category->gallery_folders_count }}"
+                                        onclick="openCategoryDeleteModal(this)"
+                                        title="Hapus bidang pelatihan"
+                                        class="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-rose-600">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </button>
+                            </form>
+                        </div>
+                    </article>
+                @empty
+                    <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center text-sm text-slate-500">Belum ada bidang pelatihan. Klik &quot;Tambah bidang&quot; untuk membuat bidang pertama.</div>
+                @endforelse
+            </div>
+
         @else
             <!-- ========================================================
                  TABEL 2: DATA PELATIHAN (PROGRAM)
@@ -1118,11 +1353,7 @@
                     </p>
                 </div>
 
-                <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-                    <button type="button" onclick="openAddCategoryModal()" class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-[#087F78]/30 bg-white px-6 py-3 text-sm font-bold text-[#087F78] transition-all hover:border-[#087F78] hover:bg-[#E2F6F2] focus:outline-none sm:w-auto">
-                        <span class="text-base font-bold leading-none">+</span>
-                        <span>Tambah bidang</span>
-                    </button>
+                <div class="flex w-full sm:w-auto">
                     <button type="button" onclick="openAddProgramModal()" class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[#087F78] px-7 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#066761] focus:outline-none sm:w-auto">
                         <span class="text-base font-bold leading-none">+</span>
                         <span>Tambah program</span>
@@ -1228,7 +1459,7 @@
                                             <input id="inline_course_image_{{ $c->id }}" name="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-2 file:font-semibold file:text-[#087F78]">
                                         </div>
                                     </div>
-                                    @if($c->image)
+                                    @if($c->image || $c->image_url)
                                         @php
                                             $legacyImagePositions = [
                                                 'center top' => '50% 0%',
@@ -1245,18 +1476,25 @@
                                         <div class="grid gap-4 sm:grid-cols-[minmax(0,1.25fr)_minmax(220px,0.75fr)]" data-course-image-section>
                                             <div>
                                                 <div data-image-position-editor data-position-input="inline_course_image_position_{{ $c->id }}" class="relative aspect-[16/5] w-full touch-none cursor-grab overflow-hidden rounded-xl border border-slate-200 bg-slate-50 active:cursor-grabbing">
-                                                    <img src="{{ Storage::disk('public')->url($c->image) }}" alt="Gambar {{ $c->title }} saat ini" class="pointer-events-none absolute inset-0 h-full w-full select-none object-cover" draggable="false" style="object-position: {{ $editorImagePosition }}">
+                                                    <img src="{{ $c->image_url ?: Storage::disk('public')->url($c->image) }}" alt="Gambar {{ $c->title }} saat ini" class="pointer-events-none absolute inset-0 h-full w-full select-none object-cover" draggable="false" style="object-position: {{ $editorImagePosition }}">
                                                     <span class="pointer-events-none absolute inset-x-0 bottom-0 bg-[#10243A]/75 px-3 py-2 text-center text-xs font-semibold text-white">Seret gambar untuk mengatur posisi</span>
                                                 </div>
                                                 <p class="mt-2 text-xs text-slate-500">Frame ini mengikuti area banner gambar pada halaman user.</p>
                                             </div>
                                             <div>
                                                 <input id="inline_course_image_position_{{ $c->id }}" name="image_position" type="hidden" value="{{ $editorImagePosition }}">
+                                                <input id="inline_course_image_url_{{ $c->id }}" name="image_url" type="url" value="{{ $c->image_url }}" maxlength="2048" placeholder="URL gambar baru" class="mb-3 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                                                 <button type="button" data-remove-course-image data-remove-image-url="{{ route('admin.courses.image.destroy', $c) }}" class="inline-flex w-full items-center justify-center rounded-xl border border-rose-200 bg-white px-4 py-3 text-sm font-bold text-rose-700 transition-colors hover:bg-rose-50">
                                                     Hapus gambar
                                                 </button>
                                                 <p class="mt-2 text-xs leading-relaxed text-slate-500">Gambar akan langsung dihapus dan program kembali memakai gambar bawaan kategori.</p>
                                             </div>
+                                        </div>
+                                    @endif
+                                    @if(! $c->image && ! $c->image_url)
+                                        <div>
+                                            <label for="inline_course_image_url_{{ $c->id }}" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">URL gambar</label>
+                                            <input id="inline_course_image_url_{{ $c->id }}" name="image_url" type="url" maxlength="2048" placeholder="https://contoh.com/gambar.jpg" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                                         </div>
                                     @endif
                                     <div>
@@ -1309,18 +1547,18 @@
 
                 <form action="{{ route('admin.categories.store') }}" method="POST" class="space-y-4">
                     @csrf
-                    <input type="hidden" name="_form_context" value="program_category">
+                    <input type="hidden" name="_form_context" value="training_category">
                     <div>
                         <label for="program_category_name" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Nama bidang *</label>
-                        <input id="program_category_name" name="name" value="{{ old('_form_context') === 'program_category' ? old('name') : '' }}" required maxlength="100" placeholder="Contoh: Dokumentasi Event" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                        <input id="program_category_name" name="name" value="{{ old('_form_context') === 'training_category' ? old('name') : '' }}" required maxlength="100" placeholder="Contoh: Dokumentasi Event" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                     </div>
                     <div>
                         <label for="program_category_short_name" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Nama singkat</label>
-                        <input id="program_category_short_name" name="short_name" value="{{ old('_form_context') === 'program_category' ? old('short_name') : '' }}" maxlength="50" placeholder="Contoh: Event" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                        <input id="program_category_short_name" name="short_name" value="{{ old('_form_context') === 'training_category' ? old('short_name') : '' }}" maxlength="50" placeholder="Contoh: Event" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                     </div>
                     <div>
                         <label for="program_category_description" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Deskripsi bidang</label>
-                        <textarea id="program_category_description" name="description" rows="3" maxlength="1000" placeholder="Deskripsi singkat bidang pelatihan ini" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">{{ old('_form_context') === 'program_category' ? old('description') : '' }}</textarea>
+                        <textarea id="program_category_description" name="description" rows="3" maxlength="1000" placeholder="Deskripsi singkat bidang pelatihan ini" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">{{ old('_form_context') === 'training_category' ? old('description') : '' }}</textarea>
                     </div>
                     <div class="flex justify-end gap-3 border-t border-slate-100 pt-4">
                         <button type="button" onclick="closeAddCategoryModal()" class="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-100">Batal</button>
@@ -1328,6 +1566,41 @@
                     </div>
                 </form>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal Hapus Bidang Pelatihan -->
+    <div id="categoryDeleteModal" class="fixed inset-0 z-[90] hidden items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs" role="dialog" aria-modal="true" aria-labelledby="categoryDeleteTitle">
+        <div class="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl sm:p-8">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-wider text-rose-700">Konfirmasi penghapusan</p>
+                    <h3 id="categoryDeleteTitle" class="mt-2 text-xl font-extrabold text-[#10243A]">Hapus bidang pelatihan?</h3>
+                </div>
+                <button type="button" onclick="closeCategoryDeleteModal()" aria-label="Tutup" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-lg font-bold leading-none text-slate-600 hover:bg-slate-200">&times;</button>
+            </div>
+            <p class="mt-4 text-sm leading-relaxed text-slate-600">Bidang yang dihapus tidak dapat dikembalikan. Periksa data yang masih terhubung sebelum melanjutkan.</p>
+            <dl class="mt-5 grid gap-3 rounded-2xl bg-slate-50 p-4 text-sm sm:grid-cols-3">
+                <div>
+                    <dt class="text-xs font-bold uppercase tracking-wider text-slate-400">Nama bidang</dt>
+                    <dd id="categoryDeleteName" class="mt-1 break-words font-bold text-[#10243A]"></dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-bold uppercase tracking-wider text-slate-400">Program</dt>
+                    <dd id="categoryDeleteCourseCount" class="mt-1 font-bold text-[#10243A]"></dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-bold uppercase tracking-wider text-slate-400">Folder galeri</dt>
+                    <dd id="categoryDeleteFolderCount" class="mt-1 font-bold text-[#10243A]"></dd>
+                </div>
+            </dl>
+            <p id="categoryDeleteWarning" class="mt-4 rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm leading-relaxed text-rose-700"></p>
+            <form id="categoryDeleteForm" method="POST" class="mt-6 flex justify-end gap-3 border-t border-slate-100 pt-5">
+                @csrf
+                @method('DELETE')
+                <button type="button" onclick="closeCategoryDeleteModal()" class="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-100">Batal</button>
+                <button type="submit" class="rounded-xl bg-rose-700 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-rose-800">Hapus bidang</button>
+            </form>
         </div>
     </div>
 
@@ -1431,6 +1704,11 @@
                     </div>
                     <p class="mt-1 text-xs text-slate-500">Format JPG, PNG, WEBP, atau AVIF. Maksimal 100 foto, 25 MB per foto. Jika memilih keduanya, file akan digabung ke album ini.</p>
                 </div>
+                <div>
+                    <label for="gallery_photo_urls" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">URL foto</label>
+                    <textarea id="gallery_photo_urls" name="photo_urls" rows="3" placeholder="Satu URL gambar per baris: https://contoh.com/foto.jpg" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none"></textarea>
+                    <p class="mt-1 text-xs text-slate-500">Bisa digunakan sendiri atau digabung dengan file foto.</p>
+                </div>
                 <div class="flex justify-end gap-3 border-t border-slate-100 pt-4">
                     <button type="button" onclick="closeAddGalleryPhotosModal()" class="rounded-xl px-5 py-2.5 text-xs font-bold text-slate-600 transition-all hover:bg-slate-100">Batal</button>
                     <button type="submit" class="rounded-xl bg-[#087F78] px-6 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:bg-[#066761]">Unggah foto &rarr;</button>
@@ -1530,6 +1808,7 @@
                         class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-2 file:font-semibold file:text-[#087F78]"
                     >
                     <p class="mt-1 text-xs text-slate-500">Opsional, maksimal 10 MB. Gambar ini tampil sebagai latar judul detail kelas.</p>
+                    <input type="url" name="image_url" id="add_course_image_url" maxlength="2048" placeholder="Atau masukkan URL gambar: https://contoh.com/gambar.jpg" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-[#087F78] focus:outline-none">
                 </div>
 
                 <!-- Level & Format -->
@@ -1700,6 +1979,7 @@
                         class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-2 file:font-semibold file:text-[#087F78]"
                     >
                     <p class="mt-1 text-xs text-slate-500">Opsional, maksimal 10 MB. Kosongkan jika gambar tidak diubah.</p>
+                    <input type="url" name="image_url" id="edit_course_image_url" maxlength="2048" placeholder="Atau masukkan URL gambar baru: https://contoh.com/gambar.jpg" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-[#087F78] focus:outline-none">
                 </div>
 
                 <!-- Level & Format -->
@@ -2102,10 +2382,16 @@
                     <label for="add_article_image" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Foto utama</label>
                     <input id="add_article_image" name="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-2 file:font-semibold file:text-[#087F78]">
                     <p class="mt-1 text-xs text-slate-500">Opsional, maksimal 10 MB. Format JPG, PNG, WEBP, atau AVIF.</p>
+                    <input id="add_article_image_url" name="image_url" type="url" maxlength="2048" placeholder="Atau masukkan URL gambar" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-[#087F78] focus:outline-none">
                 </div>
                 <div>
-                    <label for="add_article_category" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Kategori *</label>
-                    <input id="add_article_category" name="category" type="text" required maxlength="100" placeholder="Artificial Intelligence" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                    <label for="add_article_category" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Bidang pelatihan *</label>
+                    <select id="add_article_category" name="category" required class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                        <option value="">Pilih bidang pelatihan</option>
+                        @foreach($categories as $category)
+                            <option value="{{ $category->name }}">{{ $category->name }}</option>
+                        @endforeach
+                    </select>
                 </div>
                 <div>
                     <label for="add_article_excerpt" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Ringkasan artikel *</label>
@@ -2160,10 +2446,15 @@
                     <label for="edit_article_image" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Ganti foto utama</label>
                     <input id="edit_article_image" name="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-2 file:font-semibold file:text-[#087F78]">
                     <p class="mt-1 text-xs text-slate-500">Kosongkan jika foto lama tetap digunakan. Maksimal 10 MB.</p>
+                    <input id="edit_article_image_url" name="image_url" type="url" maxlength="2048" placeholder="Atau masukkan URL gambar baru" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-[#087F78] focus:outline-none">
                 </div>
                 <div>
-                    <label for="edit_article_category" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Kategori *</label>
-                    <input id="edit_article_category" name="category" type="text" required maxlength="100" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                    <label for="edit_article_category" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Bidang pelatihan *</label>
+                    <select id="edit_article_category" name="category" required class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                        @foreach($categories as $category)
+                            <option value="{{ $category->name }}">{{ $category->name }}</option>
+                        @endforeach
+                    </select>
                 </div>
                 <div>
                     <label for="edit_article_excerpt" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Ringkasan artikel *</label>
@@ -2175,14 +2466,15 @@
                 </div>
                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
-                        <label for="edit_article_published_at" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Tanggal tayang</label>
-                        <input id="edit_article_published_at" name="published_at" type="date" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                        <label for="edit_article_published_at" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Tanggal publish / jadwal</label>
+                        <input id="edit_article_published_at" name="published_at" type="date" min="{{ now()->toDateString() }}" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                     </div>
                     <div>
                         <label for="edit_article_status" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Status *</label>
                         <select id="edit_article_status" name="status" required class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                             <option value="Publish">Publish</option>
                             <option value="Draft">Draft</option>
+                            <option value="Terjadwalkan">Terjadwalkan</option>
                         </select>
                     </div>
                 </div>
@@ -2347,11 +2639,12 @@
             document.getElementById('edit_course_syllabus').value = Array.isArray(course.syllabus)
                 ? course.syllabus.join('\n')
                 : '';
+            document.getElementById('edit_course_image_url').value = course.image_url || '';
 
             const imagePreview = document.getElementById('edit_course_image_preview');
             const imagePreviewImage = document.getElementById('edit_course_image_preview_image');
-            if (course.image) {
-                imagePreviewImage.src = @json(rtrim(Storage::disk('public')->url(''), '/').'/') + course.image;
+            if (course.image || course.image_url) {
+                imagePreviewImage.src = course.image_url || (@json(rtrim(Storage::disk('public')->url(''), '/').'/') + course.image);
                 imagePreview.classList.remove('hidden');
             } else {
                 imagePreviewImage.removeAttribute('src');
@@ -2371,15 +2664,187 @@
         function closeAddArticleModal() {
             document.getElementById('addArticleModal').classList.add('hidden');
         }
+        function publishArticleNow(button) {
+            const form = button.closest('form');
+            const statusInput = form?.querySelector('[name="status"]');
+            const publishedAtInput = form?.querySelector('[name="published_at"]');
+
+            if (!form || !statusInput || !publishedAtInput) {
+                return;
+            }
+
+            const now = new Date();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            statusInput.value = 'Publish';
+            publishedAtInput.value = `${now.getFullYear()}-${month}-${day}`;
+            form.requestSubmit();
+        }
+        function submitArticleAction(status, requiresSchedule) {
+            const form = document.getElementById('addArticleInlineForm');
+            const statusInput = document.getElementById('add_article_inline_status');
+            const publishedAtInput = document.getElementById('add_article_published_at_inline');
+
+            if (!form || !statusInput || !publishedAtInput) {
+                return;
+            }
+
+            if (requiresSchedule && !publishedAtInput.value) {
+                publishedAtInput.setCustomValidity('Isi tanggal jadwal terlebih dahulu.');
+                publishedAtInput.reportValidity();
+                publishedAtInput.setCustomValidity('');
+                return;
+            }
+
+            if (status === 'Publish' && !publishedAtInput.value) {
+                const now = new Date();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                publishedAtInput.value = `${now.getFullYear()}-${month}-${day}`;
+            }
+
+            statusInput.value = status;
+            syncRichEditors(form);
+
+            if (form.reportValidity()) {
+                form.requestSubmit();
+            }
+        }
+        function syncRichEditors(scope = document) {
+            const editors = scope.matches?.('[data-rich-editor]')
+                ? [scope]
+                : scope.querySelectorAll('[data-rich-editor]');
+
+            editors.forEach((editor) => {
+                const surface = editor.querySelector('[data-rich-surface]');
+                const value = editor.querySelector('[data-rich-value]');
+                if (surface && value) {
+                    value.value = surface.innerHTML.trim();
+                }
+            });
+        }
+        function validateRichEditor(form) {
+            syncRichEditors(form);
+
+            const surface = form.querySelector('[data-rich-surface]');
+            const value = form.querySelector('[data-rich-value]');
+
+            if (!surface || !value || value.value.trim() !== '') {
+                return true;
+            }
+
+            surface.focus();
+            surface.classList.add('ring-2', 'ring-rose-300');
+            window.alert('Isi artikel wajib diisi sebelum disimpan atau dijadwalkan.');
+
+            return false;
+        }
+        document.querySelectorAll('[data-rich-editor]').forEach((editor) => {
+            const surface = editor.querySelector('[data-rich-surface]');
+            const form = editor.closest('form');
+
+            surface?.addEventListener('input', () => syncRichEditors(editor));
+            surface?.addEventListener('blur', () => syncRichEditors(editor));
+
+            editor.querySelectorAll('[data-rich-command]').forEach((button) => {
+                button.addEventListener('mousedown', (event) => event.preventDefault());
+                button.addEventListener('click', () => {
+                    surface?.focus();
+                    document.execCommand(button.dataset.richCommand, false, button.dataset.richValue || null);
+                    syncRichEditors(form || editor);
+                });
+            });
+
+            form?.addEventListener('submit', () => syncRichEditors(form), true);
+        });
+        window.initializeArticleCalendar = () => {
+            const calendar = document.querySelector('[data-article-calendar]');
+
+            if (!calendar) {
+                return;
+            }
+
+            calendar.querySelectorAll('[data-article-calendar-date]').forEach((dayButton) => {
+                dayButton.addEventListener('click', () => {
+                    const dateInput = document.getElementById('add_article_published_at_inline');
+
+                    if (!dateInput) {
+                        return;
+                    }
+
+                    dateInput.value = dayButton.dataset.articleCalendarDate || '';
+                    dateInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    dateInput.focus();
+                });
+            });
+
+            calendar.querySelectorAll('[data-calendar-navigation]').forEach((navigationButton) => {
+                navigationButton.addEventListener('click', async () => {
+                    const currentMonth = calendar.dataset.calendarMonth;
+                    const [year, month] = currentMonth.split('-').map(Number);
+                    const targetMonth = new Date(year, month - 1, 1);
+
+                    if (navigationButton.dataset.calendarNavigation === 'previous') {
+                        targetMonth.setMonth(targetMonth.getMonth() - 1);
+                    } else if (navigationButton.dataset.calendarNavigation === 'next') {
+                        targetMonth.setMonth(targetMonth.getMonth() + 1);
+                    } else {
+                        const now = new Date();
+                        targetMonth.setFullYear(now.getFullYear(), now.getMonth(), 1);
+                    }
+
+                    const targetMonthValue = targetMonth.getFullYear() + '-' + String(targetMonth.getMonth() + 1).padStart(2, '0');
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('tab', 'artikel');
+                    url.searchParams.set('article_month', targetMonthValue);
+                    url.searchParams.set('calendar_only', '1');
+                    calendar.classList.add('pointer-events-none', 'opacity-60');
+
+                    try {
+                        const response = await fetch(url, {
+                            headers: {
+                                Accept: 'text/html',
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Kalender gagal dimuat.');
+                        }
+
+                        const html = await response.text();
+                        const template = document.createElement('template');
+                        template.innerHTML = html.trim();
+                        const nextCalendar = template.content.firstElementChild;
+
+                        if (!nextCalendar) {
+                            throw new Error('Tampilan kalender tidak valid.');
+                        }
+
+                        calendar.replaceWith(nextCalendar);
+                        url.searchParams.delete('calendar_only');
+                        window.history.replaceState({}, '', url);
+                        window.initializeArticleCalendar();
+                    } catch (error) {
+                        calendar.classList.remove('pointer-events-none', 'opacity-60');
+                        window.alert(error.message || 'Kalender gagal dimuat. Silakan coba lagi.');
+                    }
+                });
+            });
+        };
+        window.initializeArticleCalendar();
         function openEditArticleModal(article) {
             const form = document.getElementById('editArticleForm');
             form.action = `/admin/articles/${article.id}`;
             document.getElementById('edit_article_title').value = article.title || '';
             document.getElementById('edit_article_category').value = article.category || '';
+            document.getElementById('edit_article_image_url').value = article.image_url || '';
             document.getElementById('edit_article_excerpt').value = article.excerpt || '';
             document.getElementById('edit_article_content').value = article.content || '';
             document.getElementById('edit_article_published_at').value = article.published_at ? String(article.published_at).slice(0, 10) : '';
-            document.getElementById('edit_article_status').value = article.status || 'Draft';
+            document.getElementById('edit_article_status').value = article.status === 'Draft' && article.published_at
+                ? 'Terjadwalkan'
+                : (article.status || 'Draft');
             document.getElementById('editArticleModal').classList.remove('hidden');
         }
         function closeEditArticleModal() {
@@ -2406,6 +2871,37 @@
         }
         function closeAddCategoryModal() {
             document.getElementById('addCategoryModal').classList.add('hidden');
+        }
+        function openCategoryDeleteModal(button) {
+            const modal = document.getElementById('categoryDeleteModal');
+            const form = document.getElementById('categoryDeleteForm');
+
+            if (!modal || !form || !button) {
+                return;
+            }
+
+            const courseCount = Number(button.dataset.categoryCourseCount || 0);
+            const folderCount = Number(button.dataset.categoryFolderCount || 0);
+
+            form.action = button.dataset.categoryDeleteUrl;
+            document.getElementById('categoryDeleteName').textContent = button.dataset.categoryDeleteName;
+            document.getElementById('categoryDeleteCourseCount').textContent = `${courseCount} program`;
+            document.getElementById('categoryDeleteFolderCount').textContent = `${folderCount} folder`;
+            document.getElementById('categoryDeleteWarning').textContent = courseCount > 0 || folderCount > 0
+                ? `${courseCount > 0 ? `${courseCount} program akan ikut terhapus. ` : ''}${folderCount > 0 ? `${folderCount} folder galeri akan tetap ada tanpa bidang. ` : ''}Pastikan penghapusan ini sudah sesuai.`
+                : 'Bidang ini belum memiliki program atau folder galeri.';
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+        function closeCategoryDeleteModal() {
+            const modal = document.getElementById('categoryDeleteModal');
+
+            if (!modal) {
+                return;
+            }
+
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
         }
         function openGalleryFolderDeleteModal(button) {
             const modal = document.getElementById('galleryFolderDeleteModal');
@@ -2684,17 +3180,26 @@
                 document.getElementById('gallery_photo_folder'),
             ];
             const selectedPhotos = photoInputs.flatMap((input) => Array.from(input.files).map((file) => ({ file, input })));
+            const photoUrlsInput = document.getElementById('gallery_photo_urls');
+            const photoUrls = (photoUrlsInput?.value || '').split(/\r?\n/).map((url) => url.trim()).filter(Boolean);
+            const totalPhotoCount = selectedPhotos.length + photoUrls.length;
 
             error.classList.add('hidden');
             error.textContent = '';
 
-            if (selectedPhotos.length === 0) {
-                showGalleryUploadError('Pilih foto atau folder foto yang akan diunggah.');
+            if (totalPhotoCount === 0) {
+                showGalleryUploadError('Pilih foto, folder foto, atau masukkan minimal satu URL gambar.');
                 return;
             }
 
-            if (selectedPhotos.length > 100) {
-                showGalleryUploadError('Maksimal 100 foto dapat dipilih dalam satu kali unggah.');
+            if (totalPhotoCount > 100) {
+                showGalleryUploadError('Maksimal 100 gambar dapat dipilih dalam satu kali unggah.');
+                return;
+            }
+
+            if (selectedPhotos.length === 0) {
+                form.removeAttribute('onsubmit');
+                form.submit();
                 return;
             }
 
@@ -2708,7 +3213,7 @@
             const progressMessage = document.getElementById('galleryUploadProgressMessage');
             const totalBytes = selectedPhotos.reduce((total, { file }) => total + file.size, 0);
             setGalleryUploadProgress(0);
-            progressMessage.textContent = `Mengunggah ${selectedPhotos.length} foto...`;
+            progressMessage.textContent = `Mengunggah ${totalPhotoCount} gambar...`;
             document.getElementById('addGalleryPhotosModal').classList.add('hidden');
             progressModal.classList.remove('hidden');
 
@@ -2718,7 +3223,7 @@
             const uploadNextPhoto = (index, uploadedBytes) => {
                 if (index >= selectedPhotos.length) {
                     setGalleryUploadProgress(100);
-                    progressMessage.textContent = `${selectedPhotos.length} foto berhasil diunggah. Memuat galeri...`;
+                    progressMessage.textContent = `${totalPhotoCount} gambar berhasil diunggah. Memuat galeri...`;
                     sessionStorage.setItem('gallery-folder-photo-change', String(folderId));
                     window.setTimeout(() => window.location.assign(`${@json(route('admin.dashboard', ['tab' => 'galeri']))}&folder_id=${encodeURIComponent(folderId)}`), 500);
                     return;
@@ -2780,7 +3285,9 @@
                 const data = new FormData();
                 data.append('_token', csrfToken);
                 data.append('gallery_folder_id', folderId);
-                data.append('batch_count', String(selectedPhotos.length));
+                if (index === 0 && photoUrls.length > 0) {
+                    data.append('photo_urls', photoUrls.join('\n'));
+                }
                 data.append('photos[]', file, file.name);
                 request.send(data);
             };
@@ -2822,6 +3329,7 @@
                 closeEditSessionModal();
                 closeAddGalleryFolderModal();
                 closeAddCategoryModal();
+                closeCategoryDeleteModal();
                 closeGalleryFolderDeleteModal();
                 closeGalleryFolderEditorDeleteModal();
                 closeGalleryPhotoDeleteModal();
@@ -2833,7 +3341,7 @@
 
         @if(old('_form_context') === 'gallery_folder')
             openAddGalleryFolderModal();
-        @elseif(old('_form_context') === 'program_category')
+        @elseif(old('_form_context') === 'training_category')
             openAddCategoryModal();
         @elseif(old('_form_context') === 'gallery_upload')
             openAddGalleryPhotosModal(@json(old('gallery_folder_id')));
@@ -3051,6 +3559,51 @@
                 }
             });
         });
+
+        const articleManager = document.querySelector('[data-article-manager]');
+        if (articleManager) {
+            const articleCards = [...articleManager.querySelectorAll('[data-article-card]')];
+            const filterButtons = [...articleManager.querySelectorAll('[data-article-filter]')];
+            const searchInput = articleManager.querySelector('#article_search');
+            const emptyState = articleManager.querySelector('[data-article-filter-empty]');
+            let activeFilter = articleManager.dataset.articleStatusFilter || 'all';
+
+            const applyArticleFilter = () => {
+                const searchTerm = searchInput?.value.trim().toLocaleLowerCase() || '';
+                let visibleCount = 0;
+
+                articleCards.forEach((card) => {
+                    const matchesStatus = activeFilter === 'all' || card.dataset.articleFilterStatus === activeFilter;
+                    const matchesSearch = !searchTerm || (card.dataset.articleTitle || '').toLocaleLowerCase().includes(searchTerm);
+                    const isVisible = matchesStatus && matchesSearch;
+
+                    card.hidden = !isVisible;
+                    visibleCount += isVisible ? 1 : 0;
+                });
+
+                filterButtons.forEach((button) => {
+                    const isActive = button.dataset.articleFilter === activeFilter;
+
+                    button.classList.toggle('bg-[#10243A]', isActive);
+                    button.classList.toggle('text-white', isActive);
+                    button.classList.toggle('shadow-sm', isActive);
+                    button.classList.toggle('hover:bg-white', !isActive);
+                    button.classList.toggle('hover:text-[#10243A]', !isActive);
+                });
+
+                emptyState?.classList.toggle('hidden', visibleCount > 0 || articleCards.length === 0);
+            };
+
+            window.filterArticleList = (requestedFilter = null) => {
+                if (requestedFilter !== null) {
+                    activeFilter = requestedFilter;
+                }
+
+                applyArticleFilter();
+            };
+
+            window.filterArticleList();
+        }
         filterRegistrationBatches(document.getElementById('registration_course_filter')?.value || '');
     </script>
 
