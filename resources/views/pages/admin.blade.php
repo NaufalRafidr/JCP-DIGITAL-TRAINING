@@ -64,7 +64,7 @@
         }
     </style>
 </head>
-<body class="h-screen overflow-hidden bg-brand-ivory text-[#10243A] antialiased flex p-0 m-0">
+<body class="flex h-screen min-h-screen overflow-hidden bg-brand-ivory p-0 m-0 text-[#10243A] antialiased">
 
     <!-- ========================================================
          SIDEBAR KIRI NAVY (Persis Gambar Slide 16)
@@ -76,7 +76,7 @@
         $selectedGalleryFolder = $selectedGalleryFolder ?? null;
     @endphp
 
-    <aside class="sticky top-0 flex h-screen w-60 shrink-0 flex-col justify-between overflow-y-auto bg-[#10243A] p-6 text-white shadow-lg sm:w-64">
+    <aside id="admin-sidebar" aria-label="Navigasi dashboard admin" class="fixed inset-y-0 left-0 z-40 flex h-screen w-72 max-w-[85vw] shrink-0 -translate-x-full flex-col justify-between overflow-y-auto bg-[#10243A] p-4 text-white shadow-lg transition-transform duration-200 ease-out lg:sticky lg:top-0 lg:w-64 lg:translate-x-0 lg:p-6">
         <div class="space-y-6">
             <!-- Logo Judul JCP ADMIN -->
             <div class="pt-2">
@@ -145,10 +145,21 @@
         </div>
     </aside>
 
+    <button id="admin-sidebar-overlay" type="button" aria-label="Tutup menu navigasi" class="fixed inset-0 z-30 hidden bg-[#10243A]/50 lg:hidden"></button>
+
     <!-- ========================================================
          MAIN CONTENT AREA
          ======================================================== -->
-    <main id="admin-main-content" class="h-screen min-w-0 max-w-6xl flex-1 overflow-y-auto overscroll-contain p-8 sm:p-12 lg:p-14">
+    <main id="admin-main-content" class="h-screen min-w-0 w-full max-w-none flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 lg:max-w-6xl lg:p-14">
+
+        <div class="mb-6 flex items-center justify-between gap-3 lg:hidden">
+            <a href="{{ route('home') }}" class="text-lg font-black tracking-tight text-[#10243A]">JCP ADMIN</a>
+            <button id="admin-sidebar-toggle" type="button" aria-controls="admin-sidebar" aria-expanded="false" class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[#10243A] text-white shadow-sm transition-colors hover:bg-[#087F78]" aria-label="Buka menu navigasi">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+        </div>
 
         <!-- Notifikasi Berhasil -->
         @if(session('success'))
@@ -348,7 +359,7 @@
 
         @elseif($activeTab === 'jadwal')
             <!-- Header Area Jadwal / Batch -->
-            <div class="flex items-center justify-between pb-8">
+            <div class="flex flex-col items-stretch justify-between gap-4 pb-8 sm:flex-row sm:items-center">
                 <div>
                     <h1 class="text-3xl sm:text-4xl font-extrabold text-[#10243A] tracking-tight">
                         Jadwal / Batch
@@ -361,7 +372,7 @@
                 <button 
                     type="button" 
                     onclick="openAddSessionModal()"
-                    class="bg-[#087F78] hover:bg-[#066761] text-white px-7 py-3 rounded-2xl text-sm font-bold transition-all shadow-sm flex items-center gap-2 focus:outline-none cursor-pointer">
+                    class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[#087F78] px-7 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#066761] focus:outline-none sm:w-auto">
                     <span class="text-base font-bold leading-none">+</span>
                     <span>Tambah jadwal / batch</span>
                 </button>
@@ -1101,7 +1112,7 @@
                  TABEL 2: DATA PELATIHAN (PROGRAM)
                  Bisa Tambah, Edit, dan Hapus Program
                  ======================================================== -->
-            <div class="flex items-center justify-between pb-8">
+            <div class="flex flex-col items-stretch justify-between gap-4 pb-8 sm:flex-row sm:items-center">
                 <div>
                     <h1 class="text-3xl sm:text-4xl font-extrabold text-[#10243A] tracking-tight">
                         Data Pelatihan
@@ -1114,7 +1125,7 @@
                 <button 
                     type="button" 
                     onclick="openAddProgramModal()"
-                    class="bg-[#087F78] hover:bg-[#066761] text-white px-7 py-3 rounded-2xl text-sm font-bold transition-all shadow-sm flex items-center gap-2 focus:outline-none cursor-pointer">
+                    class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[#087F78] px-7 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#066761] focus:outline-none sm:w-auto">
                     <span class="text-base font-bold leading-none">+</span>
                     <span>Tambah program</span>
                 </button>
@@ -2209,6 +2220,41 @@
 
     <!-- Script Interactivity & Penghitungan Durasi Otomatis -->
     <script>
+        function setAdminSidebarOpen(isOpen) {
+            const sidebar = document.getElementById('admin-sidebar');
+            const overlay = document.getElementById('admin-sidebar-overlay');
+            const toggle = document.getElementById('admin-sidebar-toggle');
+
+            if (!sidebar || !overlay) {
+                return;
+            }
+
+            sidebar.classList.toggle('-translate-x-full', !isOpen);
+            sidebar.classList.toggle('translate-x-0', isOpen);
+            overlay.classList.toggle('hidden', !isOpen);
+
+            if (toggle) {
+                toggle.setAttribute('aria-expanded', String(isOpen));
+                toggle.setAttribute('aria-label', isOpen ? 'Tutup menu navigasi' : 'Buka menu navigasi');
+            }
+        }
+
+        function toggleAdminSidebar() {
+            const sidebar = document.getElementById('admin-sidebar');
+
+            if (!sidebar) {
+                return;
+            }
+
+            setAdminSidebarOpen(sidebar.classList.contains('-translate-x-full'));
+        }
+
+        document.getElementById('admin-sidebar-toggle')?.addEventListener('click', toggleAdminSidebar);
+        document.getElementById('admin-sidebar-overlay')?.addEventListener('click', () => setAdminSidebarOpen(false));
+        document.querySelectorAll('#admin-sidebar a').forEach((link) => {
+            link.addEventListener('click', () => setAdminSidebarOpen(false));
+        });
+
         let pendingAdminDeleteForm = null;
 
         function openAdminDeleteModal(form, type, name) {
@@ -2768,6 +2814,7 @@
         // Tutup modal dengan tombol Escape
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
+                setAdminSidebarOpen(false);
                 closeAddProgramModal();
                 closeEditProgramModal();
                 closeAddArticleModal();
