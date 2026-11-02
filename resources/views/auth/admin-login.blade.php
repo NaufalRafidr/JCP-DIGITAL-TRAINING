@@ -21,7 +21,18 @@
             @csrf
             <div>
                 <label for="password" class="mb-1 block text-sm font-semibold text-slate-700">Password</label>
-                <input id="password" name="password" type="password" autocomplete="current-password" required autofocus class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                <div class="relative">
+                    <input id="password" name="password" type="password" autocomplete="current-password" required autofocus class="w-full rounded-xl border border-slate-300 px-4 py-3 pr-12 text-sm focus:border-[#087F78] focus:outline-none">
+                    <button type="button" data-password-toggle="password" aria-controls="password" aria-label="Tampilkan password" aria-pressed="false" class="absolute right-2 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-[#087F78] focus:outline-none focus:ring-2 focus:ring-[#087F78]/30">
+                        <svg data-password-eye class="hidden h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7C20.268 16.057 16.477 19 12 19s-8.268-2.943-9.542-7Z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        <svg data-password-eye-off class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m3 3 18 18M10.584 10.587a2 2 0 0 0 2.829 2.829M9.88 5.09A10.94 10.94 0 0 1 12 5c4.477 0 8.268 2.943 9.542 7a11.05 11.05 0 0 1-2.112 3.592M6.228 6.228A11.04 11.04 0 0 0 2.458 12C3.732 16.057 7.523 19 12 19c1.61 0 3.12-.397 4.449-1.098" />
+                        </svg>
+                    </button>
+                </div>
             </div>
             <button type="submit" class="w-full rounded-xl bg-[#087F78] px-4 py-3 font-bold text-white hover:bg-[#066761]">Masuk Admin</button>
         </form>
