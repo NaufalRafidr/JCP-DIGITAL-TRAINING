@@ -10,6 +10,16 @@ use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
+it('serves uploaded gallery files through the storage route', function () {
+    Storage::fake('public');
+    Storage::disk('public')->put('gallery/example.jpg', 'image content');
+    Storage::disk('public')->assertExists('gallery/example.jpg');
+
+    $this->get('/storage/gallery/example.jpg')
+        ->assertOk()
+        ->assertHeader('Content-Type', 'image/jpeg');
+});
+
 it('generates same-origin URLs for uploaded gallery files', function () {
     expect(Storage::disk('public')->url('gallery/example.jpg'))
         ->toBe('/storage/gallery/example.jpg');
