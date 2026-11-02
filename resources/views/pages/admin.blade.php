@@ -309,31 +309,26 @@
             <div class="max-w-2xl">
                 <div class="pb-8">
                     <h1 class="text-3xl sm:text-4xl font-extrabold text-[#10243A] tracking-tight">Pengaturan Akun Admin</h1>
-                    <p class="text-sm text-slate-500 mt-2">Perbarui username atau buat kata sandi baru untuk akun yang sedang digunakan.</p>
+                    <p class="text-sm text-slate-500 mt-2">Reset password untuk akun admin yang sedang digunakan.</p>
                 </div>
 
                 <form action="{{ route('admin.account.update') }}" method="POST" class="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 space-y-5 shadow-sm">
                     @csrf
                     @method('PUT')
                     <div>
-                        <label for="username" class="mb-1 block text-sm font-semibold text-slate-700">Username baru</label>
-                        <input id="username" name="username" type="text" value="{{ old('username', auth()->user()->username) }}" autocomplete="username" minlength="3" maxlength="40" pattern="[A-Za-z0-9_-]+" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
-                        <p class="mt-1 text-xs text-slate-500">3–40 karakter: huruf, angka, garis bawah, atau tanda hubung.</p>
-                    </div>
-                    <div>
-                        <label for="password" class="mb-1 block text-sm font-semibold text-slate-700">Kata sandi baru <span class="font-normal text-slate-500">(kosongkan jika tidak diubah)</span></label>
-                        <input id="password" name="password" type="password" autocomplete="new-password" minlength="5" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                        <label for="password" class="mb-1 block text-sm font-semibold text-slate-700">Password baru</label>
+                        <input id="password" name="password" type="password" autocomplete="new-password" minlength="5" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                     </div>
                     <div>
                         <label for="password_confirmation" class="mb-1 block text-sm font-semibold text-slate-700">Konfirmasi kata sandi baru</label>
-                        <input id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                        <input id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" minlength="5" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                     </div>
                     <div class="border-t border-slate-100 pt-5">
                         <label for="current_password" class="mb-1 block text-sm font-semibold text-slate-700">Kata sandi saat ini <span class="text-rose-600">*</span></label>
                         <input id="current_password" name="current_password" type="password" autocomplete="current-password" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                         <p class="mt-1 text-xs text-slate-500">Masukkan kata sandi saat ini untuk mengonfirmasi perubahan.</p>
                     </div>
-                    <button type="submit" class="rounded-xl bg-[#087F78] px-5 py-3 text-sm font-bold text-white hover:bg-[#066761]">Simpan perubahan</button>
+                    <button type="submit" class="rounded-xl bg-[#087F78] px-5 py-3 text-sm font-bold text-white hover:bg-[#066761]">Reset password</button>
                 </form>
             </div>
 

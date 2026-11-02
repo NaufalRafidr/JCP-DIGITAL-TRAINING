@@ -21,25 +21,18 @@ class AdminLoginController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $credentials = $request->validate([
-            'username' => 'required|string|max:40',
-            'password' => 'required|string',
+        $validated = $request->validate([
+            'password' => ['required', 'string'],
         ]);
-        $credentials['username'] = strtolower(trim($credentials['username']));
 
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
-            return back()->withErrors(['username' => 'Username atau kata sandi tidak cocok.'])->onlyInput('username');
+        if (! Auth::attempt([
+            'is_admin' => true,
+            'password' => $validated['password'],
+        ])) {
+            return back()->withErrors(['password' => 'Kata sandi tidak cocok.']);
         }
 
         $request->session()->regenerate();
-
-        if (! $request->user()->is_admin) {
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            return back()->withErrors(['username' => 'Akun ini tidak memiliki akses admin.'])->onlyInput('username');
-        }
 
         return redirect()->intended(route('admin.dashboard'));
     }
