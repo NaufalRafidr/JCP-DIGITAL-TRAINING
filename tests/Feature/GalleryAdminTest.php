@@ -10,6 +10,11 @@ use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
+it('generates same-origin URLs for uploaded gallery files', function () {
+    expect(Storage::disk('public')->url('gallery/example.jpg'))
+        ->toBe('/storage/gallery/example.jpg');
+});
+
 it('creates a shared training field from the field management page', function () {
     $admin = User::factory()->create(['is_admin' => true]);
 

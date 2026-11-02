@@ -115,6 +115,14 @@ jobs:
           compose=(docker compose --env-file .env.production -f docker-compose.production.yml)
 
           "${compose[@]}" up -d --build app scheduler
+          "${compose[@]}" exec -T app sh -lc '
+              mkdir -p storage/app/public
+              if [ ! -e public/storage ] && [ ! -L public/storage ]; then
+                  php artisan storage:link
+              fi
+              test -L public/storage
+              chown -R www-data:www-data storage/app/public
+          '
           "${compose[@]}" exec -T app php artisan migrate --force
           "${compose[@]}" exec -T app php artisan optimize:clear
           "${compose[@]}" ps
