@@ -42,9 +42,22 @@ jobs:
           test -n "$VPS_SSH_KEY" || { echo "Secret VPS_SSH_KEY belum diatur." >&2; exit 1; }
 
           install -m 700 -d "$HOME/.ssh"
-          printf '%s' "$VPS_SSH_KEY" | tr -d '\r' > "$HOME/.ssh/deploy_key"
+          # Buang CR (Windows), dukung secret yang tersimpan dengan "\n" literal,
+          # dan pastikan file diakhiri tepat satu newline (wajib untuk OpenSSH).
+          key="${VPS_SSH_KEY//$'\r'/}"
+          if [[ "$key" != *$'\n'* && "$key" == *'\n'* ]]; then
+            key="${key//\\n/$'\n'}"
+          fi
+          key="$(printf '%s' "$key")"
+          printf '%s\n' "$key" > "$HOME/.ssh/deploy_key"
           chmod 600 "$HOME/.ssh/deploy_key"
-          ssh-keygen -y -f "$HOME/.ssh/deploy_key" > /dev/null
+
+          if ! ssh-keygen -y -P '' -f "$HOME/.ssh/deploy_key" > /dev/null; then
+            echo "Private key tidak valid. Baris pertama: $(head -n 1 "$HOME/.ssh/deploy_key" | cut -c1-40)" >&2
+            echo "Jumlah baris: $(wc -l < "$HOME/.ssh/deploy_key")" >&2
+            echo "Pastikan secret berisi private key OpenSSH/PEM utuh tanpa passphrase (bukan .ppk / public key)." >&2
+            exit 1
+          fi
           ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> "$HOME/.ssh/known_hosts"
 
       - name: Package source
