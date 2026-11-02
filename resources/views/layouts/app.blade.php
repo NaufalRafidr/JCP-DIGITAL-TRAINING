@@ -118,8 +118,8 @@
                 </nav>
 
                 <!-- Tombol CTA: Daftar sekarang -->
-                <div class="flex items-center gap-3">
-                    <a href="{{ route('register') }}" class="bg-[#087F78] hover:bg-[#066761] text-white px-6 sm:px-8 py-3 rounded-2xl font-bold text-sm sm:text-base transition-all shadow-sm flex items-center justify-center">
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <a href="{{ route('register') }}" class="inline-flex h-12 shrink-0 items-center justify-center whitespace-nowrap rounded-2xl bg-[#087F78] px-5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#066761] sm:px-6">
                         Daftar sekarang
                     </a>
                     
