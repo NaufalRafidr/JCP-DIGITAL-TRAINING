@@ -3071,12 +3071,6 @@
                 });
             });
 
-            window.addEventListener('beforeunload', (event) => {
-                if (!galleryFolderHasUnsavedChanges) return;
-
-                event.preventDefault();
-                event.returnValue = '';
-            });
         }
 
         function submitGalleryBulkAction(event, action) {
