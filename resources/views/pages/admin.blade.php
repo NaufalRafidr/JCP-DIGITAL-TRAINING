@@ -301,31 +301,6 @@
                         </div>
                     </div>
 
-                    <div class="border-t border-slate-100 pt-6">
-                        <h2 class="text-lg font-extrabold text-[#10243A]">Statistik profil</h2>
-                        <p class="mt-1 text-xs text-slate-500">Tiga angka dan label ini tampil pada kartu visi di halaman Tentang.</p>
-                        <div class="mt-5 grid gap-5 sm:grid-cols-3">
-                            <div>
-                                <label for="programs_stat" class="mb-1 block text-sm font-semibold text-slate-700">Angka program</label>
-                                <input id="programs_stat" name="programs_stat" type="text" value="{{ old('programs_stat', $jcpProfile->programs_stat) }}" maxlength="30" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
-                                <label for="programs_label" class="sr-only">Label program</label>
-                                <input id="programs_label" name="programs_label" type="text" value="{{ old('programs_label', $jcpProfile->programs_label) }}" maxlength="120" required class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none" placeholder="Label program">
-                            </div>
-                            <div>
-                                <label for="expertise_stat" class="mb-1 block text-sm font-semibold text-slate-700">Angka keahlian</label>
-                                <input id="expertise_stat" name="expertise_stat" type="text" value="{{ old('expertise_stat', $jcpProfile->expertise_stat) }}" maxlength="30" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
-                                <label for="expertise_label" class="sr-only">Label keahlian</label>
-                                <input id="expertise_label" name="expertise_label" type="text" value="{{ old('expertise_label', $jcpProfile->expertise_label) }}" maxlength="120" required class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none" placeholder="Label keahlian">
-                            </div>
-                            <div>
-                                <label for="practice_stat" class="mb-1 block text-sm font-semibold text-slate-700">Angka praktik</label>
-                                <input id="practice_stat" name="practice_stat" type="text" value="{{ old('practice_stat', $jcpProfile->practice_stat) }}" maxlength="30" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
-                                <label for="practice_label" class="sr-only">Label praktik</label>
-                                <input id="practice_label" name="practice_label" type="text" value="{{ old('practice_label', $jcpProfile->practice_label) }}" maxlength="120" required class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none" placeholder="Label praktik">
-                            </div>
-                        </div>
-                    </div>
-
                     <button type="submit" class="rounded-xl bg-[#087F78] px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-[#066761]">Simpan profil</button>
                 </form>
             </div>
@@ -388,7 +363,7 @@
                 <div class="col-span-3">Nama Batch</div>
                 <div class="col-span-3">Program Pelatihan</div>
                 <div class="col-span-2">Mulai Berjalan</div>
-                <div class="col-span-2">Durasi Otomatis</div>
+                <div class="col-span-2">Durasi</div>
                 <div class="col-span-1">Status</div>
                 <div class="col-span-1" aria-hidden="true"></div>
             </div>

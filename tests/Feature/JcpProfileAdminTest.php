@@ -9,29 +9,42 @@ uses(RefreshDatabase::class);
 it('updates the JCP profile and renders the changes on the about page', function () {
     $admin = User::factory()->create(['is_admin' => true]);
     $profile = JcpProfile::query()->firstOrFail();
+    $profileStatistics = $profile->only([
+        'programs_stat',
+        'programs_label',
+        'expertise_stat',
+        'expertise_label',
+        'practice_stat',
+        'practice_label',
+    ]);
     $payload = [
         'organization_name' => 'JCP Digital Academy',
         'tagline' => 'Belajar keterampilan digital yang relevan untuk industri.',
         'vision_title' => 'Belajar, Berkarya, Bertumbuh',
         'vision_content' => 'Kami menyiapkan peserta melalui praktik yang relevan dan terukur.',
-        'programs_stat' => '20+',
-        'programs_label' => 'Program Aktif',
-        'expertise_stat' => '6',
-        'expertise_label' => 'Bidang Keahlian',
-        'practice_stat' => '95%',
-        'practice_label' => 'Praktik Berbasis Proyek',
     ];
 
     $response = $this->actingAs($admin)->put(route('admin.profile.update'), $payload);
 
     $response->assertRedirect(route('admin.dashboard', ['tab' => 'profil']));
     expect($profile->refresh()->only(array_keys($payload)))->toMatchArray($payload);
+    expect($profile->refresh()->only(array_keys($profileStatistics)))->toMatchArray($profileStatistics);
     $this->get(route('tentang'))
         ->assertOk()
         ->assertSee('JCP Digital Academy')
         ->assertSee('Belajar, Berkarya, Bertumbuh')
-        ->assertSee('20+')
-        ->assertSee('Praktik Berbasis Proyek');
+        ->assertDontSee($profileStatistics['programs_label'])
+        ->assertDontSee($profileStatistics['practice_label']);
+});
+
+it('does not show profile statistics fields in the admin profile form', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+
+    $this->actingAs($admin)
+        ->get(route('admin.dashboard', ['tab' => 'profil']))
+        ->assertOk()
+        ->assertDontSee('Statistik profil')
+        ->assertDontSee('name="programs_stat"', false);
 });
 
 it('forbids non-admin users from updating the JCP profile', function () {
@@ -51,12 +64,6 @@ it('escapes user-provided JCP profile content on the about page', function () {
         'tagline' => 'Deskripsi aman.',
         'vision_title' => 'Judul aman.',
         'vision_content' => 'Isi aman.',
-        'programs_stat' => '15+',
-        'programs_label' => 'Program Terstandar',
-        'expertise_stat' => '5',
-        'expertise_label' => 'Bidang Keahlian',
-        'practice_stat' => '100%',
-        'practice_label' => 'Praktik Lapangan & Studi Kasus',
     ]);
 
     $this->get(route('tentang'))

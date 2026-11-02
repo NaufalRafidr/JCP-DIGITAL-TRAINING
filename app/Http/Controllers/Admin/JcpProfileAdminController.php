@@ -16,12 +16,6 @@ class JcpProfileAdminController extends Controller
             'tagline' => ['required', 'string', 'max:500'],
             'vision_title' => ['required', 'string', 'max:255'],
             'vision_content' => ['required', 'string', 'max:2000'],
-            'programs_stat' => ['required', 'string', 'max:30'],
-            'programs_label' => ['required', 'string', 'max:120'],
-            'expertise_stat' => ['required', 'string', 'max:30'],
-            'expertise_label' => ['required', 'string', 'max:120'],
-            'practice_stat' => ['required', 'string', 'max:30'],
-            'practice_label' => ['required', 'string', 'max:120'],
         ]);
 
         JcpProfile::query()->firstOrFail()->update($validated);

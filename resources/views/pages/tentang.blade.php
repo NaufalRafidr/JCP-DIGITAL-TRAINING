@@ -25,20 +25,6 @@
         <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
             {{ $profile->vision_content }}
         </p>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-slate-800 text-center">
-            <div class="p-4 rounded-2xl bg-slate-800/60">
-                <div class="text-3xl font-extrabold text-[#087F78]">{{ $profile->programs_stat }}</div>
-                <div class="text-xs text-slate-400 mt-1">{{ $profile->programs_label }}</div>
-            </div>
-            <div class="p-4 rounded-2xl bg-slate-800/60">
-                <div class="text-3xl font-extrabold text-[#E5AD49]">{{ $profile->expertise_stat }}</div>
-                <div class="text-xs text-slate-400 mt-1">{{ $profile->expertise_label }}</div>
-            </div>
-            <div class="p-4 rounded-2xl bg-slate-800/60">
-                <div class="text-3xl font-extrabold text-teal-400">{{ $profile->practice_stat }}</div>
-                <div class="text-xs text-slate-400 mt-1">{{ $profile->practice_label }}</div>
-            </div>
-        </div>
     </div>
 
 </div>

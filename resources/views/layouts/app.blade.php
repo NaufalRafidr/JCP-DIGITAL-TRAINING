@@ -169,6 +169,21 @@
         @yield('content')
     </main>
 
+    @if(config('services.whatsapp.admin_number'))
+        <a
+            href="https://wa.me/{{ preg_replace('/\D+/', '', config('services.whatsapp.admin_number')) }}?text={{ rawurlencode('Halo Admin JCP Training, saya ingin bertanya tentang layanan yang tersedia.') }}"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Hubungi Admin melalui WhatsApp"
+            title="Chat Admin via WhatsApp"
+            class="fixed bottom-7 right-7 z-40 inline-flex h-16 w-16 items-center justify-center rounded-full border border-[#7DE8A4] bg-[#25D366] text-white shadow-[0_10px_30px_rgba(16,36,58,0.25)] transition-transform duration-200 hover:scale-105 hover:bg-[#20BD5A] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#25D366]/60 sm:bottom-8 sm:right-8 sm:h-[70px] sm:w-[70px]"
+        >
+            <svg class="h-8 w-8" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+                <path fill="currentColor" d="M16 3.5a12.5 12.5 0 0 0-10.8 18.8L3.5 28.5l6.4-1.7A12.5 12.5 0 1 0 16 3.5Zm0 22.7c-2 0-3.9-.6-5.5-1.7l-.4-.3-3.8 1 1-3.7-.3-.4A10.2 10.2 0 1 1 16 26.2Zm5.6-7.7c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.5-1.6-.9-.8-1.6-1.8-1.8-2.1-.2-.3 0-.5.1-.7.1-.1.3-.4.5-.6.2-.2.2-.3.3-.5.1-.2 0-.4 0-.6 0-.2-.7-1.7-1-2.3-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.1 1.1-1.1 2.6s1.1 3 1.2 3.2c.2.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.3.2 1.8.1.5-.1 1.8-.7 2.1-1.4.3-.7.3-1.3.2-1.4-.1-.1-.3-.2-.6-.3Z"/>
+            </svg>
+        </a>
+    @endif
+
     <!-- Footer: PT Jogja Creative Production -->
     <footer class="bg-[#10243A] text-white border-t border-slate-800 pt-16 pb-12 mt-20">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
