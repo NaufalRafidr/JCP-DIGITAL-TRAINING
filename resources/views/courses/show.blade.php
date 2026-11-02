@@ -37,6 +37,14 @@
         ? $course->image_position
         : $titleArtwork['position'];
     $hasOpenSession = $course->sessions->contains('status', 'Buka');
+    $activityImages = [
+        'photo-video' => asset('images/course-activity-photo-video.png'),
+        'digital-marketing' => asset('images/course-activity-digital-marketing.png'),
+        'artificial-intelligence' => asset('images/course-activity-ai.png'),
+        'drone-technology' => asset('images/course-activity-drone.png'),
+        'information-technology' => asset('images/course-activity-it.png'),
+    ];
+    $activityImage = $activityImages[$course->category->slug] ?? asset('images/course-activity-ai.png');
 @endphp
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
 
@@ -53,7 +61,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         <!-- Left Column: Course Main Details (Slide 9 left card) -->
-        <div class="lg:col-span-8 bg-white rounded-3xl p-6 sm:p-10 border border-slate-200/90 shadow-xs space-y-8">
+        <div class="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-10 border border-slate-200/90 shadow-xs space-y-8">
             
             <!-- Category Artwork & Title -->
             <div class="space-y-4">
@@ -65,6 +73,7 @@
                         style="object-position: {{ $backgroundPosition }}"
                         class="absolute inset-0 z-0 h-full w-full object-cover"
                     >
+                    <div class="absolute inset-0 z-10 {{ $course->category->slug === 'drone-technology' ? 'bg-gradient-to-r from-[#10243A]/90 via-[#10243A]/65 to-[#10243A]/15' : 'bg-gradient-to-r from-[#10243A]/55 via-[#10243A]/20 to-transparent' }}"></div>
                     <div class="relative z-20 space-y-3">
                         <span class="inline-flex items-center rounded-full bg-white/15 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-teal-100 ring-1 ring-white/20">
                             {{ $course->category->name }}
@@ -165,37 +174,20 @@
         </div>
 
         <!-- Right Column: Registration Sidebar Card (Slide 9 right card) -->
-        <div class="lg:col-span-4 bg-[#10243A] text-white rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl sticky top-28">
-            
-            <div class="space-y-2">
-                <span class="text-xs uppercase tracking-wider font-bold text-teal-400">RINGKASAN KELAS</span>
-                <div class="text-4xl font-extrabold text-white">
-                    {{ $summarySession?->duration ?? 'Belum ditentukan' }}
-                </div>
-                <div class="text-xs text-slate-300 pt-1">
-                    Jadwal dan biaya tampil sesuai data admin terverifikasi
-                </div>
+        <div class="lg:col-span-5 overflow-hidden rounded-3xl border border-slate-200/90 bg-[#10243A] text-white shadow-xl">
+            <div class="relative aspect-video w-full overflow-hidden bg-[#061D2E]">
+                <img
+                    src="{{ $activityImage }}"
+                    alt="Ilustrasi kegiatan {{ $course->category->name }}"
+                    class="absolute inset-0 h-full w-full object-cover"
+                    loading="lazy"
+                >
+                <div class="absolute inset-0 bg-gradient-to-t from-[#061D2E]/25 via-transparent to-transparent"></div>
             </div>
 
-            <div class="pt-4 border-t border-slate-700/80 space-y-3 text-xs text-slate-300">
-                <div class="flex justify-between">
-                    <span>Investasi:</span>
-                    <span class="font-bold text-white text-sm">{{ $course->formatted_price }}</span>
-                </div>
-                <div class="flex justify-between">
-                    <span>Format Belajar:</span>
-                    <span class="font-semibold text-white">{{ $course->format }}</span>
-                </div>
-                <div class="flex justify-between">
-                    <span>Fasilitas:</span>
-                    <span class="font-semibold text-white">{{ $course->facilities ?: 'Modul, Alat Praktik, Sertifikat' }}</span>
-                </div>
-            </div>
-
-            <!-- CTA Primary (Slide 9: "Daftar pelatihan") -->
-            <div class="space-y-3 pt-2">
+            <div class="space-y-6 p-6 sm:p-7">
                 @if($hasOpenSession)
-                    <a href="{{ route('register', ['course_id' => $course->id]) }}" class="bg-[#087F78] hover:bg-[#066761] text-white w-full py-3.5 rounded-xl font-bold text-sm text-center block transition-all shadow-md">
+                    <a href="{{ route('register', ['course_id' => $course->id]) }}" class="block w-full rounded-xl bg-[#087F78] py-3.5 text-center text-sm font-bold text-white transition-all hover:bg-[#066761] shadow-md">
                         Daftar pelatihan
                     </a>
                 @else
@@ -204,16 +196,15 @@
                     </span>
                 @endif
 
-                <!-- B2B Link (Slide 9: "Butuh kelas untuk tim? Hubungi admin") -->
-                <div class="text-center pt-2">
-                    <a href="{{ route('corporate') }}" class="text-xs text-slate-300 hover:text-white underline font-semibold transition-colors">
+                <div class="text-center">
+                    <a href="{{ route('corporate') }}" class="text-sm font-semibold text-slate-300 underline transition-colors hover:text-white">
                         Butuh kelas untuk tim? Hubungi admin
                     </a>
                 </div>
-            </div>
 
-            <div class="pt-4 border-t border-slate-800 text-[11px] text-slate-400 text-center">
-                Pendaftaran aman & terenkripsi • Konfirmasi cepat via WhatsApp
+                <div class="border-t border-slate-700/80 pt-5 text-center text-xs leading-relaxed text-slate-400">
+                    Pendaftaran aman & terenkripsi • Konfirmasi cepat via WhatsApp
+                </div>
             </div>
 
         </div>

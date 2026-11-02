@@ -20,11 +20,11 @@
         </p>
     </div>
 
-    <!-- Main Container Layout: 2 Kolom (Content Kiri + Sidebar Filter Kanan Slide 7) -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    <!-- Main Container Layout -->
+    <div class="grid grid-cols-1 gap-8 items-start">
         
         <!-- Left Side: Search + Category Selector + Courses Grid (8 Kolom) -->
-        <div class="lg:col-span-8 space-y-6">
+        <div class="space-y-6">
             
             <!-- Search Bar (Slide 7: ⌕ Cari judul atau topik pelatihan [Cari]) -->
             <form action="{{ route('courses.index') }}" method="GET" class="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-2 flex items-center justify-between gap-3">
@@ -132,68 +132,6 @@
                     @endforeach
                 </div>
             @endif
-
-        </div>
-
-        <!-- Right Side: Dark Navy Filter Box (Slide 7 Sidebar FILTER) -->
-        <div class="lg:col-span-4 bg-[#10243A] text-white rounded-3xl p-6 sm:p-7 shadow-xl space-y-6 lg:sticky lg:top-24">
-            <div class="border-b border-slate-700/80 pb-3 flex items-center justify-between">
-                <span class="text-xs font-extrabold tracking-widest text-[#087F78] uppercase">FILTER KATALOG</span>
-                <a href="{{ route('courses.index') }}" class="text-[11px] text-slate-400 hover:text-white underline">Reset</a>
-            </div>
-
-            <!-- 1. Bidang -->
-            <div class="space-y-2">
-                <div class="text-xs font-bold uppercase tracking-wider text-slate-300">Bidang</div>
-                <div class="text-xs text-slate-400">5 kategori pilihan: Foto/Video, Digital, AI, Drone, IT</div>
-                <div class="space-y-1 pt-1">
-                    @foreach($categories as $cat)
-                        <a href="{{ route('courses.index', ['kategori' => $cat->slug]) }}" 
-                           class="flex items-center justify-between py-1.5 px-2.5 rounded-lg text-xs {{ ($selectedCategorySlug ?? '') === $cat->slug ? 'bg-[#087F78] text-white font-bold' : 'text-slate-300 hover:bg-slate-800' }}">
-                            <span>{{ $cat->name }}</span>
-                            <span class="text-[10px] opacity-70">{{ $cat->courses_count ?? '' }}</span>
-                        </a>
-                    @endforeach
-                </div>
-            </div>
-
-            <!-- 2. Format -->
-            <div class="space-y-2 pt-2 border-t border-slate-800">
-                <div class="text-xs font-bold uppercase tracking-wider text-slate-300">Format</div>
-                <div class="flex flex-wrap gap-1.5 text-xs">
-                    <span class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">Offline / Studio</span>
-                    <span class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">Online</span>
-                    <span class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">Hybrid</span>
-                </div>
-            </div>
-
-            <!-- 3. Level -->
-            <div class="space-y-2 pt-2 border-t border-slate-800">
-                <div class="text-xs font-bold uppercase tracking-wider text-slate-300">Level</div>
-                <div class="text-xs text-slate-400">Basic / Intermediate / Advanced</div>
-            </div>
-
-            <!-- 4. Durasi -->
-            <div class="space-y-2 pt-2 border-t border-slate-800">
-                <div class="text-xs font-bold uppercase tracking-wider text-slate-300">Durasi</div>
-                <div class="text-xs text-slate-400">1 – 5+ hari workshop intensif</div>
-            </div>
-
-            <!-- 5. Jadwal -->
-            <div class="space-y-2 pt-2 border-t border-slate-800">
-                <div class="text-xs font-bold uppercase tracking-wider text-slate-300">Jadwal</div>
-                <div class="flex items-center gap-2 pt-1">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                    <span class="text-xs text-slate-300">Tersedia / Segera hadir</span>
-                </div>
-            </div>
-
-            <!-- CTA Bawah Sidebar -->
-            <div class="pt-4 border-t border-slate-800">
-                <a href="{{ route('courses.schedule') }}" class="w-full block text-center py-2.5 px-4 rounded-xl bg-[#087F78] hover:bg-[#066761] text-white text-xs font-bold transition-all shadow-md">
-                    Lihat Kalender Jadwal &rarr;
-                </a>
-            </div>
 
         </div>
 

@@ -207,14 +207,28 @@
                     </ul>
                 </div>
                 <div>
-                    <h4 class="font-bold text-white mb-3 text-xs uppercase tracking-wider">Halaman</h4>
-                    <ul class="space-y-2 text-xs text-slate-400">
-                        <li><a href="{{ route('courses.schedule') }}" class="hover:text-white">Jadwal Cohort</a></li>
-                        <li><a href="{{ route('corporate') }}" class="hover:text-white">Corporate Training</a></li>
-                        <li><a href="{{ route('artikel') }}" class="hover:text-white">Artikel</a></li>
-                        <li><a href="{{ route('tentang') }}" class="hover:text-white">Tentang Kami</a></li>
-                        <li><a href="{{ route('kontak') }}" class="hover:text-white">Kontak</a></li>
-                        <li><a href="{{ route('admin.dashboard') }}" class="text-[#087F78] hover:text-teal-300 font-semibold">Dashboard Admin</a></li>
+                    <h4 class="font-bold text-white mb-3 text-xs uppercase tracking-wider">Kontak</h4>
+                    <ul class="space-y-3 text-xs text-slate-400">
+                        @if(config('services.whatsapp.admin_number'))
+                            <li>
+                                <a href="tel:+6285600604388" class="flex items-start gap-2 hover:text-white">
+                                    <span class="mt-0.5 text-[#25D366]" aria-hidden="true">☎</span>
+                                    <span>+62 856-0060-4388</span>
+                                </a>
+                            </li>
+                        @endif
+                        <li>
+                            <a href="https://maps.app.goo.gl/Ywv2niYG4cKhykkJ7" target="_blank" rel="noopener noreferrer" class="flex items-start gap-2 hover:text-white">
+                                <span class="mt-0.5 text-[#25D366]" aria-hidden="true">⌖</span>
+                                <span>Google Maps</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="mailto:jogjacreativeproduction@gmail.com" class="flex items-start gap-2 break-all hover:text-white">
+                                <span class="mt-0.5 text-[#25D366]" aria-hidden="true">✉</span>
+                                <span>jogjacreativeproduction@gmail.com</span>
+                            </a>
+                        </li>
                     </ul>
                 </div>
                 <div>

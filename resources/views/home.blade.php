@@ -88,86 +88,54 @@
             Pilih bidang pelatihan
         </h2>
 
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-5">
             @foreach($categories as $category)
-                <button
-                    type="button"
-                    data-category="{{ $category->slug }}"
-                    onclick="selectCategory(this.dataset.category, this)"
-                    class="category-btn h-14 rounded-2xl border border-slate-200 bg-white text-sm font-bold text-slate-700 shadow-xs transition-all hover:border-[#087F78] hover:text-[#087F78] sm:h-16 sm:text-base"
+                <a
+                    href="{{ route('courses.index', ['kategori' => $category->slug]) }}"
+                    class="category-btn flex min-h-40 flex-col items-center justify-between rounded-3xl border border-slate-200 bg-white p-4 text-sm font-bold text-slate-700 shadow-xs transition-all hover:-translate-y-1 hover:border-[#087F78] hover:text-[#087F78] hover:shadow-md sm:min-h-48 sm:p-5 sm:text-base"
                 >
-                    {{ $category->short_name ?? $category->name }}
-                </button>
-            @endforeach
-        </div>
-    </section>
-
-    <!-- ==========================================
-         04 / KELAS UNGGULAN (Slide 5 Item 04)
-         ========================================== -->
-    <section class="space-y-6 pt-2">
-        <div class="flex items-center justify-between">
-            <h2 class="text-xl sm:text-2xl font-bold text-[#10243A] tracking-tight">
-                Kelas unggulan
-            </h2>
-            <a href="{{ route('courses.index') }}" class="text-xs sm:text-sm font-bold text-[#087F78] hover:underline">
-                Lihat semua kelas &rarr;
-            </a>
-        </div>
-
-        <!-- Kartu Kelas Unggulan -->
-        <div id="course-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            @foreach($allCourses as $course)
-                @php
-                    $courseSession = $course->sessions->firstWhere('status', '!=', 'Penuh') ?? $course->sessions->first();
-                @endphp
-                <div 
-                    data-category="{{ $course->category->slug }}"
-                    class="course-card bg-white rounded-2xl border border-slate-200/90 hover:border-[#087F78]/50 shadow-xs hover:shadow-lg transition-all duration-200 flex flex-col justify-between p-6">
-                    
-                    <div class="space-y-3">
-                        <!-- Chip Kategori Mint & Durasi -->
-                        <div class="flex items-center justify-between">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#E2F6F2] text-[#087F78]">
-                                {{ $course->category->short_name ?? $course->category->name }}
-                            </span>
-                            <span class="text-xs font-medium text-slate-500">
-                                ⏱ {{ $courseSession?->duration ?? 'Belum ditentukan' }}
-                            </span>
-                        </div>
-
-                        <!-- Judul Pelatihan -->
-                        <h3 class="text-lg font-bold text-[#10243A] hover:text-[#087F78] transition-colors">
-                            <a href="{{ route('courses.show', $course->slug) }}">
-                                {{ $course->title }}
-                            </a>
-                        </h3>
-
-                        <!-- Deskripsi Singkat -->
-                        <p class="text-sm text-slate-600 line-clamp-2 leading-relaxed">
-                            {{ $course->description }}
-                        </p>
-
-                        <!-- Level & Format -->
-                        <div class="flex flex-wrap items-center gap-2 pt-1 text-xs text-slate-500">
-                            <span class="px-2.5 py-1 rounded-md bg-slate-100">◉ {{ $course->format }}</span>
-                            <span class="px-2.5 py-1 rounded-md bg-slate-100">✓ {{ $course->level }}</span>
-                        </div>
-                    </div>
-
-                    <!-- Tombol Lihat Detail -->
-                    <div class="pt-5 mt-5 border-t border-slate-100 flex items-center justify-between">
-                        <div>
-                            <span class="text-[11px] uppercase tracking-wider text-slate-400 block font-semibold">Investasi</span>
-                            <span class="text-sm font-bold text-[#10243A]">{{ $course->formatted_price }}</span>
-                        </div>
-                        <a href="{{ route('courses.show', $course->slug) }}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-[#087F78] bg-[#E2F6F2] hover:bg-[#087F78] hover:text-white transition-all">
-                            <span>Lihat detail</span>
-                            <span>&rarr;</span>
-                        </a>
-                    </div>
-
-                </div>
+                    <span class="flex h-24 w-full items-center justify-center rounded-2xl bg-[#F1FBF9] text-[#087F78] sm:h-28">
+                        @if($category->slug === 'photo-video')
+                            <svg class="h-16 w-16" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                                <rect x="8" y="18" width="48" height="32" rx="7" stroke="currentColor" stroke-width="3" />
+                                <path d="M20 18l4-7h16l4 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                                <circle cx="32" cy="34" r="10" stroke="currentColor" stroke-width="3" />
+                                <path d="M32 29v10l7-5-7-5Z" fill="currentColor" />
+                            </svg>
+                        @elseif($category->slug === 'digital-marketing')
+                            <svg class="h-16 w-16" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                                <path d="M10 29h13l22-11v28L23 35H10V29Z" stroke="currentColor" stroke-width="3" stroke-linejoin="round" />
+                                <path d="M23 35l4 16h-8l-4-16M52 25c3 3 3 11 0 14" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+                                <path d="M13 22l5-5 6 4 9-10" stroke="#E5AD49" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        @elseif($category->slug === 'artificial-intelligence')
+                            <svg class="h-16 w-16" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                                <rect x="12" y="16" width="40" height="34" rx="9" stroke="currentColor" stroke-width="3" />
+                                <circle cx="25" cy="31" r="3" fill="currentColor" />
+                                <circle cx="39" cy="31" r="3" fill="currentColor" />
+                                <path d="M24 41c4 3 12 3 16 0M32 16V9M28 9h8" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+                                <path d="M7 25v7M57 25v7" stroke="#E5AD49" stroke-width="3" stroke-linecap="round" />
+                            </svg>
+                        @elseif($category->slug === 'drone-technology')
+                            <svg class="h-16 w-16" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                                <rect x="25" y="25" width="14" height="14" rx="4" stroke="currentColor" stroke-width="3" />
+                                <path d="M25 29H15M39 29h10M25 35H15M39 35h10M15 24v10M49 24v10" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+                                <path d="M9 20c4-4 10-4 14 0M41 20c4-4 10-4 14 0M9 44c4 4 10 4 14 0M41 44c4 4 10 4 14 0" stroke="#E5AD49" stroke-width="3" stroke-linecap="round" />
+                            </svg>
+                        @elseif($category->slug === 'information-technology')
+                            <svg class="h-16 w-16" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                                <rect x="9" y="12" width="46" height="31" rx="4" stroke="currentColor" stroke-width="3" />
+                                <path d="M5 52h54M25 52l3-9h8l3 9M25 27l-5 5 5 5M39 27l5 5-5 5M35 25l-6 14" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        @else
+                            <svg class="h-16 w-16" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                                <circle cx="32" cy="32" r="19" stroke="currentColor" stroke-width="3" />
+                                <path d="M32 21v22M21 32h22" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+                            </svg>
+                        @endif
+                    </span>
+                    <span>{{ $category->short_name ?? $category->name }}</span>
+                </a>
             @endforeach
         </div>
     </section>
@@ -305,40 +273,4 @@
 
 </div>
 
-@push('scripts')
-<script>
-    // Inisialisasi filter kategori saat pertama kali dimuat – default: Foto / Video
-    document.addEventListener('DOMContentLoaded', () => {
-        // Aktifkan bidang pertama yang tersedia dari database.
-        const firstBtn = document.querySelector('.category-btn');
-        if (firstBtn) selectCategory(firstBtn.dataset.category, firstBtn);
-    });
-
-    function selectCategory(categorySlug, btnElement) {
-        // Reset styling semua tombol kategori
-        document.querySelectorAll('.category-btn').forEach(btn => {
-            btn.classList.remove('bg-[#E2F6F2]', 'text-[#087F78]', 'border-[#087F78]/30', 'active');
-            btn.classList.add('bg-white', 'text-slate-700', 'border-slate-200');
-        });
-
-        // Set tombol yang diklik menjadi aktif
-        btnElement.classList.remove('bg-white', 'text-slate-700', 'border-slate-200');
-        btnElement.classList.add('bg-[#E2F6F2]', 'text-[#087F78]', 'border-[#087F78]/30', 'active');
-
-        // Tampilkan kartu yang sesuai
-        filterCategoryDisplay(categorySlug);
-    }
-
-    function filterCategoryDisplay(categorySlug) {
-        const cards = document.querySelectorAll('.course-card');
-        cards.forEach(card => {
-            if (!categorySlug || card.dataset.category === categorySlug) {
-                card.style.display = 'flex';
-            } else {
-                card.style.display = 'none';
-            }
-        });
-    }
-</script>
-@endpush
 @endsection

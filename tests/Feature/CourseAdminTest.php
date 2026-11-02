@@ -45,7 +45,8 @@ it('creates a program with detail content and a background image', function () {
         ->assertSee(Storage::disk('public')->url($course->image), false)
         ->assertSee('Komposisi visual')
         ->assertSee('Peserta mampu membuat konten visual yang berkualitas.')
-        ->assertSee('Modul, Alat Praktik, Sertifikat');
+        ->assertSee('Ilustrasi kegiatan')
+        ->assertDontSee('Investasi:');
 });
 
 it('creates a program with a background image URL', function () {

@@ -40,7 +40,8 @@ class WebsiteBlueprintTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee($course->title);
         $response->assertSee('Yang akan dipelajari');
-        $response->assertSee('RINGKASAN KELAS');
+        $response->assertSee('Ilustrasi kegiatan');
+        $response->assertDontSee('RINGKASAN KELAS');
     }
 
     public function test_schedule_page_loads(): void
