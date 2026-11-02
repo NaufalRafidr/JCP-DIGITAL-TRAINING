@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo-jcp.png') }}">
     <meta name="description" content="JCP Training - Platform Pelatihan Profesional dari PT Jogja Creative Production. Upgrade skill, buka peluang karir & bisnis masa depan.">
     <title>@yield('title', 'JCP TRAINING') - PT Jogja Creative Production</title>
 
@@ -35,8 +36,9 @@
                 
                 <!-- Logo: JCP TRAINING -->
                 <div class="flex items-center">
-                    <a href="{{ route('home') }}" class="font-extrabold text-xl sm:text-2xl tracking-tight text-[#10243A] hover:opacity-90 transition-opacity">
-                        JCP <span class="tracking-normal">  DIGITAL <span class="tracking-normal">TRAINING</span>
+                    <a href="{{ route('home') }}" class="inline-flex items-center gap-2.5 font-extrabold text-xl tracking-tight text-[#10243A] transition-opacity hover:opacity-90 sm:gap-3 sm:text-2xl">
+                        <img src="{{ asset('images/logo-jcp.png') }}" alt="" aria-hidden="true" class="h-8 w-8 shrink-0 object-contain sm:h-10 sm:w-10">
+                        <span>JCP <span class="tracking-normal">DIGITAL <span class="tracking-normal">TRAINING</span></span></span>
                     </a>
                 </div>
 
