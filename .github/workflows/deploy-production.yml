@@ -114,7 +114,7 @@ jobs:
           cd "$APP_PATH"
           compose=(docker compose --env-file .env.production -f docker-compose.production.yml)
 
-          "${compose[@]}" up -d --build app scheduler
+          "${compose[@]}" up -d --build --force-recreate app scheduler
           "${compose[@]}" exec -T app sh -lc '
               mkdir -p storage/app/public
               if [ ! -e public/storage ] && [ ! -L public/storage ]; then
@@ -125,6 +125,13 @@ jobs:
           '
           "${compose[@]}" exec -T app php artisan migrate --force
           "${compose[@]}" exec -T app php artisan db:seed --class=DummyScheduleSeeder --force
+          max_schedule_date="$("${compose[@]}" exec -T app php artisan tinker --execute="echo \\App\\Models\\CourseSession::max('start_date');" | tr -d '\r\n')"
+          echo "Jadwal terakhir di database: $max_schedule_date"
+          test -n "$max_schedule_date"
+          if [[ "$max_schedule_date" < "2027-12-01" ]]; then
+              echo "Jadwal dummy belum mencapai Desember 2027." >&2
+              exit 1
+          fi
           "${compose[@]}" exec -T app php artisan optimize:clear
           "${compose[@]}" ps
           REMOTE
