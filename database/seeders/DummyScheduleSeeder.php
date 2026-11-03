@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\Course;
 use App\Models\CourseSession;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
+use RuntimeException;
 
 class DummyScheduleSeeder extends Seeder
 {
@@ -14,66 +14,66 @@ class DummyScheduleSeeder extends Seeder
      */
     public function run(): void
     {
-        $courses = Course::query()
-            ->with('category')
+        $templateSessions = CourseSession::query()
+            ->with('course')
+            ->whereBetween('start_date', ['2026-11-01', '2026-11-30'])
+            ->orderBy('start_date')
+            ->orderBy('id')
+            ->limit(6)
             ->get()
+            ->filter(fn (CourseSession $session): bool => $session->course !== null)
             ->values();
 
-        if ($courses->isEmpty()) {
-            return;
+        if ($templateSessions->isEmpty()) {
+            throw new RuntimeException('Tidak ditemukan jadwal template pada tabel course_sessions.');
         }
-
-        $scheduleLocations = [
-            'photo-video' => 'Studio Foto Komersial JCP',
-            'digital-marketing' => 'JCP Learning Studio & Zoom',
-            'artificial-intelligence' => 'JCP Learning Studio & Online Hybrid',
-            'drone-technology' => 'Lapangan Terbang Gading & Studio JCP',
-            'information-technology' => 'JCP Tech Hub Yogyakarta',
-        ];
-
-        $schedulePrices = [
-            'photo-video' => 1500000,
-            'digital-marketing' => 1250000,
-            'artificial-intelligence' => 1750000,
-            'drone-technology' => 2500000,
-            'information-technology' => 2250000,
-        ];
 
         $monthStart = Carbon::create(2026, 11, 1);
         $lastScheduleMonth = Carbon::create(2027, 12, 1);
         $monthCount = $monthStart->diffInMonths($lastScheduleMonth) + 1;
+        $createdSessions = 0;
 
         foreach (range(0, $monthCount - 1) as $monthOffset) {
             $currentMonth = $monthStart->copy()->addMonths($monthOffset);
             $batchNumber = str_pad((int) floor($monthOffset / 3) + 1, 2, '0', STR_PAD_LEFT);
 
-            foreach ($courses as $courseIndex => $course) {
-                if ($courseIndex % 3 !== $monthOffset % 3) {
-                    continue;
-                }
-
-                $categorySlug = $course->category->slug;
-                $durationInDays = max((int) preg_replace('/\D+/', '', $course->duration), 1);
-                $startDate = $currentMonth->copy()
-                    ->next(Carbon::SATURDAY)
-                    ->addWeeks($courseIndex % 4);
+            foreach ($templateSessions as $templateSession) {
+                $dayOfMonth = min(
+                    $templateSession->start_date->day,
+                    $currentMonth->copy()->endOfMonth()->day,
+                );
+                $startDate = $currentMonth->copy()->day($dayOfMonth);
+                $durationInDays = $templateSession->end_date === null
+                    ? 1
+                    : max($templateSession->start_date->diffInDays($templateSession->end_date) + 1, 1);
                 $batchName = 'Batch '.$batchNumber.' - '.$currentMonth->format('F Y');
 
-                CourseSession::firstOrCreate(
+                $session = CourseSession::firstOrCreate(
                     [
-                        'course_id' => $course->id,
+                        'course_id' => $templateSession->course_id,
                         'batch_name' => $batchName,
                         'start_date' => $startDate->toDateString(),
                     ],
                     [
                         'end_date' => $startDate->copy()->addDays($durationInDays - 1),
-                        'location' => $scheduleLocations[$categorySlug],
-                        'quota' => $categorySlug === 'drone-technology' ? 12 : 15,
-                        'price' => $schedulePrices[$categorySlug],
-                        'status' => 'Buka',
+                        'location' => $templateSession->location,
+                        'quota' => $templateSession->quota,
+                        'price' => $templateSession->price,
+                        'status' => $templateSession->status,
                     ],
                 );
+
+                if ($session->wasRecentlyCreated) {
+                    $createdSessions++;
+                }
             }
         }
+
+        $this->command?->info(sprintf(
+            'Jadwal template: %d, jadwal baru: %d, total jadwal: %d.',
+            $templateSessions->count(),
+            $createdSessions,
+            CourseSession::count(),
+        ));
     }
 }
