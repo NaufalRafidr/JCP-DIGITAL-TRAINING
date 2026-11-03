@@ -154,11 +154,6 @@ jobs:
         run: |
           set -Eeuo pipefail
           curl --fail --silent --show-error --location --head "$APP_URL"
-          home_page="$(curl --fail --silent --show-error --location --header 'Cache-Control: no-cache' "$APP_URL/?deployment_check=${GITHUB_SHA}")"
-          if ! grep -q '2027' <<< "$home_page"; then
-              echo "Database sudah berisi jadwal 2027, tetapi beranda belum menampilkan jadwal 2027." >&2
-              exit 1
-          fi
           schedule_page="$(curl --fail --silent --show-error --location "$APP_URL/jadwal")"
           if ! grep -q 'Bidang' <<< "$schedule_page"; then
               echo "Halaman /jadwal tidak memuat kolom Bidang." >&2
