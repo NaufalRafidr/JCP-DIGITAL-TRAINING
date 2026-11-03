@@ -6,7 +6,6 @@ use App\Models\Category;
 use App\Models\Course;
 use App\Models\CourseSession;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Carbon;
 
 class DatabaseSeeder extends Seeder
 {
@@ -336,90 +335,9 @@ class DatabaseSeeder extends Seeder
         }
 
         // ========================================================
-        // 09 / JADWAL & COHORT (Tepat sesuai Slide 10 Blueprint)
-        // 1. AI untuk Produktivitas -> Status: Buka
-        // 2. Basic Drone Training   -> Status: Buka
-        // 3. Website Development    -> Status: Segera
-        // 4. Drone Mapping          -> Status: Penuh
-        // + Tambahan batch pendukung
+        // 09 / JADWAL PELATIHAN
+        // Buat seluruh jadwal dummy sampai Desember 2027.
         // ========================================================
-
-        $scheduledCohorts = [
-            [
-                'course_slug' => 'ai-produktivitas-kerja',
-                'batch_name' => 'Batch 01 - November 2026',
-                'start_date' => Carbon::parse('2026-11-14'),
-                'end_date' => Carbon::parse('2026-11-15'),
-                'location' => 'JCP Learning Studio & Online Hybrid',
-                'quota' => 15,
-                'price' => 1750000,
-                'status' => 'Buka',
-            ],
-            [
-                'course_slug' => 'basic-drone-training',
-                'batch_name' => 'Batch 01 - November 2026',
-                'start_date' => Carbon::parse('2026-11-21'),
-                'end_date' => Carbon::parse('2026-11-22'),
-                'location' => 'Lapangan Terbang Gading & Studio JCP',
-                'quota' => 12,
-                'price' => 2500000,
-                'status' => 'Buka',
-            ],
-            [
-                'course_slug' => 'website-development-training',
-                'batch_name' => 'Batch 01 - November 2026',
-                'start_date' => Carbon::parse('2026-11-28'),
-                'end_date' => Carbon::parse('2026-11-30'),
-                'location' => 'JCP Tech Hub Yogyakarta',
-                'quota' => 15,
-                'price' => 2250000,
-                'status' => 'Segera',
-            ],
-            [
-                'course_slug' => 'drone-mapping-training',
-                'batch_name' => 'Batch 01 - November 2026',
-                'start_date' => Carbon::parse('2026-11-08'),
-                'end_date' => Carbon::parse('2026-11-10'),
-                'location' => 'Area Survei Sleman & Lab Komputasi',
-                'quota' => 10,
-                'price' => 3500000,
-                'status' => 'Penuh',
-            ],
-            [
-                'course_slug' => 'smartphone-photography-videography',
-                'batch_name' => 'Batch 01 - November 2026',
-                'start_date' => Carbon::parse('2026-11-17'),
-                'end_date' => Carbon::parse('2026-11-18'),
-                'location' => 'Studio Foto Komersial JCP',
-                'quota' => 15,
-                'price' => 1500000,
-                'status' => 'Buka',
-            ],
-            [
-                'course_slug' => 'digital-marketing-umkm',
-                'batch_name' => 'Batch 01 - November 2026',
-                'start_date' => Carbon::parse('2026-11-24'),
-                'end_date' => Carbon::parse('2026-11-25'),
-                'location' => 'JCP Learning Studio & Zoom',
-                'quota' => 20,
-                'price' => 1250000,
-                'status' => 'Buka',
-            ],
-        ];
-
-        foreach ($scheduledCohorts as $cohort) {
-            if (isset($courses[$cohort['course_slug']])) {
-                CourseSession::create([
-                    'course_id' => $courses[$cohort['course_slug']]->id,
-                    'batch_name' => $cohort['batch_name'],
-                    'start_date' => $cohort['start_date'],
-                    'end_date' => $cohort['end_date'],
-                    'location' => $cohort['location'],
-                    'quota' => $cohort['quota'],
-                    'price' => $cohort['price'],
-                    'status' => $cohort['status'],
-                ]);
-            }
-        }
+        $this->call(DummyScheduleSeeder::class);
     }
 }
