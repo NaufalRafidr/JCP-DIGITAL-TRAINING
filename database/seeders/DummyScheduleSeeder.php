@@ -16,7 +16,6 @@ class DummyScheduleSeeder extends Seeder
     {
         $courses = Course::query()
             ->with('category')
-            ->where('status', 'Publish')
             ->get()
             ->values();
 
@@ -40,13 +39,8 @@ class DummyScheduleSeeder extends Seeder
             'information-technology' => 2250000,
         ];
 
-        $monthStart = Carbon::today()->startOfMonth();
+        $monthStart = Carbon::create(2026, 11, 1);
         $lastScheduleMonth = Carbon::create(2027, 12, 1);
-
-        if ($monthStart->greaterThan($lastScheduleMonth)) {
-            return;
-        }
-
         $monthCount = $monthStart->diffInMonths($lastScheduleMonth) + 1;
 
         foreach (range(0, $monthCount - 1) as $monthOffset) {
