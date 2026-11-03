@@ -129,10 +129,20 @@ jobs:
           max_schedule_date="$("${compose[@]}" exec -T app php artisan tinker --execute="echo \\App\\Models\\CourseSession::max('start_date');" | tr -d '\r\n')"
           echo "Jumlah jadwal di database: $session_count"
           echo "Jadwal terakhir di database: $max_schedule_date"
-          test "$session_count" -gt 6
-          test -n "$max_schedule_date"
+          if ! [[ "$session_count" =~ ^[0-9]+$ ]]; then
+              echo "Gagal membaca jumlah jadwal dari database produksi: [$session_count]" >&2
+              exit 1
+          fi
+          if (( session_count <= 6 )); then
+              echo "Seeder belum menambahkan jadwal. Database produksi hanya berisi $session_count jadwal." >&2
+              exit 1
+          fi
+          if [[ -z "$max_schedule_date" ]]; then
+              echo "Database produksi tidak memiliki tanggal jadwal." >&2
+              exit 1
+          fi
           if [[ "$max_schedule_date" < "2027-12-01" ]]; then
-              echo "Jadwal dummy belum mencapai Desember 2027." >&2
+              echo "Jadwal dummy baru sampai $max_schedule_date, belum mencapai Desember 2027." >&2
               exit 1
           fi
           "${compose[@]}" exec -T app php artisan optimize:clear
@@ -145,9 +155,15 @@ jobs:
           set -Eeuo pipefail
           curl --fail --silent --show-error --location --head "$APP_URL"
           home_page="$(curl --fail --silent --show-error --location --header 'Cache-Control: no-cache' "$APP_URL/?deployment_check=${GITHUB_SHA}")"
-          grep -q '2027' <<< "$home_page"
+          if ! grep -q '2027' <<< "$home_page"; then
+              echo "Database sudah berisi jadwal 2027, tetapi beranda belum menampilkan jadwal 2027." >&2
+              exit 1
+          fi
           schedule_page="$(curl --fail --silent --show-error --location "$APP_URL/jadwal")"
-          grep -q 'Bidang' <<< "$schedule_page"
+          if ! grep -q 'Bidang' <<< "$schedule_page"; then
+              echo "Halaman /jadwal tidak memuat kolom Bidang." >&2
+              exit 1
+          fi
 
       - name: Publish deployment summary
         if: always()
