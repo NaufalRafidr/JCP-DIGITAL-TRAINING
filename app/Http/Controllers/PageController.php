@@ -126,16 +126,9 @@ class PageController extends Controller
         }
 
         $courses = Course::with('category')->latest()->get();
-        $sessions = CourseSession::with(['course.category'])
-            ->orderBy('start_date')
-            ->orderBy('id')
-            ->get();
+        $sessions = CourseSession::with('course')->latest()->get();
         $scheduleSessions = request()->query('tab') === 'jadwal'
-            ? CourseSession::with(['course.category'])
-                ->orderBy('start_date')
-                ->orderBy('id')
-                ->paginate(10)
-                ->withQueryString()
+            ? CourseSession::with('course')->latest()->paginate(10)->withQueryString()
             : collect();
         $upcomingSessions = CourseSession::query()
             ->with('course:id,title,slug')
