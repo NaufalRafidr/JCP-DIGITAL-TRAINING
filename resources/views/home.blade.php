@@ -168,6 +168,7 @@
                 </div>
             </div>
 
+            <div id="home-training-schedule" data-home-schedule>
             <!-- Tabel Jadwal Pelatihan (Slide 10 Table Layout) -->
             <div class="overflow-x-auto rounded-2xl border border-slate-200">
                 <table class="w-full text-left border-collapse">
@@ -261,6 +262,12 @@
                 </table>
             </div>
 
+            @if($upcomingSessions->hasPages())
+                <div class="border-t border-slate-200 pt-6">
+                    {{ $upcomingSessions->links('pagination.schedule') }}
+                </div>
+            @endif
+            </div>
 
             <!-- Footer Catatan Jadwal -->
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500 pt-2 border-t border-slate-100">

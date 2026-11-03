@@ -3,6 +3,53 @@ document.addEventListener('click', (event) => {
         return;
     }
 
+    const scheduleLink = event.target.closest('[data-home-schedule] a[rel="prev"], [data-home-schedule] a[rel="next"]');
+
+    if (scheduleLink instanceof HTMLAnchorElement) {
+        event.preventDefault();
+
+        const pageUrl = new URL(scheduleLink.href, window.location.href);
+        const scheduleContainer = scheduleLink.closest('[data-home-schedule]');
+
+        if (!(scheduleContainer instanceof HTMLElement)) {
+            window.location.assign(pageUrl);
+            return;
+        }
+
+        scheduleContainer.setAttribute('aria-busy', 'true');
+
+        fetch(pageUrl, {
+            headers: {
+                Accept: 'text/html',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Gagal memuat halaman jadwal.');
+                }
+
+                return response.text();
+            })
+            .then((html) => {
+                const documentParser = new DOMParser();
+                const parsedDocument = documentParser.parseFromString(html, 'text/html');
+                const nextSchedule = parsedDocument.querySelector('[data-home-schedule]');
+
+                if (!(nextSchedule instanceof HTMLElement)) {
+                    throw new Error('Bagian jadwal tidak ditemukan.');
+                }
+
+                scheduleContainer.replaceWith(nextSchedule);
+                window.history.pushState({}, '', pageUrl);
+            })
+            .catch(() => {
+                window.location.assign(pageUrl);
+            });
+
+        return;
+    }
+
     const toggleButton = event.target.closest('[data-password-toggle]');
 
     if (!(toggleButton instanceof HTMLButtonElement)) {

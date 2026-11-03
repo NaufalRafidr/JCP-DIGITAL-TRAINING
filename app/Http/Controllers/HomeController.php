@@ -22,7 +22,9 @@ class HomeController extends Controller
         $upcomingSessions = CourseSession::with(['course.category'])
             ->withCount('registrations')
             ->orderBy('start_date', 'asc')
-            ->get();
+            ->orderBy('id', 'asc')
+            ->paginate(10)
+            ->withQueryString();
 
         return view('home', compact('categories', 'upcomingSessions'));
     }
