@@ -12,10 +12,10 @@ document.addEventListener('click', (event) => {
         const scheduleContainer = scheduleLink.closest('[data-home-schedule]');
 
         if (!(scheduleContainer instanceof HTMLElement)) {
-            window.location.assign(pageUrl);
             return;
         }
 
+        scheduleContainer.querySelector('[data-home-schedule-error]')?.remove();
         scheduleContainer.setAttribute('aria-busy', 'true');
 
         fetch(pageUrl, {
@@ -44,7 +44,13 @@ document.addEventListener('click', (event) => {
                 window.history.pushState({}, '', pageUrl);
             })
             .catch(() => {
-                window.location.assign(pageUrl);
+                scheduleContainer.removeAttribute('aria-busy');
+
+                const errorMessage = document.createElement('p');
+                errorMessage.dataset.homeScheduleError = 'true';
+                errorMessage.className = 'mt-4 text-center text-sm font-semibold text-rose-600';
+                errorMessage.textContent = 'Jadwal gagal dimuat. Silakan coba lagi.';
+                scheduleContainer.append(errorMessage);
             });
 
         return;
