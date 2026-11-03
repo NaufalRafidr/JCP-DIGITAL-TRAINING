@@ -9,6 +9,9 @@ document.addEventListener('click', (event) => {
         event.preventDefault();
 
         const pageUrl = new URL(scheduleLink.href, window.location.href);
+        const fragmentUrl = new URL(pageUrl);
+        fragmentUrl.searchParams.set('schedule_fragment', '1');
+        pageUrl.searchParams.delete('schedule_fragment');
         const scheduleContainer = scheduleLink.closest('[data-home-schedule]');
 
         if (!(scheduleContainer instanceof HTMLElement)) {
@@ -18,7 +21,7 @@ document.addEventListener('click', (event) => {
         scheduleContainer.querySelector('[data-home-schedule-error]')?.remove();
         scheduleContainer.setAttribute('aria-busy', 'true');
 
-        fetch(pageUrl, {
+        fetch(fragmentUrl, {
             headers: {
                 Accept: 'text/html',
                 'X-Requested-With': 'XMLHttpRequest',
