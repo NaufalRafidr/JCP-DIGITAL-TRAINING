@@ -399,9 +399,9 @@
 
             <!-- List Baris Card Jadwal / Batch -->
             <div class="space-y-4">
-                @forelse($sessions as $s)
+                @forelse($scheduleSessions as $s)
                     @php
-                        $sessionEditorQuery = ['tab' => 'jadwal', 'session_id' => $s->id];
+                        $sessionEditorQuery = ['tab' => 'jadwal', 'session_id' => $s->id, 'page' => $scheduleSessions->currentPage()];
                     @endphp
                     <article class="admin-editor-card cursor-pointer rounded-2xl border bg-white px-5 py-5 text-sm shadow-[0_1px_3px_rgba(0,0,0,0.03)] transition-all hover:border-[#087F78]/50 hover:shadow-md md:grid md:grid-cols-12 md:items-center md:px-8 {{ $selectedSession?->id === $s->id ? 'border-[#087F78] ring-2 ring-[#087F78]/10' : 'border-slate-200/90' }}" data-editor-url="{{ route('admin.dashboard', $sessionEditorQuery) }}" tabindex="0" role="button" aria-expanded="{{ $selectedSession?->id === $s->id ? 'true' : 'false' }}" aria-label="Edit jadwal {{ $s->batch_name }}">
                         
@@ -519,6 +519,12 @@
                     </div>
                 @endforelse
             </div>
+
+            @if($scheduleSessions->hasPages())
+                <div class="mt-6 border-t border-slate-100 pt-6">
+                    {{ $scheduleSessions->links() }}
+                </div>
+            @endif
 
             <!-- Tautan Cepat ke Tabel Program -->
             <div class="pt-8 text-center">

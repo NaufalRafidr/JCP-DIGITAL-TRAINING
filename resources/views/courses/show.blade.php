@@ -52,7 +52,7 @@
     <div class="flex items-center gap-2 text-xs font-semibold text-slate-400">
         <a href="{{ route('home') }}" class="hover:text-[#087F78]">Beranda</a>
         <span>/</span>
-        <a href="{{ route('courses.index') }}" class="hover:text-[#087F78]">Pelatihan</a>
+        <a href="{{ route('courses.index', ['kategori' => $course->category->slug]) }}" class="hover:text-[#087F78]">{{ $course->category->name }}</a>
         <span>/</span>
         <span class="text-[#087F78] truncate max-w-xs">{{ $course->title }}</span>
     </div>

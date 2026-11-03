@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Course;
 use App\Models\CourseSession;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -13,19 +14,23 @@ class CourseController extends Controller
     /**
      * Show courses catalog (Slide 7 & 8).
      */
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
         $selectedCategorySlug = $request->query('kategori');
         $searchQuery = $request->query('q');
 
-        $categories = Category::withCount('courses')->get();
+        if (! $selectedCategorySlug && ! $searchQuery) {
+            return redirect()->route('home');
+        }
+
+        $category = $selectedCategorySlug
+            ? Category::query()->where('slug', $selectedCategorySlug)->firstOrFail()
+            : null;
 
         $query = Course::with(['category', 'sessions'])->where('status', 'Publish');
 
-        if ($selectedCategorySlug) {
-            $query->whereHas('category', function ($q) use ($selectedCategorySlug) {
-                $q->where('slug', $selectedCategorySlug);
-            });
+        if ($category) {
+            $query->whereBelongsTo($category);
         }
 
         if ($searchQuery) {
@@ -37,7 +42,7 @@ class CourseController extends Controller
 
         $courses = $query->get();
 
-        return view('courses.index', compact('categories', 'courses', 'selectedCategorySlug', 'searchQuery'));
+        return view('courses.index', compact('category', 'courses', 'selectedCategorySlug', 'searchQuery'));
     }
 
     /**
@@ -77,7 +82,7 @@ class CourseController extends Controller
             });
         }
 
-        $sessions = $sessionsQuery->get();
+        $sessions = $sessionsQuery->paginate(10)->withQueryString();
 
         return view('courses.schedule', compact('categories', 'sessions', 'selectedCategory'));
     }

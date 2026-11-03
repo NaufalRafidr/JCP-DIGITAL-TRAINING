@@ -497,7 +497,7 @@ it('shows the actual batch duration on the schedule and course detail pages', fu
 
     $scheduleResponse = $this->get(route('courses.schedule'));
     $courseResponse = $this->get(route('courses.show', $course->slug));
-    $catalogResponse = $this->get(route('courses.index'));
+    $catalogResponse = $this->get(route('courses.index', ['kategori' => $category->slug]));
     $homeResponse = $this->get(route('home'));
 
     $scheduleResponse->assertOk()

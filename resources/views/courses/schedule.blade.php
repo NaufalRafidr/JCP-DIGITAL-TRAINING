@@ -115,6 +115,12 @@
         </div>
     </div>
 
+    @if($sessions->hasPages())
+        <div class="border-t border-slate-200 pt-6">
+            {{ $sessions->links() }}
+        </div>
+    @endif
+
 </div>
 @endsection
 

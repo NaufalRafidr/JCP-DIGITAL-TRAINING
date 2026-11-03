@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Katalog Pelatihan • 15 Program dalam 5 Bidang')
+@section('title', ($category?->name ?? 'Hasil pencarian pelatihan').' • JCP Training')
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
@@ -10,14 +10,19 @@
         <div class="flex items-center gap-2 text-xs font-semibold text-slate-400 mb-2">
             <a href="{{ route('home') }}" class="hover:text-[#087F78]">Beranda</a>
             <span>/</span>
-            <span class="text-[#087F78]">Katalog Pelatihan</span>
+            <span class="text-[#087F78]">{{ $category?->name ?? 'Hasil pencarian' }}</span>
         </div>
         <h1 class="text-3xl sm:text-4xl font-extrabold text-[#10243A] tracking-tight">
-            Semua Pelatihan
+            {{ $category?->name ?? 'Hasil pencarian pelatihan' }}
         </h1>
         <p class="text-slate-600 text-sm mt-1">
-            Temukan kelas dalam beberapa langkah. Pencarian, filter, dan sort bekerja bersama.
+            {{ $category?->description ?? 'Temukan program pelatihan yang sesuai dengan kata kunci pencarian Anda.' }}
         </p>
+        @if($category)
+            <a href="{{ route('home') }}" class="mt-4 inline-flex items-center text-xs font-bold text-[#087F78] hover:underline">
+                &larr; Pilih bidang pelatihan lain
+            </a>
+        @endif
     </div>
 
     <!-- Main Container Layout -->
@@ -48,37 +53,13 @@
                 </button>
             </form>
 
-            <!-- Kategori Radio List / Horizontal Pill (Slide 7: Kategori [Semua bidang, Foto & Video, Digital, AI, Drone, IT]) -->
-            <div class="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5">
-                <div class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Kategori Bidang</div>
-                <div class="flex flex-wrap items-center gap-2">
-                    <a href="{{ route('courses.index', array_filter(['q' => $searchQuery ?? null])) }}" 
-                       class="px-4 py-2 rounded-xl text-xs font-bold transition-all {{ empty($selectedCategorySlug) ? 'bg-[#087F78] text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
-                        Semua bidang
-                    </a>
-                    @foreach($categories as $cat)
-                        <a href="{{ route('courses.index', array_filter(['kategori' => $cat->slug, 'q' => $searchQuery ?? null])) }}" 
-                           class="px-4 py-2 rounded-xl text-xs font-bold transition-all {{ ($selectedCategorySlug ?? '') === $cat->slug ? 'bg-[#087F78] text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
-                            {{ $cat->short_name ?? $cat->name }}
-                        </a>
-                    @endforeach
-                </div>
-            </div>
-
-            <!-- List Header: Count Program & Sort Dropdown (Slide 7: 15 program • Urutkan: Terbaru) -->
-            <div class="flex items-center justify-between text-sm px-1">
+            <!-- List Header: Count Program -->
+            <div class="flex items-center justify-between px-1 text-sm">
                 <div class="font-extrabold text-[#10243A]">
                     <span>{{ $courses->count() }} program</span>
-                    @if(!empty($selectedCategorySlug))
+                    @if($category)
                         <span class="text-slate-400 font-normal">dalam kategori ini</span>
                     @endif
-                </div>
-                <div class="flex items-center gap-2 text-xs font-semibold text-slate-500">
-                    <span>Urutkan:</span>
-                    <select onchange="window.location.href=this.value" class="bg-transparent border-0 font-bold text-[#087F78] focus:ring-0 cursor-pointer">
-                        <option value="{{ request()->fullUrlWithQuery(['sort' => 'terbaru']) }}">Terbaru</option>
-                        <option value="{{ request()->fullUrlWithQuery(['sort' => 'populer']) }}" {{ request('sort') == 'populer' ? 'selected' : '' }}>Populer</option>
-                    </select>
                 </div>
             </div>
 
@@ -90,7 +71,7 @@
                     <p class="text-sm text-slate-500 mt-1 max-w-md mx-auto">
                         Coba gunakan kata kunci pencarian yang lain atau reset filter kategori.
                     </p>
-                    <a href="{{ route('courses.index') }}" class="mt-4 inline-block bg-[#087F78] text-white px-5 py-2 rounded-xl text-xs font-bold hover:bg-[#066761]">
+                    <a href="{{ $category ? route('courses.index', ['kategori' => $category->slug]) : route('home') }}" class="mt-4 inline-block bg-[#087F78] text-white px-5 py-2 rounded-xl text-xs font-bold hover:bg-[#066761]">
                         Reset Filter
                     </a>
                 </div>

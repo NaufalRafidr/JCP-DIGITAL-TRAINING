@@ -28,9 +28,12 @@ class WebsiteBlueprintTest extends TestCase
 
     public function test_catalog_page_shows_courses(): void
     {
-        $response = $this->get('/pelatihan');
+        $course = Course::with('category')->firstOrFail();
+        $response = $this->get(route('courses.index', ['kategori' => $course->category->slug]));
+
         $response->assertStatus(200);
-        $response->assertSee('Semua Pelatihan');
+        $response->assertSee($course->category->name);
+        $response->assertDontSee('Semua Pelatihan');
     }
 
     public function test_course_detail_page_loads(): void
