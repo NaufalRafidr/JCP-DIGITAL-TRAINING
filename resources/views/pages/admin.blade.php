@@ -522,7 +522,7 @@
 
             @if($scheduleSessions->hasPages())
                 <div class="mt-6 border-t border-slate-100 pt-6">
-                    {{ $scheduleSessions->links() }}
+                    {{ $scheduleSessions->links('pagination.schedule') }}
                 </div>
             @endif
 
