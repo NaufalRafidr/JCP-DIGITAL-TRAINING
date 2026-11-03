@@ -124,6 +124,7 @@ jobs:
               chown -R www-data:www-data storage/app/public
           '
           "${compose[@]}" exec -T app php artisan migrate --force
+          "${compose[@]}" exec -T app php artisan db:seed --class=DummyScheduleSeeder --force
           "${compose[@]}" exec -T app php artisan optimize:clear
           "${compose[@]}" ps
           REMOTE
