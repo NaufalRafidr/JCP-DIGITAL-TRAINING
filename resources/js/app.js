@@ -1,61 +1,66 @@
+const updateHomeSchedulePage = (scheduleContainer, requestedPage) => {
+    const rows = Array.from(scheduleContainer.querySelectorAll('[data-schedule-row]'));
+    const pageSize = Number(scheduleContainer.dataset.schedulePageSize) || 10;
+    const totalPages = Math.max(Math.ceil(rows.length / pageSize), 1);
+    const currentPage = Math.min(Math.max(requestedPage, 1), totalPages);
+    const firstRow = (currentPage - 1) * pageSize;
+
+    rows.forEach((row, index) => {
+        row.hidden = index < firstRow || index >= firstRow + pageSize;
+    });
+
+    const previousButton = scheduleContainer.querySelector('[data-schedule-previous]');
+    const nextButton = scheduleContainer.querySelector('[data-schedule-next]');
+    const pageStatus = scheduleContainer.querySelector('[data-schedule-page-status]');
+
+    if (previousButton instanceof HTMLButtonElement) {
+        previousButton.disabled = currentPage === 1;
+        previousButton.dataset.schedulePage = String(currentPage - 1);
+    }
+
+    if (nextButton instanceof HTMLButtonElement) {
+        nextButton.disabled = currentPage === totalPages;
+        nextButton.dataset.schedulePage = String(currentPage + 1);
+    }
+
+    if (pageStatus instanceof HTMLElement) {
+        pageStatus.textContent = `Halaman ${currentPage} dari ${totalPages}`;
+    }
+};
+
+const initializeHomeSchedulePagination = () => {
+    document.querySelectorAll('[data-home-schedule]').forEach((scheduleContainer) => {
+        if (!(scheduleContainer instanceof HTMLElement)) {
+            return;
+        }
+
+        updateHomeSchedulePage(scheduleContainer, 1);
+    });
+};
+
 document.addEventListener('click', (event) => {
     if (!(event.target instanceof Element)) {
         return;
     }
 
-    const scheduleLink = event.target.closest('[data-home-schedule] a[rel="prev"], [data-home-schedule] a[rel="next"]');
+    const scheduleButton = event.target.closest('[data-schedule-previous], [data-schedule-next]');
 
-    if (scheduleLink instanceof HTMLAnchorElement) {
-        event.preventDefault();
+    if (scheduleButton instanceof HTMLButtonElement) {
+        const scheduleContainer = scheduleButton.closest('[data-home-schedule]');
+        const requestedPage = Number(scheduleButton.dataset.schedulePage);
 
-        const pageUrl = new URL(scheduleLink.href, window.location.href);
-        const fragmentUrl = new URL(pageUrl);
-        fragmentUrl.searchParams.set('schedule_fragment', '1');
-        pageUrl.searchParams.delete('schedule_fragment');
-        const scheduleContainer = scheduleLink.closest('[data-home-schedule]');
-
-        if (!(scheduleContainer instanceof HTMLElement)) {
-            return;
+        if (scheduleContainer instanceof HTMLElement && Number.isInteger(requestedPage)) {
+            updateHomeSchedulePage(scheduleContainer, requestedPage);
         }
 
-        scheduleContainer.querySelector('[data-home-schedule-error]')?.remove();
-        scheduleContainer.setAttribute('aria-busy', 'true');
+        return;
+    }
+});
 
-        fetch(fragmentUrl, {
-            headers: {
-                Accept: 'text/html',
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-        })
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error('Gagal memuat halaman jadwal.');
-                }
+initializeHomeSchedulePagination();
 
-                return response.text();
-            })
-            .then((html) => {
-                const documentParser = new DOMParser();
-                const parsedDocument = documentParser.parseFromString(html, 'text/html');
-                const nextSchedule = parsedDocument.querySelector('[data-home-schedule]');
-
-                if (!(nextSchedule instanceof HTMLElement)) {
-                    throw new Error('Bagian jadwal tidak ditemukan.');
-                }
-
-                scheduleContainer.replaceWith(nextSchedule);
-                window.history.pushState({}, '', pageUrl);
-            })
-            .catch(() => {
-                scheduleContainer.removeAttribute('aria-busy');
-
-                const errorMessage = document.createElement('p');
-                errorMessage.dataset.homeScheduleError = 'true';
-                errorMessage.className = 'mt-4 text-center text-sm font-semibold text-rose-600';
-                errorMessage.textContent = 'Jadwal gagal dimuat. Silakan coba lagi.';
-                scheduleContainer.append(errorMessage);
-            });
-
+document.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element)) {
         return;
     }
 
