@@ -74,7 +74,8 @@ class CourseController extends Controller
         $categories = Category::all();
 
         $sessionsQuery = CourseSession::with(['course.category'])
-            ->orderBy('start_date', 'asc');
+            ->orderBy('start_date', 'asc')
+            ->orderBy('id', 'asc');
 
         if ($selectedCategory) {
             $sessionsQuery->whereHas('course.category', function ($q) use ($selectedCategory) {
