@@ -51,7 +51,7 @@ class WebsiteBlueprintTest extends TestCase
     {
         $response = $this->get('/jadwal');
         $response->assertStatus(200);
-        $response->assertSee('Jadwal & Cohort Pelatihan');
+        $response->assertSee('Jadwal Pelatihan');
     }
 
     public function test_corporate_page_loads(): void

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\CourseSession;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class HomeController extends Controller
@@ -11,7 +12,7 @@ class HomeController extends Controller
     /**
      * Show the homepage based on Slide 1 to 5 specifications.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
         $categories = Category::query()
             ->withCount(['courses' => fn ($query) => $query->where('status', 'Publish')])
@@ -22,8 +23,12 @@ class HomeController extends Controller
         $upcomingSessions = CourseSession::with(['course.category'])
             ->withCount('registrations')
             ->orderBy('start_date', 'asc')
-            ->take(6)
-            ->get();
+            ->paginate(10, ['*'], 'home_page')
+            ->withQueryString();
+
+        if ($request->ajax()) {
+            return view('home.partials.training-schedule', compact('upcomingSessions'));
+        }
 
         return view('home', compact('categories', 'upcomingSessions'));
     }

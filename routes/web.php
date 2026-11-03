@@ -22,7 +22,7 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/pelatihan', [CourseController::class, 'index'])->name('courses.index');
 Route::get('/pelatihan/{slug}', [CourseController::class, 'show'])->name('courses.show');
 
-// Slide 3 & 10: Jadwal & Cohort
+// Slide 3 & 10: Jadwal Pelatihan
 Route::get('/jadwal', [CourseController::class, 'schedule'])->name('courses.schedule');
 
 // Slide 3 & 12: Layanan B2B Corporate & In-House Training

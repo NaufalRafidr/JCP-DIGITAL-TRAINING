@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Jadwal & Cohort Pelatihan • JCP Training')
+@section('title', 'Jadwal Pelatihan • JCP Training')
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
@@ -13,7 +13,7 @@
                 <span class="text-[#087F78]">Jadwal Pelatihan</span>
             </div>
             <h1 class="text-3xl sm:text-4xl font-extrabold text-[#10243A] tracking-tight">
-                Jadwal & Cohort Pelatihan
+                Jadwal Pelatihan
             </h1>
             <p class="text-slate-600 text-sm mt-1">
                 Jadwal terintegrasi sistem: kuota dinamis, lokasi terverifikasi, dan status pendaftaran real-time.

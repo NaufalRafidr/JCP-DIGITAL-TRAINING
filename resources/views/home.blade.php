@@ -150,7 +150,7 @@
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
                 <div>
                     <span class="text-xs font-bold uppercase tracking-wider text-[#087F78] block mb-1">
-                        09 / Jadwal & Cohort
+                        09 / Jadwal Pelatihan
                     </span>
                     <h2 class="text-2xl sm:text-3xl font-extrabold text-[#10243A] tracking-tight">
                         Jadwal Pelatihan
@@ -160,17 +160,15 @@
                     </p>
                 </div>
 
-                <!-- Kategori Filter Badge & Link Kalender (Slide 10) -->
+                <!-- Kategori Jadwal -->
                 <div class="flex items-center gap-3">
                     <span class="inline-flex items-center px-4 py-2 rounded-full text-xs font-bold bg-[#E2F6F2] text-[#087F78]">
                         Semua kategori
                     </span>
-                    <a href="{{ route('courses.schedule') }}" class="text-xs font-bold text-slate-600 hover:text-[#087F78] underline">
-                        Lihat semua jadwal &rarr;
-                    </a>
                 </div>
             </div>
 
+            <div id="home-training-schedule" data-home-schedule>
             <!-- Tabel Jadwal Pelatihan (Slide 10 Table Layout) -->
             <div class="overflow-x-auto rounded-2xl border border-slate-200">
                 <table class="w-full text-left border-collapse">
@@ -184,7 +182,7 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 text-sm">
-                        @foreach($upcomingSessions as $session)
+                        @forelse($upcomingSessions as $session)
                             <tr class="hover:bg-slate-50/80 transition-colors">
                                 
                                 <!-- Kolom Batch / Jadwal -->
@@ -253,9 +251,22 @@
                                 </td>
 
                             </tr>
-                        @endforeach
+                        @empty
+                            <tr>
+                                <td colspan="5" class="px-6 py-10 text-center text-sm text-slate-500">
+                                    Belum ada jadwal pelatihan yang tersedia.
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
+            </div>
+
+            @if($upcomingSessions->hasPages())
+                <div data-home-schedule-pagination class="border-t border-slate-100 pt-6">
+                    {{ $upcomingSessions->links() }}
+                </div>
+            @endif
             </div>
 
             <!-- Footer Catatan Jadwal -->
