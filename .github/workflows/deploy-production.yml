@@ -141,6 +141,8 @@ jobs:
         run: |
           set -Eeuo pipefail
           curl --fail --silent --show-error --location --head "$APP_URL"
+          schedule_page="$(curl --fail --silent --show-error --location "$APP_URL/jadwal")"
+          grep -q 'Bidang' <<< "$schedule_page"
 
       - name: Publish deployment summary
         if: always()
