@@ -24,6 +24,11 @@
     </style>
 </head>
 <body class="flex flex-col min-h-screen bg-brand-ivory text-[#10243A] antialiased">
+    @php
+        $homeAnchor = request()->routeIs('home') ? '#home-top' : route('home').'#home-top';
+        $scheduleAnchor = request()->routeIs('home') ? '#home-training-schedule' : route('home').'#home-training-schedule';
+    @endphp
+    <div id="home-top" aria-hidden="true"></div>
 
     <!-- ========================================================
          NAVBAR: Persis sesuai gambar referensi (Slide 4 Desktop 1440px)
@@ -36,7 +41,7 @@
                 
                 <!-- Logo: JCP TRAINING -->
                 <div class="min-w-0 flex-1">
-                    <a href="{{ route('home') }}" class="inline-flex min-w-0 items-center gap-2 font-extrabold text-base leading-[1.05] tracking-tight text-[#10243A] transition-opacity hover:opacity-90 sm:gap-3 sm:text-2xl">
+                    <a href="{{ $homeAnchor }}" class="inline-flex min-w-0 items-center gap-2 font-extrabold text-base leading-[1.05] tracking-tight text-[#10243A] transition-opacity hover:opacity-90 sm:gap-3 sm:text-2xl">
                         <img src="{{ asset('images/logo-jcp.png') }}" alt="" aria-hidden="true" class="h-9 w-9 shrink-0 object-contain sm:h-10 sm:w-10">
                         <span class="min-w-0">
                             <span class="block sm:inline">JCP</span>
@@ -47,7 +52,7 @@
 
                 <!-- Desktop Nav Items: Beranda, Pelatihan⌄, Jadwal, Corporate, Artikel, Tentang -->
                 <nav class="hidden lg:flex items-center gap-7 lg:gap-9 text-[15px] font-semibold text-slate-700">
-                    <a href="{{ route('home') }}" class="hover:text-[#087F78] transition-colors {{ request()->routeIs('home') ? 'text-slate-800' : 'text-slate-600' }}">
+                    <a href="{{ $homeAnchor }}" class="hover:text-[#087F78] transition-colors {{ request()->routeIs('home') ? 'text-slate-800' : 'text-slate-600' }}">
                         Beranda
                     </a>
 
@@ -103,7 +108,7 @@
                         </div>
                     </div>
 
-                    <a href="{{ route('courses.schedule') }}" class="hover:text-[#087F78] transition-colors {{ request()->routeIs('courses.schedule') ? 'text-[#087F78]' : 'text-slate-600' }}">
+                    <a href="{{ $scheduleAnchor }}" class="text-slate-600 hover:text-[#087F78] transition-colors">
                         Jadwal
                     </a>
                     <a href="{{ route('corporate') }}" class="hover:text-[#087F78] transition-colors {{ request()->routeIs('corporate') ? 'text-[#087F78]' : 'text-slate-600' }}">
@@ -139,7 +144,7 @@
 
             <!-- Mobile Drawer Menu (Slide 4 Mobile) -->
             <div id="mobile-menu" class="hidden lg:hidden mt-2 bg-white rounded-2xl border border-slate-200 shadow-xl p-5 space-y-3">
-                <a href="{{ route('home') }}" class="block text-sm font-semibold text-slate-800 py-1">Beranda</a>
+                <a href="{{ $homeAnchor }}" class="block text-sm font-semibold text-slate-800 py-1">Beranda</a>
                 <div class="pt-2 border-t border-slate-100">
                     <span class="block text-xs font-bold text-[#087F78] uppercase mb-2">Pelatihan:</span>
                     <div class="space-y-2 pl-2 text-xs text-slate-600">
@@ -151,7 +156,7 @@
                     </div>
                 </div>
                 <div class="pt-2 border-t border-slate-100 space-y-2">
-                    <a href="{{ route('courses.schedule') }}" class="block text-sm font-semibold text-slate-800">Jadwal</a>
+                    <a href="{{ $scheduleAnchor }}" class="block text-sm font-semibold text-slate-800">Jadwal</a>
                     <a href="{{ route('corporate') }}" class="block text-sm font-semibold text-slate-800">Corporate</a>
                     <a href="{{ route('gallery.index') }}" class="block text-sm font-semibold text-slate-800">Galeri</a>
                     <a href="{{ route('artikel') }}" class="block text-sm font-semibold text-slate-800">Artikel</a>

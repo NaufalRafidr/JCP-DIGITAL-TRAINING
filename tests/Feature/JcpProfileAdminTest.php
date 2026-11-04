@@ -3,6 +3,8 @@
 use App\Models\JcpProfile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -45,6 +47,42 @@ it('does not show profile statistics fields in the admin profile form', function
         ->assertOk()
         ->assertDontSee('Statistik profil')
         ->assertDontSee('name="programs_stat"', false);
+});
+
+it('stores and replaces the homepage hero image from the admin profile form', function () {
+    Storage::fake('public');
+    $admin = User::factory()->create(['is_admin' => true]);
+    $profile = JcpProfile::query()->firstOrFail();
+    $profilePayload = [
+        'organization_name' => $profile->organization_name,
+        'tagline' => $profile->tagline,
+        'vision_title' => $profile->vision_title,
+        'vision_content' => $profile->vision_content,
+    ];
+
+    $createResponse = $this->actingAs($admin)->put(route('admin.profile.update'), [
+        ...$profilePayload,
+        'hero_image' => UploadedFile::fake()->image('homepage-hero.jpg'),
+    ]);
+
+    $firstImagePath = $profile->refresh()->hero_image;
+
+    $createResponse->assertRedirect(route('admin.dashboard', ['tab' => 'profil']));
+    Storage::disk('public')->assertExists($firstImagePath);
+
+    $updateResponse = $this->actingAs($admin)->put(route('admin.profile.update'), [
+        ...$profilePayload,
+        'hero_image' => UploadedFile::fake()->image('homepage-hero-new.jpg'),
+    ]);
+
+    $updatedProfile = $profile->refresh();
+
+    $updateResponse->assertRedirect(route('admin.dashboard', ['tab' => 'profil']));
+    Storage::disk('public')->assertMissing($firstImagePath);
+    Storage::disk('public')->assertExists($updatedProfile->hero_image);
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee(Storage::disk('public')->url($updatedProfile->hero_image), false);
 });
 
 it('forbids non-admin users from updating the JCP profile', function () {

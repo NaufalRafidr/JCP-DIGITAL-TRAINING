@@ -286,7 +286,7 @@
                     <p class="mt-2 text-sm text-slate-500">Perbarui informasi yang tampil pada halaman Tentang untuk pengguna.</p>
                 </div>
 
-                <form action="{{ route('admin.profile.update') }}" method="POST" class="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                <form action="{{ route('admin.profile.update') }}" method="POST" enctype="multipart/form-data" class="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
                     @csrf
                     @method('PUT')
 
@@ -298,6 +298,33 @@
                         <div class="sm:col-span-2">
                             <label for="tagline" class="mb-1 block text-sm font-semibold text-slate-700">Deskripsi singkat</label>
                             <textarea id="tagline" name="tagline" rows="3" maxlength="500" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">{{ old('tagline', $jcpProfile->tagline) }}</textarea>
+                        </div>
+                        <div class="sm:col-span-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 sm:p-5">
+                            <div class="mb-4">
+                                <label class="block text-sm font-semibold text-slate-700">Gambar hero beranda</label>
+                                <p class="mt-1 text-xs leading-relaxed text-slate-500">Gambar ini tampil di banner utama beranda. Gunakan JPG, PNG, WEBP, atau AVIF maksimal 10 MB.</p>
+                            </div>
+
+                            @php
+                                $heroPreview = $jcpProfile->hero_image_url
+                                    ?: ($jcpProfile->hero_image
+                                        ? Storage::disk('public')->url($jcpProfile->hero_image)
+                                        : asset('images/jcp-hero-banner.jpg'));
+                            @endphp
+                            <img src="{{ $heroPreview }}" alt="Pratinjau gambar hero beranda" class="mb-4 h-40 w-full rounded-2xl border border-slate-200 object-cover object-center sm:h-52">
+
+                            <label for="hero_image" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Upload gambar baru</label>
+                            <input id="hero_image" name="hero_image" type="file" accept=".jpg,.jpeg,.png,.webp,.avif,image/jpeg,image/png,image/webp,image/avif" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-[#E2F6F2] file:px-3 file:py-2 file:font-semibold file:text-[#087F78]">
+
+                            <label for="hero_image_url" class="mt-4 mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Atau gunakan URL gambar</label>
+                            <input id="hero_image_url" name="hero_image_url" type="url" value="{{ old('hero_image_url', $jcpProfile->hero_image_url) }}" placeholder="https://contoh.com/gambar-hero.jpg" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+
+                            @if($jcpProfile->hero_image || $jcpProfile->hero_image_url)
+                                <label class="mt-4 flex items-center gap-2 text-sm font-semibold text-rose-600">
+                                    <input name="remove_hero_image" type="checkbox" value="1" class="h-4 w-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500">
+                                    Hapus gambar custom dan gunakan gambar default beranda
+                                </label>
+                            @endif
                         </div>
                         <div class="sm:col-span-2">
                             <label for="vision_title" class="mb-1 block text-sm font-semibold text-slate-700">Judul visi dan komitmen</label>

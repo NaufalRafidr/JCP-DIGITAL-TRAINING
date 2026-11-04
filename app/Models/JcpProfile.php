@@ -9,6 +9,8 @@ class JcpProfile extends Model
     protected $fillable = [
         'organization_name',
         'tagline',
+        'hero_image',
+        'hero_image_url',
         'vision_title',
         'vision_content',
         'programs_stat',

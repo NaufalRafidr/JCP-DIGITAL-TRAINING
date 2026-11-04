@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\CourseSession;
+use App\Models\JcpProfile;
 use Illuminate\View\View;
 
 class HomeController extends Controller
@@ -13,6 +14,7 @@ class HomeController extends Controller
      */
     public function index(): View
     {
+        $jcpProfile = JcpProfile::query()->firstOrFail();
         $categories = Category::query()
             ->withCount(['courses' => fn ($query) => $query->where('status', 'Publish')])
             ->orderBy('id')
@@ -25,6 +27,6 @@ class HomeController extends Controller
             ->orderBy('id', 'asc')
             ->get();
 
-        return view('home', compact('categories', 'upcomingSessions'));
+        return view('home', compact('categories', 'upcomingSessions', 'jcpProfile'));
     }
 }

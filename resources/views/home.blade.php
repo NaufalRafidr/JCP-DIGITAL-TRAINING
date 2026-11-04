@@ -3,6 +3,12 @@
 @section('title', 'JCP TRAINING • Skill baru, peluang baru.')
 
 @section('content')
+@php
+    $heroImage = $jcpProfile->hero_image_url
+        ?: ($jcpProfile->hero_image
+            ? Storage::disk('public')->url($jcpProfile->hero_image)
+            : asset('images/jcp-hero-banner.jpg'));
+@endphp
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-16 space-y-12 sm:space-y-16">
 
     <!-- ==========================================
@@ -13,7 +19,7 @@
         <!-- Background Illustration mencakup 5 Bidang Pelatihan dengan warna Navy, Teal, Mint & Amber yang mengalir dinamis -->
         <div class="absolute inset-0 z-0 pointer-events-none">
             <img 
-                src="{{ asset('images/jcp-hero-banner.jpg') }}" 
+                src="{{ $heroImage }}"
                 alt="JCP Training - 5 Bidang Pelatihan" 
                 class="w-full h-full object-cover object-center sm:object-right"
             >
@@ -98,7 +104,7 @@
             ];
         @endphp
 
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-5">
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
             @foreach($categories as $category)
                 @php
                     $categoryImage = $category->image_url
@@ -108,22 +114,66 @@
                 @endphp
                 <a
                     href="{{ route('courses.index', ['kategori' => $category->slug]) }}"
-                    class="category-btn group flex min-h-40 flex-col justify-between overflow-hidden rounded-3xl border border-slate-200 bg-white text-sm font-bold text-slate-700 shadow-xs transition-all hover:-translate-y-1 hover:border-[#087F78] hover:text-[#087F78] hover:shadow-md sm:min-h-48 sm:text-base"
+                    class="category-btn group relative isolate flex min-h-[390px] overflow-hidden rounded-[22px] border border-[#087F78]/70 bg-[#10243A] text-white shadow-lg transition-all hover:-translate-y-1 hover:border-[#E5AD49] hover:shadow-2xl sm:min-h-[430px]"
                 >
-                    <span class="relative block h-24 w-full overflow-hidden bg-[#10243A] sm:h-28">
-                        <img src="{{ $categoryImage }}" alt="Ilustrasi {{ $category->name }}" loading="lazy" decoding="async" class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
-                        <span class="absolute inset-0 bg-gradient-to-t from-[#10243A]/75 via-[#10243A]/10 to-transparent"></span>
+                    <img src="{{ $categoryImage }}" alt="Ilustrasi {{ $category->name }}" loading="lazy" decoding="async" class="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105">
+                    <span class="absolute inset-0 bg-gradient-to-t from-[#10243A]/80 via-[#10243A]/25 to-[#087F78]/10"></span>
+                    <span class="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-[#10243A]/95 via-[#10243A]/55 to-transparent sm:h-64"></span>
+                    <span class="relative z-10 mt-auto block w-full px-5 py-5 sm:px-6 sm:py-6">
+                        <span class="block text-center text-2xl font-extrabold uppercase leading-tight tracking-tight text-white sm:text-3xl">
+                            {{ $category->name }}
+                        </span>
                     </span>
-                    <span class="px-4 py-3 text-center sm:px-5 sm:py-4">{{ $category->short_name ?? $category->name }}</span>
                 </a>
             @endforeach
         </div>
     </section>
 
     <!-- ========================================================
+         04 / PAKET PELATIHAN & WISATA
+         ======================================================== -->
+    @php
+        $packageLink = config('services.whatsapp.admin_number')
+            ? 'https://wa.me/'.preg_replace('/\D+/', '', config('services.whatsapp.admin_number')).'?text='.rawurlencode('Halo Admin JCP Digital Training, saya tertarik dengan paket pelatihan dan wisata.')
+            : route('corporate');
+        $packageTarget = config('services.whatsapp.admin_number') ? '_blank' : '_self';
+    @endphp
+    <section class="relative isolate overflow-hidden rounded-[28px] bg-[#10243A] text-white shadow-xl sm:rounded-3xl">
+        <img
+            src="{{ asset('images/training-travel-package-banner.png') }}"
+            alt="Paket pelatihan dan wisata bersama JCP Digital Training"
+            loading="lazy"
+            decoding="async"
+            class="absolute inset-0 h-full w-full object-cover object-center sm:object-right"
+        >
+        <div class="absolute inset-0 -z-0 bg-gradient-to-r from-[#10243A]/95 via-[#10243A]/75 to-[#10243A]/15"></div>
+
+        <div class="relative z-10 max-w-2xl space-y-5 p-7 sm:p-10 lg:p-14">
+            <span class="inline-flex rounded-full border border-teal-300/30 bg-[#087F78]/90 px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-teal-50 shadow-sm sm:text-xs">
+                Paket pelatihan + wisata
+            </span>
+            <h2 class="max-w-xl text-2xl font-extrabold leading-tight tracking-tight sm:text-3xl lg:text-4xl">
+                Bikin liburanmu lebih meriah dengan pelatihan bersama JCP Digital Training
+            </h2>
+            <p class="max-w-lg text-sm leading-relaxed text-slate-200 sm:text-base">
+                Gabungkan pengalaman belajar, team building, dan eksplorasi destinasi dalam satu perjalanan yang berkesan.
+            </p>
+            <div class="flex flex-wrap gap-2 text-xs font-semibold text-teal-50">
+                <span class="rounded-full bg-white/10 px-3 py-1.5 ring-1 ring-white/15">Kelas praktis</span>
+                <span class="rounded-full bg-white/10 px-3 py-1.5 ring-1 ring-white/15">Custom itinerary</span>
+                <span class="rounded-full bg-white/10 px-3 py-1.5 ring-1 ring-white/15">Untuk tim & komunitas</span>
+            </div>
+            <a href="{{ $packageLink }}" target="{{ $packageTarget }}" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-xl bg-[#E5AD49] px-5 py-3 text-sm font-extrabold text-[#10243A] shadow-lg transition hover:bg-[#F1C36D] focus:outline-none focus:ring-2 focus:ring-[#E5AD49] focus:ring-offset-2 focus:ring-offset-[#10243A]">
+                Konsultasikan paket
+                <span aria-hidden="true">&rarr;</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- ========================================================
          05 / JADWAL & COHORT (Tepat sesuai Slide 5 Item 05 & Slide 10)
          ======================================================== -->
-    <section class="space-y-6 pt-6">
+    <section id="home-training-schedule" class="scroll-mt-28 space-y-6 pt-6">
         <div class="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-6 sm:p-10 space-y-6">
             
             <!-- Header Bagian Jadwal -->
@@ -148,7 +198,7 @@
                 </div>
             </div>
 
-            <div id="home-training-schedule" data-home-schedule data-schedule-page-size="10">
+            <div data-home-schedule data-schedule-page-size="10">
             <!-- Tabel Jadwal Pelatihan (Slide 10 Table Layout) -->
             <div class="overflow-x-auto rounded-2xl border border-slate-200">
                 <table class="w-full text-left border-collapse">
