@@ -28,17 +28,20 @@
     <!-- ========================================================
          NAVBAR: Persis sesuai gambar referensi (Slide 4 Desktop 1440px)
          ======================================================== -->
-    <header class="sticky top-0 z-50 bg-brand-ivory/95 backdrop-blur-md pt-4 sm:pt-6 pb-2 transition-all">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header class="sticky top-0 z-50 bg-brand-ivory/95 px-0 pt-3 backdrop-blur-md transition-all sm:pt-6">
+        <div class="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
             
             <!-- Navbar Card Container (Rounded Card dengan border halus) -->
-            <div class="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-sm px-6 sm:px-8 py-3.5 sm:py-4 flex items-center justify-between relative">
+            <div class="relative flex items-center justify-between gap-2 rounded-2xl border border-slate-200/90 bg-white px-3 py-3 shadow-sm sm:gap-4 sm:rounded-3xl sm:px-8 sm:py-4">
                 
                 <!-- Logo: JCP TRAINING -->
-                <div class="flex items-center">
-                    <a href="{{ route('home') }}" class="inline-flex items-center gap-2.5 font-extrabold text-xl tracking-tight text-[#10243A] transition-opacity hover:opacity-90 sm:gap-3 sm:text-2xl">
-                        <img src="{{ asset('images/logo-jcp.png') }}" alt="" aria-hidden="true" class="h-8 w-8 shrink-0 object-contain sm:h-10 sm:w-10">
-                        <span>JCP <span class="tracking-normal">DIGITAL <span class="tracking-normal">TRAINING</span></span></span>
+                <div class="min-w-0 flex-1">
+                    <a href="{{ route('home') }}" class="inline-flex min-w-0 items-center gap-2 font-extrabold text-base leading-[1.05] tracking-tight text-[#10243A] transition-opacity hover:opacity-90 sm:gap-3 sm:text-2xl">
+                        <img src="{{ asset('images/logo-jcp.png') }}" alt="" aria-hidden="true" class="h-9 w-9 shrink-0 object-contain sm:h-10 sm:w-10">
+                        <span class="min-w-0">
+                            <span class="block sm:inline">JCP</span>
+                            <span class="block tracking-normal sm:ml-1 sm:inline">DIGITAL TRAINING</span>
+                        </span>
                     </a>
                 </div>
 
@@ -118,14 +121,15 @@
                 </nav>
 
                 <!-- Tombol CTA: Daftar sekarang -->
-                <div class="flex items-center gap-2 sm:gap-3">
-                    <a href="{{ route('register') }}" class="inline-flex h-12 shrink-0 items-center justify-center whitespace-nowrap rounded-2xl bg-[#087F78] px-5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#066761] sm:px-6">
-                        Daftar sekarang
+                <div class="flex shrink-0 items-center gap-1.5 sm:gap-3">
+                    <a href="{{ route('register') }}" class="inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-xl bg-[#087F78] px-3 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#066761] sm:h-12 sm:rounded-2xl sm:px-6 sm:text-sm">
+                        <span class="sm:hidden">Daftar</span>
+                        <span class="hidden sm:inline">Daftar sekarang</span>
                     </a>
                     
                     <!-- Mobile Hamburger (Slide 4 Mobile / 390px) -->
-                    <button type="button" id="mobile-menu-btn" class="lg:hidden p-2 text-slate-700 hover:text-[#10243A] rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center" aria-label="Buka Menu">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button type="button" id="mobile-menu-btn" class="flex h-10 w-10 items-center justify-center rounded-xl p-0 text-slate-700 hover:text-[#10243A] lg:hidden sm:h-11 sm:w-11 sm:rounded-lg sm:p-2" aria-label="Buka Menu">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                         </svg>
                     </button>
@@ -178,9 +182,9 @@
             rel="noopener noreferrer"
             aria-label="Hubungi Admin melalui WhatsApp"
             title="Chat Admin via WhatsApp"
-            class="fixed bottom-7 right-7 z-40 inline-flex h-16 w-16 items-center justify-center rounded-full border border-[#7DE8A4] bg-[#25D366] text-white shadow-[0_10px_30px_rgba(16,36,58,0.25)] transition-transform duration-200 hover:scale-105 hover:bg-[#20BD5A] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#25D366]/60 sm:bottom-8 sm:right-8 sm:h-[70px] sm:w-[70px]"
+            class="fixed bottom-5 right-4 z-40 inline-flex h-12 w-12 items-center justify-center rounded-full border border-[#7DE8A4] bg-[#25D366] text-white shadow-[0_10px_30px_rgba(16,36,58,0.25)] transition-transform duration-200 hover:scale-105 hover:bg-[#20BD5A] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#25D366]/60 sm:bottom-8 sm:right-8 sm:h-[70px] sm:w-[70px]"
         >
-            <svg class="h-8 w-8" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+            <svg class="h-6 w-6 sm:h-8 sm:w-8" viewBox="0 0 32 32" fill="none" aria-hidden="true">
                 <path fill="currentColor" d="M16 3.5a12.5 12.5 0 0 0-10.8 18.8L3.5 28.5l6.4-1.7A12.5 12.5 0 1 0 16 3.5Zm0 22.7c-2 0-3.9-.6-5.5-1.7l-.4-.3-3.8 1 1-3.7-.3-.4A10.2 10.2 0 1 1 16 26.2Zm5.6-7.7c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.5-1.6-.9-.8-1.6-1.8-1.8-2.1-.2-.3 0-.5.1-.7.1-.1.3-.4.5-.6.2-.2.2-.3.3-.5.1-.2 0-.4 0-.6 0-.2-.7-1.7-1-2.3-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.1 1.1-1.1 2.6s1.1 3 1.2 3.2c.2.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.3.2 1.8.1.5-.1 1.8-.7 2.1-1.4.3-.7.3-1.3.2-1.4-.1-.1-.3-.2-.6-.3Z"/>
             </svg>
         </a>
