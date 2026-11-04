@@ -153,8 +153,20 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          curl --fail --silent --show-error --location --head "$APP_URL"
-          schedule_page="$(curl --fail --silent --show-error --location "$APP_URL/jadwal")"
+          curl_options=(
+            --fail
+            --silent
+            --show-error
+            --location
+            --retry 12
+            --retry-delay 10
+            --retry-max-time 180
+            --retry-all-errors
+            --retry-connrefused
+          )
+
+          curl "${curl_options[@]}" --head "$APP_URL"
+          schedule_page="$(curl "${curl_options[@]}" "$APP_URL/jadwal")"
           if ! grep -q 'Bidang' <<< "$schedule_page"; then
               echo "Halaman /jadwal tidak memuat kolom Bidang." >&2
               exit 1
