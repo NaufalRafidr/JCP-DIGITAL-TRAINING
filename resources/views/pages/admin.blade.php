@@ -1627,8 +1627,13 @@
                         <textarea id="program_category_description" name="description" rows="3" maxlength="1000" placeholder="Deskripsi singkat bidang pelatihan ini" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">{{ old('_form_context') === 'training_category' ? old('description') : '' }}</textarea>
                     </div>
                     <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-4">
-                        <div id="addCategoryImagePreview" class="mb-3 hidden overflow-hidden rounded-xl border border-slate-200">
+                        <div id="addCategoryImagePreview" class="mb-3 hidden overflow-hidden rounded-xl border border-slate-200 bg-white">
+                            <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-3 py-2 text-xs font-semibold">
+                                <span class="text-slate-600">Pratinjau cover</span>
+                                <span data-category-image-preview-status class="rounded-full bg-amber-50 px-2 py-1 text-amber-700">Belum disimpan</span>
+                            </div>
                             <img id="addCategoryImagePreviewImage" src="" alt="Pratinjau ilustrasi bidang" class="h-32 w-full object-cover">
+                            <p data-category-image-preview-error class="hidden px-4 py-6 text-center text-xs font-semibold text-rose-700">Gambar tidak dapat dimuat. Periksa kembali link gambar.</p>
                         </div>
                         <label for="program_category_image" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Ilustrasi bidang</label>
                         <input id="program_category_image" name="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-2 file:font-semibold file:text-[#087F78]">
@@ -1674,8 +1679,13 @@
                         <textarea id="edit_category_description" name="description" rows="3" maxlength="1000" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none"></textarea>
                     </div>
                     <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-4">
-                        <div id="editCategoryImagePreview" class="mb-3 hidden overflow-hidden rounded-xl border border-slate-200">
+                        <div id="editCategoryImagePreview" class="mb-3 hidden overflow-hidden rounded-xl border border-slate-200 bg-white">
+                            <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-3 py-2 text-xs font-semibold">
+                                <span class="text-slate-600">Pratinjau cover</span>
+                                <span data-category-image-preview-status class="rounded-full bg-amber-50 px-2 py-1 text-amber-700">Belum disimpan</span>
+                            </div>
                             <img id="editCategoryImagePreviewImage" src="" alt="Pratinjau ilustrasi bidang" class="h-32 w-full object-cover">
+                            <p data-category-image-preview-error class="hidden px-4 py-6 text-center text-xs font-semibold text-rose-700">Gambar tidak dapat dimuat. Periksa kembali link gambar.</p>
                         </div>
                         <label for="edit_category_image" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Ganti ilustrasi</label>
                         <input id="edit_category_image" name="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-2 file:font-semibold file:text-[#087F78]">
@@ -2991,11 +3001,19 @@
         function closeAddGalleryFolderModal() {
             document.getElementById('addGalleryFolderModal').classList.add('hidden');
         }
-        function showCategoryImagePreview(preview, previewImage, source) {
+        function showCategoryImagePreview(preview, previewImage, source, status = 'Belum disimpan') {
             if (!preview || !previewImage || !source) {
                 return;
             }
 
+            const statusElement = preview.querySelector('[data-category-image-preview-status]');
+
+            if (statusElement) {
+                statusElement.textContent = status;
+            }
+
+            previewImage.classList.remove('hidden');
+            preview.querySelector('[data-category-image-preview-error]')?.classList.add('hidden');
             previewImage.src = source;
             preview.classList.remove('hidden');
         }
@@ -3005,6 +3023,8 @@
             }
 
             previewImage.removeAttribute('src');
+            previewImage.classList.remove('hidden');
+            preview.querySelector('[data-category-image-preview-error]')?.classList.add('hidden');
             preview.classList.add('hidden');
         }
         function previewCategoryImageFile(fileInput, preview, previewImage) {
@@ -3025,6 +3045,11 @@
         const addCategoryImagePreview = document.getElementById('addCategoryImagePreview');
         const addCategoryImagePreviewImage = document.getElementById('addCategoryImagePreviewImage');
 
+        addCategoryImagePreviewImage?.addEventListener('error', () => {
+            addCategoryImagePreviewImage.classList.add('hidden');
+            addCategoryImagePreview.querySelector('[data-category-image-preview-error]')?.classList.remove('hidden');
+        });
+
         addCategoryImageInput?.addEventListener('change', () => {
             if (previewCategoryImageFile(addCategoryImageInput, addCategoryImagePreview, addCategoryImagePreviewImage)) {
                 addCategoryImageUrlInput.value = '';
@@ -3034,7 +3059,7 @@
                 hideCategoryImagePreview(addCategoryImagePreview, addCategoryImagePreviewImage);
             }
         });
-        addCategoryImageUrlInput?.addEventListener('change', () => {
+        addCategoryImageUrlInput?.addEventListener('input', () => {
             const imageUrl = addCategoryImageUrlInput.value.trim();
 
             if (imageUrl) {
@@ -3045,11 +3070,20 @@
             }
         });
 
+        if (addCategoryImageUrlInput?.value.trim()) {
+            showCategoryImagePreview(addCategoryImagePreview, addCategoryImagePreviewImage, addCategoryImageUrlInput.value.trim());
+        }
+
         const editCategoryImageInput = document.getElementById('edit_category_image');
         const editCategoryImageUrlInput = document.getElementById('edit_category_image_url');
         const editCategoryRemoveImageInput = document.getElementById('edit_category_remove_image');
         const editCategoryImagePreview = document.getElementById('editCategoryImagePreview');
         const editCategoryImagePreviewImage = document.getElementById('editCategoryImagePreviewImage');
+
+        editCategoryImagePreviewImage?.addEventListener('error', () => {
+            editCategoryImagePreviewImage.classList.add('hidden');
+            editCategoryImagePreview.querySelector('[data-category-image-preview-error]')?.classList.remove('hidden');
+        });
 
         editCategoryImageInput?.addEventListener('change', () => {
             if (previewCategoryImageFile(editCategoryImageInput, editCategoryImagePreview, editCategoryImagePreviewImage)) {
@@ -3058,12 +3092,12 @@
             } else if (editCategoryImageUrlInput.value.trim()) {
                 showCategoryImagePreview(editCategoryImagePreview, editCategoryImagePreviewImage, editCategoryImageUrlInput.value.trim());
             } else if (editCategoryImagePreviewImage.dataset.originalSource) {
-                showCategoryImagePreview(editCategoryImagePreview, editCategoryImagePreviewImage, editCategoryImagePreviewImage.dataset.originalSource);
+                showCategoryImagePreview(editCategoryImagePreview, editCategoryImagePreviewImage, editCategoryImagePreviewImage.dataset.originalSource, 'Gambar saat ini');
             } else {
                 hideCategoryImagePreview(editCategoryImagePreview, editCategoryImagePreviewImage);
             }
         });
-        editCategoryImageUrlInput?.addEventListener('change', () => {
+        editCategoryImageUrlInput?.addEventListener('input', () => {
             const imageUrl = editCategoryImageUrlInput.value.trim();
 
             if (imageUrl) {
@@ -3074,7 +3108,7 @@
                 const originalSource = editCategoryImagePreviewImage.dataset.originalSource;
 
                 if (originalSource) {
-                    showCategoryImagePreview(editCategoryImagePreview, editCategoryImagePreviewImage, originalSource);
+                    showCategoryImagePreview(editCategoryImagePreview, editCategoryImagePreviewImage, originalSource, 'Gambar saat ini');
                 } else {
                     hideCategoryImagePreview(editCategoryImagePreview, editCategoryImagePreviewImage);
                 }
@@ -3086,7 +3120,7 @@
                 editCategoryImageUrlInput.value = '';
                 hideCategoryImagePreview(editCategoryImagePreview, editCategoryImagePreviewImage);
             } else if (editCategoryImagePreviewImage.dataset.originalSource) {
-                showCategoryImagePreview(editCategoryImagePreview, editCategoryImagePreviewImage, editCategoryImagePreviewImage.dataset.originalSource);
+                showCategoryImagePreview(editCategoryImagePreview, editCategoryImagePreviewImage, editCategoryImagePreviewImage.dataset.originalSource, 'Gambar saat ini');
             }
         });
 
@@ -3117,7 +3151,7 @@
             previewImage.dataset.originalSource = button.dataset.categoryImageUrl || '';
 
             if (button.dataset.categoryImageUrl) {
-                showCategoryImagePreview(preview, previewImage, button.dataset.categoryImageUrl);
+                showCategoryImagePreview(preview, previewImage, button.dataset.categoryImageUrl, 'Gambar saat ini');
             } else {
                 hideCategoryImagePreview(preview, previewImage);
             }
