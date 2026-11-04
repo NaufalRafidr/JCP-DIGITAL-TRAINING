@@ -218,7 +218,13 @@
                             </li>
                         @endif
                         <li>
-                            <a href="https://maps.app.goo.gl/Ywv2niYG4cKhykkJ7" target="_blank" rel="noopener noreferrer" class="flex items-start gap-2 hover:text-white">
+                            <a href="https://maps.app.goo.gl/Ywv2niYG4cKhykkJ7" target="_blank" rel="noopener noreferrer" class="flex items-start gap-2 hover:text-white [&>span:first-of-type]:hidden">
+                                <svg class="mt-0.5 h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path fill="#25D366" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Z" />
+                                    <path fill="#25D366" d="M5.2 6.2A7 7 0 0 0 5 9c0 2.1 1.2 4.6 2.6 6.9l3.1-3.1A4.1 4.1 0 0 1 8 9c0-1.1.4-2.1 1.1-2.9L5.2 6.2Z" />
+                                    <path fill="#25D366" d="m7.6 15.9 2.8 4.2L12 22s2.2-2.4 4.1-5.1l-3.5-3.5a4.1 4.1 0 0 1-5 2.5Z" />
+                                    <circle cx="12" cy="9" r="2.5" fill="#25D366" />
+                                </svg>
                                 <span class="mt-0.5 text-[#25D366]" aria-hidden="true">⌖</span>
                                 <span>Google Maps</span>
                             </a>

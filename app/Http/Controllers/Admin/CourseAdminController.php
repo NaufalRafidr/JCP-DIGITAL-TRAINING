@@ -26,6 +26,8 @@ class CourseAdminController extends Controller
             'name' => ['required', 'string', 'max:100', Rule::unique('categories', 'name')],
             'short_name' => ['nullable', 'string', 'max:50'],
             'description' => ['nullable', 'string', 'max:1000'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,avif', 'max:10240'],
+            'image_url' => ['nullable', 'url', 'max:2048'],
         ]);
 
         $baseSlug = Str::slug($validated['name']) ?: 'bidang-pelatihan';
@@ -36,11 +38,15 @@ class CourseAdminController extends Controller
             $slug = $baseSlug.'-'.$counter++;
         }
 
+        $imagePath = $this->storeCategoryImage($validated['image'] ?? null);
+
         Category::create([
             'name' => $validated['name'],
             'slug' => $slug,
             'short_name' => $validated['short_name'] ?? null,
             'description' => $validated['description'] ?? null,
+            'image' => $imagePath,
+            'image_url' => $imagePath === null ? ($validated['image_url'] ?? null) : null,
             'is_gallery' => true,
         ]);
 
@@ -50,12 +56,66 @@ class CourseAdminController extends Controller
     }
 
     /**
+     * Update bidang pelatihan beserta ilustrasi yang ditampilkan di beranda.
+     */
+    public function updateCategory(Request $request, Category $category): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:100', Rule::unique('categories', 'name')->ignore($category)],
+            'short_name' => ['nullable', 'string', 'max:50'],
+            'description' => ['nullable', 'string', 'max:1000'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,avif', 'max:10240'],
+            'image_url' => ['nullable', 'url', 'max:2048'],
+            'remove_image' => ['nullable', 'boolean'],
+        ]);
+
+        $oldImagePath = null;
+        $imagePath = $category->image;
+        $imageUrl = $category->image_url;
+
+        if (isset($validated['image'])) {
+            $oldImagePath = $category->image;
+            $imagePath = $this->storeCategoryImage($validated['image']);
+            $imageUrl = null;
+        } elseif (array_key_exists('image_url', $validated) && $validated['image_url'] !== null) {
+            $oldImagePath = $category->image;
+            $imagePath = null;
+            $imageUrl = $validated['image_url'];
+        } elseif ($request->boolean('remove_image')) {
+            $oldImagePath = $category->image;
+            $imagePath = null;
+            $imageUrl = null;
+        }
+
+        $category->update([
+            'name' => $validated['name'],
+            'short_name' => $validated['short_name'] ?? null,
+            'description' => $validated['description'] ?? null,
+            'image' => $imagePath,
+            'image_url' => $imageUrl,
+        ]);
+
+        if ($oldImagePath !== null) {
+            Storage::disk('public')->delete($oldImagePath);
+        }
+
+        return redirect()
+            ->route('admin.dashboard', ['tab' => 'bidang'])
+            ->with('success', 'Bidang pelatihan "'.$validated['name'].'" berhasil diperbarui.');
+    }
+
+    /**
      * Hapus bidang pelatihan beserta data program yang dimilikinya.
      */
     public function destroyCategory(Category $category): RedirectResponse
     {
         $name = $category->name;
+        $imagePath = $category->image;
         $category->delete();
+
+        if ($imagePath !== null) {
+            Storage::disk('public')->delete($imagePath);
+        }
 
         return redirect()
             ->route('admin.dashboard', ['tab' => 'bidang'])
@@ -279,6 +339,19 @@ class CourseAdminController extends Controller
         $path = $image->store('courses', 'public');
 
         abort_if($path === false, 500, 'Gambar program gagal disimpan.');
+
+        return $path;
+    }
+
+    private function storeCategoryImage(?UploadedFile $image): ?string
+    {
+        if ($image === null) {
+            return null;
+        }
+
+        $path = $image->store('categories', 'public');
+
+        abort_if($path === false, 500, 'Gambar bidang pelatihan gagal disimpan.');
 
         return $path;
     }

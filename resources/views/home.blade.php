@@ -88,53 +88,33 @@
             Pilih bidang pelatihan
         </h2>
 
+        @php
+            $categoryDefaultImages = [
+                'photo-video' => asset('images/category-photo-video.png'),
+                'digital-marketing' => asset('images/category-digital-marketing.png'),
+                'artificial-intelligence' => asset('images/category-artificial-intelligence.png'),
+                'drone-technology' => asset('images/category-drone-technology.png'),
+                'information-technology' => asset('images/category-information-technology.png'),
+            ];
+        @endphp
+
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-5">
             @foreach($categories as $category)
+                @php
+                    $categoryImage = $category->image_url
+                        ?: ($category->image
+                            ? Storage::disk('public')->url($category->image)
+                            : ($categoryDefaultImages[$category->slug] ?? asset('images/hero-bg-alt.jpg')));
+                @endphp
                 <a
                     href="{{ route('courses.index', ['kategori' => $category->slug]) }}"
-                    class="category-btn flex min-h-40 flex-col items-center justify-between rounded-3xl border border-slate-200 bg-white p-4 text-sm font-bold text-slate-700 shadow-xs transition-all hover:-translate-y-1 hover:border-[#087F78] hover:text-[#087F78] hover:shadow-md sm:min-h-48 sm:p-5 sm:text-base"
+                    class="category-btn group flex min-h-40 flex-col justify-between overflow-hidden rounded-3xl border border-slate-200 bg-white text-sm font-bold text-slate-700 shadow-xs transition-all hover:-translate-y-1 hover:border-[#087F78] hover:text-[#087F78] hover:shadow-md sm:min-h-48 sm:text-base"
                 >
-                    <span class="flex h-24 w-full items-center justify-center rounded-2xl bg-[#F1FBF9] text-[#087F78] sm:h-28">
-                        @if($category->slug === 'photo-video')
-                            <svg class="h-16 w-16" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-                                <rect x="8" y="18" width="48" height="32" rx="7" stroke="currentColor" stroke-width="3" />
-                                <path d="M20 18l4-7h16l4 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-                                <circle cx="32" cy="34" r="10" stroke="currentColor" stroke-width="3" />
-                                <path d="M32 29v10l7-5-7-5Z" fill="currentColor" />
-                            </svg>
-                        @elseif($category->slug === 'digital-marketing')
-                            <svg class="h-16 w-16" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-                                <path d="M10 29h13l22-11v28L23 35H10V29Z" stroke="currentColor" stroke-width="3" stroke-linejoin="round" />
-                                <path d="M23 35l4 16h-8l-4-16M52 25c3 3 3 11 0 14" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
-                                <path d="M13 22l5-5 6 4 9-10" stroke="#E5AD49" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                        @elseif($category->slug === 'artificial-intelligence')
-                            <svg class="h-16 w-16" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-                                <rect x="12" y="16" width="40" height="34" rx="9" stroke="currentColor" stroke-width="3" />
-                                <circle cx="25" cy="31" r="3" fill="currentColor" />
-                                <circle cx="39" cy="31" r="3" fill="currentColor" />
-                                <path d="M24 41c4 3 12 3 16 0M32 16V9M28 9h8" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
-                                <path d="M7 25v7M57 25v7" stroke="#E5AD49" stroke-width="3" stroke-linecap="round" />
-                            </svg>
-                        @elseif($category->slug === 'drone-technology')
-                            <svg class="h-16 w-16" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-                                <rect x="25" y="25" width="14" height="14" rx="4" stroke="currentColor" stroke-width="3" />
-                                <path d="M25 29H15M39 29h10M25 35H15M39 35h10M15 24v10M49 24v10" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
-                                <path d="M9 20c4-4 10-4 14 0M41 20c4-4 10-4 14 0M9 44c4 4 10 4 14 0M41 44c4 4 10 4 14 0" stroke="#E5AD49" stroke-width="3" stroke-linecap="round" />
-                            </svg>
-                        @elseif($category->slug === 'information-technology')
-                            <svg class="h-16 w-16" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-                                <rect x="9" y="12" width="46" height="31" rx="4" stroke="currentColor" stroke-width="3" />
-                                <path d="M5 52h54M25 52l3-9h8l3 9M25 27l-5 5 5 5M39 27l5 5-5 5M35 25l-6 14" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                        @else
-                            <svg class="h-16 w-16" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-                                <circle cx="32" cy="32" r="19" stroke="currentColor" stroke-width="3" />
-                                <path d="M32 21v22M21 32h22" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
-                            </svg>
-                        @endif
+                    <span class="relative block h-24 w-full overflow-hidden bg-[#10243A] sm:h-28">
+                        <img src="{{ $categoryImage }}" alt="Ilustrasi {{ $category->name }}" loading="lazy" decoding="async" class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
+                        <span class="absolute inset-0 bg-gradient-to-t from-[#10243A]/75 via-[#10243A]/10 to-transparent"></span>
                     </span>
-                    <span>{{ $category->short_name ?? $category->name }}</span>
+                    <span class="px-4 py-3 text-center sm:px-5 sm:py-4">{{ $category->short_name ?? $category->name }}</span>
                 </a>
             @endforeach
         </div>

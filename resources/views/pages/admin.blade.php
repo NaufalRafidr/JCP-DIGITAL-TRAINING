@@ -75,6 +75,13 @@
         $galleryCategories = $galleryCategories ?? collect();
         $galleryFolders = $galleryFolders ?? collect();
         $selectedGalleryFolder = $selectedGalleryFolder ?? null;
+        $categoryDefaultImages = [
+            'photo-video' => asset('images/category-photo-video.png'),
+            'digital-marketing' => asset('images/category-digital-marketing.png'),
+            'artificial-intelligence' => asset('images/category-artificial-intelligence.png'),
+            'drone-technology' => asset('images/category-drone-technology.png'),
+            'information-technology' => asset('images/category-information-technology.png'),
+        ];
     @endphp
 
     <aside id="admin-sidebar" aria-label="Navigasi dashboard admin" class="fixed inset-y-0 left-0 z-40 flex h-screen w-72 max-w-[85vw] shrink-0 -translate-x-full flex-col justify-between overflow-y-auto bg-[#10243A] p-4 text-white shadow-lg transition-transform duration-200 ease-out lg:sticky lg:top-0 lg:w-64 lg:translate-x-0 lg:p-6">
@@ -1292,7 +1299,7 @@
             </div>
 
             <div class="mb-2 hidden grid-cols-12 px-8 py-3 text-sm font-bold tracking-tight text-[#10243A] md:grid">
-                <div class="col-span-5">Nama bidang</div>
+                <div class="col-span-5">Nama & ilustrasi</div>
                 <div class="col-span-2">Nama singkat</div>
                 <div class="col-span-2">Program</div>
                 <div class="col-span-2">Folder galeri</div>
@@ -1301,12 +1308,20 @@
 
             <div class="space-y-4">
                 @forelse($categories as $category)
+                    @php
+                        $categoryDefaultImage = $categoryDefaultImages[$category->slug] ?? asset('images/hero-bg-alt.jpg');
+                        $categoryImage = $category->image_url
+                            ?: ($category->image ? Storage::disk('public')->url($category->image) : $categoryDefaultImage);
+                    @endphp
                     <article class="rounded-2xl border border-slate-200/90 bg-white px-5 py-5 text-sm shadow-[0_1px_3px_rgba(0,0,0,0.03)] transition-all hover:border-[#087F78]/50 hover:shadow-md md:grid md:grid-cols-12 md:items-center md:px-8">
-                        <div class="min-w-0 md:col-span-5 md:pr-4">
-                            <p class="font-bold text-[#10243A]">{{ $category->name }}</p>
+                        <div class="flex min-w-0 items-center gap-3 md:col-span-5 md:pr-4">
+                            <img src="{{ $categoryImage }}" alt="Ilustrasi {{ $category->name }}" class="h-14 w-20 shrink-0 rounded-xl object-cover">
+                            <div class="min-w-0">
+                                <p class="font-bold text-[#10243A]">{{ $category->name }}</p>
                             @if($category->description)
                                 <p class="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-500">{{ $category->description }}</p>
                             @endif
+                            </div>
                         </div>
 
                         <div class="mt-3 text-slate-500 md:col-span-2 md:mt-0">
@@ -1325,6 +1340,20 @@
                         </div>
 
                         <div class="mt-3 flex items-center justify-end gap-2 md:col-span-1 md:mt-0">
+                            <button type="button"
+                                    data-category-id="{{ $category->id }}"
+                                    data-category-edit-url="{{ route('admin.categories.update', $category) }}"
+                                    data-category-name="{{ $category->name }}"
+                                    data-category-short-name="{{ $category->short_name }}"
+                                    data-category-description="{{ $category->description }}"
+                                    data-category-image-url="{{ $categoryImage }}"
+                                    onclick="openEditCategoryModal(this)"
+                                    title="Edit bidang pelatihan"
+                                    class="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-[#E2F6F2] hover:text-[#087F78]">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m16.862 4.487 1.651-1.651a2.121 2.121 0 0 1 3 3L8.25 19.099 3 21l1.901-5.25L16.862 4.487ZM15 6l3 3" />
+                                </svg>
+                            </button>
                             <form action="{{ route('admin.categories.destroy', $category) }}" method="POST" class="inline">
                                 @csrf
                                 @method('DELETE')
@@ -1546,7 +1575,7 @@
     <!-- Modal Tambah Bidang Pelatihan -->
     <div id="addCategoryModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs flex">
         <div class="w-full max-w-xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
-            <div class="space-y-6 p-6 sm:p-8">
+            <div class="max-h-[90vh] space-y-6 overflow-y-auto p-6 sm:p-8">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-4">
                     <div>
                         <h3 class="text-xl font-extrabold text-[#10243A]">Tambah bidang pelatihan</h3>
@@ -1555,7 +1584,7 @@
                     <button type="button" onclick="closeAddCategoryModal()" aria-label="Tutup" class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-lg font-bold leading-none text-slate-600 hover:bg-slate-200">&times;</button>
                 </div>
 
-                <form action="{{ route('admin.categories.store') }}" method="POST" class="space-y-4">
+                <form action="{{ route('admin.categories.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                     @csrf
                     <input type="hidden" name="_form_context" value="training_category">
                     <div>
@@ -1570,9 +1599,65 @@
                         <label for="program_category_description" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Deskripsi bidang</label>
                         <textarea id="program_category_description" name="description" rows="3" maxlength="1000" placeholder="Deskripsi singkat bidang pelatihan ini" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">{{ old('_form_context') === 'training_category' ? old('description') : '' }}</textarea>
                     </div>
+                    <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-4">
+                        <label for="program_category_image" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Ilustrasi bidang</label>
+                        <input id="program_category_image" name="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-2 file:font-semibold file:text-[#087F78]">
+                        <p class="mt-1 text-xs text-slate-500">Upload gambar maksimal 10 MB. Gambar ini tampil di kartu bidang pada beranda.</p>
+                        <input id="program_category_image_url" name="image_url" type="url" value="{{ old('_form_context') === 'training_category' ? old('image_url') : '' }}" maxlength="2048" placeholder="Atau masukkan URL gambar https://..." class="mt-3 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                    </div>
                     <div class="flex justify-end gap-3 border-t border-slate-100 pt-4">
                         <button type="button" onclick="closeAddCategoryModal()" class="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-100">Batal</button>
                         <button type="submit" class="rounded-xl bg-[#087F78] px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#066761]">Tambah bidang</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Edit Bidang Pelatihan -->
+    <div id="editCategoryModal" class="fixed inset-0 z-[80] hidden items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs" role="dialog" aria-modal="true" aria-labelledby="editCategoryTitle">
+        <div class="w-full max-w-xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+            <div class="max-h-[90vh] space-y-6 overflow-y-auto p-6 sm:p-8">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <div>
+                        <h3 id="editCategoryTitle" class="text-xl font-extrabold text-[#10243A]">Edit bidang pelatihan</h3>
+                        <p class="mt-1 text-xs text-slate-500">Ganti ilustrasi bidang yang tampil di beranda.</p>
+                    </div>
+                    <button type="button" onclick="closeEditCategoryModal()" aria-label="Tutup" class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-lg font-bold leading-none text-slate-600 hover:bg-slate-200">&times;</button>
+                </div>
+
+                <form id="editCategoryForm" action="" method="POST" enctype="multipart/form-data" class="space-y-4">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="_form_context" value="training_category_edit">
+                    <input id="edit_category_id" type="hidden" name="category_id" value="">
+                    <div>
+                        <label for="edit_category_name" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Nama bidang *</label>
+                        <input id="edit_category_name" name="name" required maxlength="100" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                    </div>
+                    <div>
+                        <label for="edit_category_short_name" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Nama singkat</label>
+                        <input id="edit_category_short_name" name="short_name" maxlength="50" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                    </div>
+                    <div>
+                        <label for="edit_category_description" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Deskripsi bidang</label>
+                        <textarea id="edit_category_description" name="description" rows="3" maxlength="1000" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none"></textarea>
+                    </div>
+                    <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-4">
+                        <div id="editCategoryImagePreview" class="mb-3 hidden overflow-hidden rounded-xl border border-slate-200">
+                            <img id="editCategoryImagePreviewImage" src="" alt="Pratinjau ilustrasi bidang" class="h-32 w-full object-cover">
+                        </div>
+                        <label for="edit_category_image" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Ganti ilustrasi</label>
+                        <input id="edit_category_image" name="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-2 file:font-semibold file:text-[#087F78]">
+                        <input id="edit_category_image_url" name="image_url" type="url" maxlength="2048" placeholder="Atau ganti dengan URL gambar https://..." class="mt-3 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                        <label class="mt-3 flex items-center gap-2 text-xs font-semibold text-rose-700">
+                            <input id="edit_category_remove_image" name="remove_image" value="1" type="checkbox" class="rounded border-slate-300 text-[#087F78] focus:ring-[#087F78]">
+                            Hapus ilustrasi dan gunakan gambar default beranda
+                        </label>
+                    </div>
+                    <div class="flex justify-end gap-3 border-t border-slate-100 pt-4">
+                        <button type="button" onclick="closeEditCategoryModal()" class="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-100">Batal</button>
+                        <button type="submit" class="rounded-xl bg-[#087F78] px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#066761]">Simpan perubahan</button>
                     </div>
                 </form>
             </div>
@@ -2882,6 +2967,45 @@
         function closeAddCategoryModal() {
             document.getElementById('addCategoryModal').classList.add('hidden');
         }
+        function openEditCategoryModal(button) {
+            const modal = document.getElementById('editCategoryModal');
+            const form = document.getElementById('editCategoryForm');
+            const preview = document.getElementById('editCategoryImagePreview');
+            const previewImage = document.getElementById('editCategoryImagePreviewImage');
+
+            if (!modal || !form || !button) {
+                return;
+            }
+
+            form.action = button.dataset.categoryEditUrl;
+            document.getElementById('edit_category_id').value = button.dataset.categoryId || '';
+            document.getElementById('edit_category_name').value = button.dataset.categoryName || '';
+            document.getElementById('edit_category_short_name').value = button.dataset.categoryShortName || '';
+            document.getElementById('edit_category_description').value = button.dataset.categoryDescription || '';
+            document.getElementById('edit_category_image_url').value = '';
+            document.getElementById('edit_category_remove_image').checked = false;
+
+            if (button.dataset.categoryImageUrl) {
+                previewImage.src = button.dataset.categoryImageUrl;
+                preview.classList.remove('hidden');
+            } else {
+                previewImage.src = '';
+                preview.classList.add('hidden');
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+        function closeEditCategoryModal() {
+            const modal = document.getElementById('editCategoryModal');
+
+            if (!modal) {
+                return;
+            }
+
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
         function openCategoryDeleteModal(button) {
             const modal = document.getElementById('categoryDeleteModal');
             const form = document.getElementById('categoryDeleteForm');
@@ -3333,6 +3457,7 @@
                 closeEditSessionModal();
                 closeAddGalleryFolderModal();
                 closeAddCategoryModal();
+                closeEditCategoryModal();
                 closeCategoryDeleteModal();
                 closeGalleryFolderDeleteModal();
                 closeGalleryFolderEditorDeleteModal();
@@ -3347,6 +3472,11 @@
             openAddGalleryFolderModal();
         @elseif(old('_form_context') === 'training_category')
             openAddCategoryModal();
+        @elseif(old('_form_context') === 'training_category_edit' && old('category_id'))
+            const categoryEditorButton = document.querySelector(`[data-category-id="{{ old('category_id') }}"]`);
+            if (categoryEditorButton) {
+                openEditCategoryModal(categoryEditorButton);
+            }
         @elseif(old('_form_context') === 'gallery_upload')
             openAddGalleryPhotosModal(@json(old('gallery_folder_id')));
         @endif

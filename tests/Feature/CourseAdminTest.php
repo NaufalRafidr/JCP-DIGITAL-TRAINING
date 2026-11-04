@@ -293,6 +293,60 @@ it('creates a shared training field that is available on the homepage and galler
         ->assertSee('Data');
 });
 
+it('stores and replaces a training field illustration used on the homepage', function () {
+    Storage::fake('public');
+    $admin = User::factory()->create(['is_admin' => true]);
+
+    $createResponse = $this->actingAs($admin)->post(route('admin.categories.store'), [
+        'name' => 'Ilustrasi Kreatif',
+        'short_name' => 'Kreatif',
+        'description' => 'Bidang dengan ilustrasi yang dapat dikelola admin.',
+        'image' => UploadedFile::fake()->image('creative-field.jpg'),
+        '_form_context' => 'training_category',
+    ]);
+
+    $category = Category::query()->where('slug', 'ilustrasi-kreatif')->firstOrFail();
+
+    $createResponse->assertRedirect(route('admin.dashboard', ['tab' => 'bidang']));
+    Storage::disk('public')->assertExists($category->image);
+
+    $oldImagePath = $category->image;
+    Storage::disk('public')->put($oldImagePath, 'old image');
+
+    $updateResponse = $this->actingAs($admin)->put(route('admin.categories.update', $category), [
+        'name' => 'Ilustrasi Kreatif',
+        'short_name' => 'Kreatif',
+        'description' => 'Ilustrasi bidang yang sudah diperbarui.',
+        'image' => UploadedFile::fake()->image('new-creative-field.jpg'),
+        '_form_context' => 'training_category_edit',
+        'category_id' => $category->id,
+    ]);
+
+    $updatedCategory = $category->refresh();
+
+    $updateResponse->assertRedirect(route('admin.dashboard', ['tab' => 'bidang']));
+    Storage::disk('public')->assertMissing($oldImagePath);
+    Storage::disk('public')->assertExists($updatedCategory->image);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee(Storage::disk('public')->url($updatedCategory->image), false)
+        ->assertSee('Kreatif');
+});
+
+it('uses a field-specific default illustration on the homepage', function () {
+    Category::create([
+        'name' => 'Artificial Intelligence',
+        'slug' => 'artificial-intelligence',
+        'short_name' => 'AI',
+    ]);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee(asset('images/category-artificial-intelligence.png'), false)
+        ->assertSee('AI');
+});
+
 it('deletes a training field from the field management page', function () {
     $admin = User::factory()->create(['is_admin' => true]);
     $category = Category::create([
