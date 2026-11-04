@@ -1627,6 +1627,9 @@
                         <textarea id="program_category_description" name="description" rows="3" maxlength="1000" placeholder="Deskripsi singkat bidang pelatihan ini" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">{{ old('_form_context') === 'training_category' ? old('description') : '' }}</textarea>
                     </div>
                     <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-4">
+                        <div id="addCategoryImagePreview" class="mb-3 hidden overflow-hidden rounded-xl border border-slate-200">
+                            <img id="addCategoryImagePreviewImage" src="" alt="Pratinjau ilustrasi bidang" class="h-32 w-full object-cover">
+                        </div>
                         <label for="program_category_image" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Ilustrasi bidang</label>
                         <input id="program_category_image" name="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-2 file:font-semibold file:text-[#087F78]">
                         <p class="mt-1 text-xs text-slate-500">Upload gambar maksimal 10 MB. Gambar ini tampil di kartu bidang pada beranda.</p>
@@ -2988,6 +2991,105 @@
         function closeAddGalleryFolderModal() {
             document.getElementById('addGalleryFolderModal').classList.add('hidden');
         }
+        function showCategoryImagePreview(preview, previewImage, source) {
+            if (!preview || !previewImage || !source) {
+                return;
+            }
+
+            previewImage.src = source;
+            preview.classList.remove('hidden');
+        }
+        function hideCategoryImagePreview(preview, previewImage) {
+            if (!preview || !previewImage) {
+                return;
+            }
+
+            previewImage.removeAttribute('src');
+            preview.classList.add('hidden');
+        }
+        function previewCategoryImageFile(fileInput, preview, previewImage) {
+            const file = fileInput?.files?.[0];
+
+            if (!file || !preview || !previewImage) {
+                return false;
+            }
+
+            const objectUrl = URL.createObjectURL(file);
+            previewImage.addEventListener('load', () => URL.revokeObjectURL(objectUrl), { once: true });
+            showCategoryImagePreview(preview, previewImage, objectUrl);
+
+            return true;
+        }
+        const addCategoryImageInput = document.getElementById('program_category_image');
+        const addCategoryImageUrlInput = document.getElementById('program_category_image_url');
+        const addCategoryImagePreview = document.getElementById('addCategoryImagePreview');
+        const addCategoryImagePreviewImage = document.getElementById('addCategoryImagePreviewImage');
+
+        addCategoryImageInput?.addEventListener('change', () => {
+            if (previewCategoryImageFile(addCategoryImageInput, addCategoryImagePreview, addCategoryImagePreviewImage)) {
+                addCategoryImageUrlInput.value = '';
+            } else if (addCategoryImageUrlInput.value.trim()) {
+                showCategoryImagePreview(addCategoryImagePreview, addCategoryImagePreviewImage, addCategoryImageUrlInput.value.trim());
+            } else {
+                hideCategoryImagePreview(addCategoryImagePreview, addCategoryImagePreviewImage);
+            }
+        });
+        addCategoryImageUrlInput?.addEventListener('change', () => {
+            const imageUrl = addCategoryImageUrlInput.value.trim();
+
+            if (imageUrl) {
+                addCategoryImageInput.value = '';
+                showCategoryImagePreview(addCategoryImagePreview, addCategoryImagePreviewImage, imageUrl);
+            } else if (!previewCategoryImageFile(addCategoryImageInput, addCategoryImagePreview, addCategoryImagePreviewImage)) {
+                hideCategoryImagePreview(addCategoryImagePreview, addCategoryImagePreviewImage);
+            }
+        });
+
+        const editCategoryImageInput = document.getElementById('edit_category_image');
+        const editCategoryImageUrlInput = document.getElementById('edit_category_image_url');
+        const editCategoryRemoveImageInput = document.getElementById('edit_category_remove_image');
+        const editCategoryImagePreview = document.getElementById('editCategoryImagePreview');
+        const editCategoryImagePreviewImage = document.getElementById('editCategoryImagePreviewImage');
+
+        editCategoryImageInput?.addEventListener('change', () => {
+            if (previewCategoryImageFile(editCategoryImageInput, editCategoryImagePreview, editCategoryImagePreviewImage)) {
+                editCategoryImageUrlInput.value = '';
+                editCategoryRemoveImageInput.checked = false;
+            } else if (editCategoryImageUrlInput.value.trim()) {
+                showCategoryImagePreview(editCategoryImagePreview, editCategoryImagePreviewImage, editCategoryImageUrlInput.value.trim());
+            } else if (editCategoryImagePreviewImage.dataset.originalSource) {
+                showCategoryImagePreview(editCategoryImagePreview, editCategoryImagePreviewImage, editCategoryImagePreviewImage.dataset.originalSource);
+            } else {
+                hideCategoryImagePreview(editCategoryImagePreview, editCategoryImagePreviewImage);
+            }
+        });
+        editCategoryImageUrlInput?.addEventListener('change', () => {
+            const imageUrl = editCategoryImageUrlInput.value.trim();
+
+            if (imageUrl) {
+                editCategoryImageInput.value = '';
+                editCategoryRemoveImageInput.checked = false;
+                showCategoryImagePreview(editCategoryImagePreview, editCategoryImagePreviewImage, imageUrl);
+            } else if (!previewCategoryImageFile(editCategoryImageInput, editCategoryImagePreview, editCategoryImagePreviewImage)) {
+                const originalSource = editCategoryImagePreviewImage.dataset.originalSource;
+
+                if (originalSource) {
+                    showCategoryImagePreview(editCategoryImagePreview, editCategoryImagePreviewImage, originalSource);
+                } else {
+                    hideCategoryImagePreview(editCategoryImagePreview, editCategoryImagePreviewImage);
+                }
+            }
+        });
+        editCategoryRemoveImageInput?.addEventListener('change', () => {
+            if (editCategoryRemoveImageInput.checked) {
+                editCategoryImageInput.value = '';
+                editCategoryImageUrlInput.value = '';
+                hideCategoryImagePreview(editCategoryImagePreview, editCategoryImagePreviewImage);
+            } else if (editCategoryImagePreviewImage.dataset.originalSource) {
+                showCategoryImagePreview(editCategoryImagePreview, editCategoryImagePreviewImage, editCategoryImagePreviewImage.dataset.originalSource);
+            }
+        });
+
         function openAddCategoryModal() {
             document.getElementById('addCategoryModal').classList.remove('hidden');
         }
@@ -3009,15 +3111,15 @@
             document.getElementById('edit_category_name').value = button.dataset.categoryName || '';
             document.getElementById('edit_category_short_name').value = button.dataset.categoryShortName || '';
             document.getElementById('edit_category_description').value = button.dataset.categoryDescription || '';
-            document.getElementById('edit_category_image_url').value = '';
-            document.getElementById('edit_category_remove_image').checked = false;
+            editCategoryImageInput.value = '';
+            editCategoryImageUrlInput.value = '';
+            editCategoryRemoveImageInput.checked = false;
+            previewImage.dataset.originalSource = button.dataset.categoryImageUrl || '';
 
             if (button.dataset.categoryImageUrl) {
-                previewImage.src = button.dataset.categoryImageUrl;
-                preview.classList.remove('hidden');
+                showCategoryImagePreview(preview, previewImage, button.dataset.categoryImageUrl);
             } else {
-                previewImage.src = '';
-                preview.classList.add('hidden');
+                hideCategoryImagePreview(preview, previewImage);
             }
 
             modal.classList.remove('hidden');
