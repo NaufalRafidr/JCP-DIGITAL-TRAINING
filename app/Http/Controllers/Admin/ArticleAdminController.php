@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Article;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -19,8 +20,28 @@ class ArticleAdminController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $this->validateArticle($request);
-        $imagePath = $this->storeImage($validated['image'] ?? null);
-        unset($validated['image']);
+        $autosaveToken = $validated['autosave_token'] ?? null;
+        $draft = $autosaveToken === null
+            ? null
+            : Article::query()
+                ->where('autosave_token', $autosaveToken)
+                ->where('status', 'Draft')
+                ->first();
+        $oldImagePath = null;
+        $imagePath = $draft?->image_path;
+        $imageUrl = $draft?->image_url;
+
+        if (isset($validated['image'])) {
+            $oldImagePath = $draft?->image_path;
+            $imagePath = $this->storeImage($validated['image']);
+            $imageUrl = null;
+        } elseif ($request->boolean('image_url_changed') || (array_key_exists('image_url', $validated) && $validated['image_url'] !== null)) {
+            $oldImagePath = $draft?->image_path;
+            $imagePath = null;
+            $imageUrl = $validated['image_url'] ?? null;
+        }
+
+        unset($validated['image'], $validated['autosave_token'], $validated['image_url_changed']);
 
         $publishedAt = $validated['published_at'] ?? ($validated['status'] === 'Publish' ? today()->toDateString() : null);
 
@@ -28,19 +49,102 @@ class ArticleAdminController extends Controller
             $validated['status'] = 'Draft';
         }
 
-        $this->ensurePublicationDateAvailable($publishedAt);
+        $this->ensurePublicationDateAvailable($publishedAt, $draft);
 
-        Article::create([
+        $article = $draft ?? new Article;
+        $article->fill([
             ...$validated,
             'image_path' => $imagePath,
-            'image_url' => $imagePath !== null ? null : ($validated['image_url'] ?? null),
-            'slug' => $this->uniqueSlug($validated['title']),
+            'image_url' => $imageUrl,
+            'slug' => $this->uniqueSlug($validated['title'], $draft),
             'published_at' => $publishedAt,
-        ]);
+            'autosave_token' => null,
+        ])->save();
+
+        if ($oldImagePath !== null && $oldImagePath !== $imagePath) {
+            Storage::disk('public')->delete($oldImagePath);
+        }
 
         return redirect()
             ->route('admin.dashboard', ['tab' => 'artikel'])
             ->with('success', 'Artikel berhasil ditambahkan.');
+    }
+
+    /**
+     * Simpan artikel baru secara otomatis sebagai draft.
+     */
+    public function autosave(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'autosave_token' => ['required', 'uuid'],
+            'title' => ['required', 'string', 'max:255'],
+            'author' => ['nullable', 'string', 'max:100'],
+            'category' => ['required', 'string', 'max:100'],
+            'excerpt' => ['required', 'string', 'max:500'],
+            'content' => ['required', 'string'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,avif', 'max:10240'],
+            'image_url' => ['nullable', 'url', 'max:2048'],
+            'image_url_changed' => ['nullable', 'boolean'],
+        ]);
+
+        $sanitizedContent = $this->sanitizeRichText($validated['content']);
+        $article = Article::query()->firstOrCreate(
+            ['autosave_token' => $validated['autosave_token']],
+            [
+                'title' => $validated['title'],
+                'author' => $validated['author'] ?? null,
+                'slug' => $this->uniqueSlug($validated['title']),
+                'category' => $validated['category'],
+                'excerpt' => $validated['excerpt'],
+                'content' => $sanitizedContent,
+                'published_at' => null,
+                'status' => 'Draft',
+            ],
+        );
+
+        if ($article->exists && $article->status !== 'Draft') {
+            return response()->json([
+                'message' => 'Artikel ini sudah dipublikasikan dan tidak dapat ditimpa oleh autosave.',
+            ], 409);
+        }
+
+        $oldImagePath = null;
+        $imagePath = $article->image_path;
+        $imageUrl = $article->image_url;
+
+        if (isset($validated['image'])) {
+            $oldImagePath = $article->image_path;
+            $imagePath = $this->storeImage($validated['image']);
+            $imageUrl = null;
+        } elseif ($request->boolean('image_url_changed')) {
+            $oldImagePath = $article->image_path;
+            $imagePath = null;
+            $imageUrl = $validated['image_url'] ?? null;
+        }
+
+        $article->fill([
+            'title' => $validated['title'],
+            'author' => $validated['author'] ?? null,
+            'slug' => $this->uniqueSlug($validated['title'], $article),
+            'category' => $validated['category'],
+            'excerpt' => $validated['excerpt'],
+            'content' => $sanitizedContent,
+            'image_path' => $imagePath,
+            'image_url' => $imageUrl,
+            'published_at' => null,
+            'status' => 'Draft',
+        ])->save();
+
+        if ($oldImagePath !== null && $oldImagePath !== $imagePath) {
+            Storage::disk('public')->delete($oldImagePath);
+        }
+
+        return response()->json([
+            'article_id' => $article->id,
+            'image_preview_url' => $article->image_url
+                ?: ($article->image_path ? Storage::disk('public')->url($article->image_path) : null),
+            'saved_at' => now()->toIso8601String(),
+        ]);
     }
 
     /**
@@ -63,7 +167,7 @@ class ArticleAdminController extends Controller
             $imageUrl = $validated['image_url'];
         }
 
-        unset($validated['image']);
+        unset($validated['image'], $validated['autosave_token'], $validated['image_url_changed']);
 
         $publishedAt = $validated['status'] === 'Publish'
             ? ($validated['published_at'] ?? today()->toDateString())
@@ -81,6 +185,7 @@ class ArticleAdminController extends Controller
             'image_url' => $imageUrl,
             'slug' => $this->uniqueSlug($validated['title'], $article),
             'published_at' => $publishedAt,
+            'autosave_token' => null,
         ]);
 
         if ($oldImagePath !== null) {
@@ -109,7 +214,7 @@ class ArticleAdminController extends Controller
     }
 
     /**
-     * @return array{title: string, author: ?string, category: string, excerpt: string, content: string, published_at: ?string, status: string, image_url: ?string, image?: UploadedFile}
+     * @return array{title: string, author: ?string, category: string, excerpt: string, content: string, published_at: ?string, status: string, image_url: ?string, autosave_token?: string, image_url_changed?: bool, image?: UploadedFile}
      */
     private function validateArticle(Request $request, ?Article $article = null): array
     {
@@ -123,6 +228,8 @@ class ArticleAdminController extends Controller
             'image_url' => 'nullable|url|max:2048',
             'published_at' => 'nullable|date|date_format:Y-m-d',
             'status' => 'required|in:Publish,Draft,Terjadwalkan',
+            'autosave_token' => ['nullable', 'uuid'],
+            'image_url_changed' => ['nullable', 'boolean'],
         ]);
 
         if ($validated['status'] === 'Terjadwalkan') {

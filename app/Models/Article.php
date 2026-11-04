@@ -21,6 +21,7 @@ class Article extends Model
         'reading_time',
         'published_at',
         'status',
+        'autosave_token',
     ];
 
     protected $casts = [

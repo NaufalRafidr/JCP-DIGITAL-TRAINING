@@ -8,6 +8,95 @@ use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
+it('requires an admin session to autosave an article draft', function () {
+    $this->postJson(route('admin.articles.autosave'), [
+        'autosave_token' => '10000000-0000-4000-8000-000000000001',
+    ])->assertRedirect(route('login'));
+});
+
+it('requires complete article fields before creating an automatic draft', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+
+    $this->actingAs($admin)->postJson(route('admin.articles.autosave'), [
+        'autosave_token' => '10000000-0000-4000-8000-000000000004',
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors(['title', 'category', 'excerpt', 'content']);
+
+    expect(Article::query()->exists())->toBeFalse();
+});
+
+it('autosaves completed article fields into one reusable draft', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+    $autosaveToken = '10000000-0000-4000-8000-000000000002';
+
+    $this->actingAs($admin)->postJson(route('admin.articles.autosave'), [
+        'autosave_token' => $autosaveToken,
+        'title' => 'Draft Otomatis Artikel',
+        'author' => 'Tim Media JCP',
+        'category' => 'Digital Marketing',
+        'excerpt' => 'Ringkasan awal yang tersimpan otomatis.',
+        'content' => '<p>Isi awal artikel.</p>',
+        'image_url' => 'https://example.com/draft-article.jpg',
+        'image_url_changed' => true,
+    ])->assertOk()
+        ->assertJsonStructure(['article_id', 'image_preview_url', 'saved_at']);
+
+    $article = Article::query()->where('autosave_token', $autosaveToken)->firstOrFail();
+
+    expect($article->status)->toBe('Draft')
+        ->and($article->published_at)->toBeNull()
+        ->and($article->image_url)->toBe('https://example.com/draft-article.jpg');
+
+    $this->actingAs($admin)->postJson(route('admin.articles.autosave'), [
+        'autosave_token' => $autosaveToken,
+        'title' => 'Draft Otomatis Diperbarui',
+        'author' => 'Tim Media JCP',
+        'category' => 'Digital Marketing',
+        'excerpt' => 'Ringkasan terbaru yang tersimpan otomatis.',
+        'content' => '<p>Isi terbaru artikel.</p>',
+    ])->assertOk();
+
+    expect(Article::query()->count())->toBe(1)
+        ->and($article->refresh()->title)->toBe('Draft Otomatis Diperbarui')
+        ->and($article->excerpt)->toBe('Ringkasan terbaru yang tersimpan otomatis.');
+
+    $this->get(route('artikel.show', ['article' => $article->slug]))->assertNotFound();
+});
+
+it('publishes an autosaved draft without creating a duplicate article', function () {
+    Storage::fake('public');
+    $admin = User::factory()->create(['is_admin' => true]);
+    $autosaveToken = '10000000-0000-4000-8000-000000000003';
+
+    $this->actingAs($admin)->postJson(route('admin.articles.autosave'), [
+        'autosave_token' => $autosaveToken,
+        'title' => 'Artikel dengan Foto Autosave',
+        'category' => 'Teknologi',
+        'excerpt' => 'Ringkasan artikel dengan foto autosave.',
+        'content' => '<p>Isi artikel dengan foto autosave.</p>',
+        'image' => UploadedFile::fake()->image('autosave-article.jpg'),
+    ])->assertOk();
+
+    $draft = Article::query()->where('autosave_token', $autosaveToken)->firstOrFail();
+    Storage::disk('public')->assertExists($draft->image_path);
+
+    $response = $this->actingAs($admin)->post(route('admin.articles.store'), [
+        'autosave_token' => $autosaveToken,
+        'title' => 'Artikel dengan Foto Autosave',
+        'category' => 'Teknologi',
+        'excerpt' => 'Ringkasan artikel dengan foto autosave.',
+        'content' => '<p>Isi artikel dengan foto autosave.</p>',
+        'published_at' => today()->toDateString(),
+        'status' => 'Publish',
+    ]);
+
+    $response->assertRedirect(route('admin.dashboard', ['tab' => 'artikel']));
+    expect(Article::query()->count())->toBe(1)
+        ->and($draft->refresh()->status)->toBe('Publish')
+        ->and($draft->autosave_token)->toBeNull();
+    Storage::disk('public')->assertExists($draft->image_path);
+});
+
 it('creates a published article that appears on the user article page', function () {
     $admin = User::factory()->create(['is_admin' => true]);
 

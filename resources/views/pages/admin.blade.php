@@ -784,11 +784,16 @@
                         <h2 class="mt-1 text-2xl font-extrabold tracking-tight text-[#10243A]">Tulis artikel baru.</h2>
                         <p class="mt-1 text-sm text-slate-500">Simpan sebagai draft, jadwalkan, atau publikasikan sekarang.</p>
                     </div>
-                    <span class="rounded-full bg-[#E2F6F2] px-3 py-1.5 text-xs font-bold text-[#087F78]">Maksimal 1 artikel per hari</span>
+                    <div class="flex flex-col items-start gap-2 sm:items-end">
+                        <span class="rounded-full bg-[#E2F6F2] px-3 py-1.5 text-xs font-bold text-[#087F78]">Maksimal 1 artikel per hari</span>
+                        <p id="articleAutosaveStatus" role="status" aria-live="polite" class="text-xs font-semibold text-slate-500">Perubahan lengkap akan otomatis disimpan sebagai Draft.</p>
+                    </div>
                 </div>
 
-                <form id="addArticleInlineForm" action="{{ route('admin.articles.store') }}" method="POST" enctype="multipart/form-data" onsubmit="return validateRichEditor(this)" class="space-y-5">
+                <form id="addArticleInlineForm" data-article-autosave-url="{{ route('admin.articles.autosave') }}" action="{{ route('admin.articles.store') }}" method="POST" enctype="multipart/form-data" onsubmit="return validateRichEditor(this)" class="space-y-5">
                     @csrf
+                    <input name="autosave_token" type="hidden" value="{{ old('autosave_token') }}" data-article-autosave-token>
+                    <input name="image_url_changed" type="hidden" value="{{ old('image_url') ? '1' : '0' }}" data-article-image-url-changed>
                     <input id="add_article_inline_status" name="status" type="hidden" value="{{ old('status', 'Draft') }}">
                     <div class="grid gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)]">
                         <div class="space-y-5">
@@ -821,15 +826,23 @@
                         </div>
 
                         <div class="space-y-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-4 sm:p-5">
+                            <div data-article-image-preview data-new-article-preview class="hidden overflow-hidden rounded-xl border border-slate-200 bg-white">
+                                <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-3 py-2 text-xs font-semibold">
+                                    <span class="text-slate-600">Pratinjau gambar artikel</span>
+                                    <span data-article-image-preview-status class="rounded-full bg-amber-50 px-2 py-1 text-amber-700">Belum disimpan</span>
+                                </div>
+                                <img data-article-image-preview-image src="" alt="Pratinjau gambar utama artikel" class="h-44 w-full object-cover">
+                                <p data-article-image-preview-error class="hidden px-4 py-6 text-center text-xs font-semibold text-rose-700">Gambar tidak dapat dimuat. Periksa kembali file atau link gambar.</p>
+                            </div>
                             <div>
                                 <label for="add_article_image_inline" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Gambar utama</label>
-                                <input id="add_article_image_inline" name="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-2 file:font-semibold file:text-[#087F78]">
+                                <input id="add_article_image_inline" data-article-image-file name="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-2 file:font-semibold file:text-[#087F78]">
                                 <p class="mt-1 text-xs text-slate-500">Pilih file gambar maksimal 10 MB.</p>
                             </div>
                             <div class="flex items-center gap-3 text-[10px] font-bold uppercase tracking-wider text-slate-400"><span class="h-px flex-1 bg-slate-200"></span>atau<span class="h-px flex-1 bg-slate-200"></span></div>
                             <div>
                                 <label for="add_article_image_url_inline" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">URL gambar</label>
-                                <input id="add_article_image_url_inline" name="image_url" type="url" value="{{ old('image_url') }}" maxlength="2048" placeholder="https://contoh.com/gambar.jpg" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                                <input id="add_article_image_url_inline" data-article-image-url name="image_url" type="url" value="{{ old('image_url') }}" maxlength="2048" placeholder="https://contoh.com/gambar.jpg" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                                 <p class="mt-1 text-xs text-slate-500">Jika file dan URL diisi, file akan digunakan.</p>
                             </div>
                             <div>
@@ -962,6 +975,14 @@
                                 <form action="{{ route('admin.articles.update', $article) }}" method="POST" enctype="multipart/form-data" onsubmit="return validateRichEditor(this)" class="mt-5 space-y-5">
                                     @csrf
                                     @method('PUT')
+                                    <div data-article-image-preview data-current-source="{{ $article->image_url ?: ($article->image_path ? Storage::disk('public')->url($article->image_path) : '') }}" class="hidden overflow-hidden rounded-xl border border-slate-200 bg-white">
+                                        <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-3 py-2 text-xs font-semibold">
+                                            <span class="text-slate-600">Pratinjau gambar artikel</span>
+                                            <span data-article-image-preview-status class="rounded-full bg-slate-100 px-2 py-1 text-slate-600">Gambar saat ini</span>
+                                        </div>
+                                        <img data-article-image-preview-image src="" alt="Pratinjau gambar utama {{ $article->title }}" class="h-48 w-full object-cover">
+                                        <p data-article-image-preview-error class="hidden px-4 py-6 text-center text-xs font-semibold text-rose-700">Gambar tidak dapat dimuat. Periksa kembali file atau link gambar.</p>
+                                    </div>
                                     <div class="grid gap-4 sm:grid-cols-2">
                                         <div class="sm:col-span-2">
                                             <label for="inline_article_title_{{ $article->id }}" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Judul artikel *</label>
@@ -996,11 +1017,11 @@
                                         </div>
                                         <div>
                                             <label for="inline_article_image_{{ $article->id }}" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Ganti foto utama</label>
-                                            <input id="inline_article_image_{{ $article->id }}" name="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-2 file:font-semibold file:text-[#087F78]">
+                                            <input id="inline_article_image_{{ $article->id }}" data-article-image-file name="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-2 file:font-semibold file:text-[#087F78]">
                                         </div>
                                         <div>
                                             <label for="inline_article_image_url_{{ $article->id }}" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">URL gambar</label>
-                                            <input id="inline_article_image_url_{{ $article->id }}" name="image_url" type="url" value="{{ $article->image_url }}" maxlength="2048" placeholder="https://contoh.com/gambar.jpg" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                                            <input id="inline_article_image_url_{{ $article->id }}" data-article-image-url name="image_url" type="url" value="{{ $article->image_url }}" maxlength="2048" placeholder="https://contoh.com/gambar.jpg" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                                         </div>
                                     </div>
                                     <div>
@@ -2892,6 +2913,274 @@
 
             form?.addEventListener('submit', () => syncRichEditors(form), true);
         });
+
+        function showArticleImagePreview(preview, source, status = 'Belum disimpan') {
+            const image = preview?.querySelector('[data-article-image-preview-image]');
+
+            if (!preview || !image || !source) {
+                return;
+            }
+
+            const statusElement = preview.querySelector('[data-article-image-preview-status]');
+            if (statusElement) {
+                statusElement.textContent = status;
+            }
+
+            image.classList.remove('hidden');
+            preview.querySelector('[data-article-image-preview-error]')?.classList.add('hidden');
+            image.src = source;
+            preview.classList.remove('hidden');
+        }
+
+        function hideArticleImagePreview(preview) {
+            const image = preview?.querySelector('[data-article-image-preview-image]');
+
+            if (!preview || !image) {
+                return;
+            }
+
+            image.removeAttribute('src');
+            image.classList.remove('hidden');
+            preview.querySelector('[data-article-image-preview-error]')?.classList.add('hidden');
+            preview.classList.add('hidden');
+        }
+
+        document.querySelectorAll('[data-article-image-preview]').forEach((preview) => {
+            const form = preview.closest('form');
+            const fileInput = form?.querySelector('[data-article-image-file]');
+            const urlInput = form?.querySelector('[data-article-image-url]');
+            const urlChangedInput = form?.querySelector('[data-article-image-url-changed]');
+            const image = preview.querySelector('[data-article-image-preview-image]');
+
+            image?.addEventListener('error', () => {
+                image.classList.add('hidden');
+                preview.querySelector('[data-article-image-preview-error]')?.classList.remove('hidden');
+                preview.classList.remove('hidden');
+            });
+
+            fileInput?.addEventListener('change', () => {
+                const file = fileInput.files?.[0];
+
+                if (!file) {
+                    return;
+                }
+
+                const objectUrl = URL.createObjectURL(file);
+                image?.addEventListener('load', () => URL.revokeObjectURL(objectUrl), { once: true });
+                urlInput.value = '';
+                if (urlChangedInput) {
+                    urlChangedInput.value = '0';
+                }
+                showArticleImagePreview(preview, objectUrl);
+            });
+
+            urlInput?.addEventListener('input', () => {
+                const imageUrl = urlInput.value.trim();
+                fileInput.value = '';
+                if (urlChangedInput) {
+                    urlChangedInput.value = '1';
+                }
+
+                if (imageUrl) {
+                    showArticleImagePreview(preview, imageUrl);
+                } else if (preview.dataset.currentSource && !preview.hasAttribute('data-new-article-preview')) {
+                    showArticleImagePreview(preview, preview.dataset.currentSource, 'Gambar saat ini');
+                } else {
+                    hideArticleImagePreview(preview);
+                }
+            });
+
+            const initialSource = urlInput?.value.trim() || preview.dataset.currentSource;
+            if (initialSource) {
+                const initialStatus = preview.hasAttribute('data-new-article-preview')
+                    ? 'Belum disimpan'
+                    : 'Gambar saat ini';
+                showArticleImagePreview(preview, initialSource, initialStatus);
+            }
+        });
+
+        const articleAutosaveForm = document.getElementById('addArticleInlineForm');
+        if (articleAutosaveForm) {
+            const autosaveUrl = articleAutosaveForm.dataset.articleAutosaveUrl;
+            const autosaveTokenInput = articleAutosaveForm.querySelector('[data-article-autosave-token]');
+            const autosaveStatus = document.getElementById('articleAutosaveStatus');
+            const articleImagePreview = articleAutosaveForm.querySelector('[data-article-image-preview]');
+            const imageFileInput = articleAutosaveForm.querySelector('[data-article-image-file]');
+            const imageUrlChangedInput = articleAutosaveForm.querySelector('[data-article-image-url-changed]');
+            let autosaveTimer;
+            let autosaveRequestInFlight = false;
+            let autosaveQueued = false;
+            let pendingExplicitSubmission = false;
+            let isSubmitting = false;
+
+            const createAutosaveToken = () => {
+                if (globalThis.crypto?.randomUUID) {
+                    return globalThis.crypto.randomUUID();
+                }
+
+                const bytes = new Uint8Array(16);
+                globalThis.crypto.getRandomValues(bytes);
+                bytes[6] = (bytes[6] & 0x0f) | 0x40;
+                bytes[8] = (bytes[8] & 0x3f) | 0x80;
+                const hex = [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+
+                return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+            };
+
+            autosaveTokenInput.value ||= createAutosaveToken();
+
+            const updateAutosaveStatus = (message, tone = 'idle') => {
+                if (!autosaveStatus) {
+                    return;
+                }
+
+                autosaveStatus.textContent = message;
+                autosaveStatus.classList.toggle('text-emerald-700', tone === 'success');
+                autosaveStatus.classList.toggle('text-rose-700', tone === 'error');
+                autosaveStatus.classList.toggle('text-slate-500', tone === 'idle');
+            };
+
+            const canAutosaveDraft = () => {
+                syncRichEditors(articleAutosaveForm);
+
+                const content = articleAutosaveForm.querySelector('[name="content"]')?.value.trim();
+
+                return articleAutosaveForm.checkValidity() && Boolean(content);
+            };
+
+            const buildAutosaveData = (includeImage = true) => {
+                syncRichEditors(articleAutosaveForm);
+                const formData = new FormData(articleAutosaveForm);
+                formData.delete('published_at');
+                formData.delete('status');
+
+                if (!includeImage) {
+                    formData.delete('image');
+                }
+
+                return formData;
+            };
+
+            const saveArticleDraft = async () => {
+                if (isSubmitting || !canAutosaveDraft()) {
+                    return;
+                }
+
+                if (autosaveRequestInFlight) {
+                    autosaveQueued = true;
+
+                    return;
+                }
+
+                autosaveRequestInFlight = true;
+                autosaveQueued = false;
+                updateAutosaveStatus('Menyimpan perubahan sebagai Draft...');
+                const includedFile = imageFileInput?.files?.[0] ?? null;
+
+                try {
+                    const response = await fetch(autosaveUrl, {
+                        method: 'POST',
+                        headers: {
+                            Accept: 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: buildAutosaveData(),
+                        keepalive: !includedFile,
+                    });
+                    const payload = await response.json().catch(() => ({}));
+
+                    if (!response.ok) {
+                        throw new Error(payload.message || 'Draft otomatis gagal disimpan.');
+                    }
+
+                    articleAutosaveForm.dataset.autosavedArticleId = payload.article_id;
+                    if (imageUrlChangedInput) {
+                        imageUrlChangedInput.value = '0';
+                    }
+
+                    if (includedFile && payload.image_preview_url) {
+                        imageFileInput.value = '';
+                        articleImagePreview.dataset.currentSource = payload.image_preview_url;
+                        showArticleImagePreview(articleImagePreview, payload.image_preview_url, 'Tersimpan sebagai Draft');
+                    } else {
+                        const previewImage = articleImagePreview?.querySelector('[data-article-image-preview-image]');
+                        if (previewImage?.getAttribute('src')) {
+                            articleImagePreview.querySelector('[data-article-image-preview-status]').textContent = 'Tersimpan sebagai Draft';
+                        }
+                    }
+
+                    const savedTime = new Date(payload.saved_at).toLocaleTimeString('id-ID', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    });
+                    updateAutosaveStatus(`Draft otomatis tersimpan pukul ${savedTime}.`, 'success');
+                } catch (error) {
+                    updateAutosaveStatus(error.message || 'Draft otomatis gagal disimpan.', 'error');
+                } finally {
+                    autosaveRequestInFlight = false;
+
+                    if (pendingExplicitSubmission) {
+                        pendingExplicitSubmission = false;
+                        autosaveQueued = false;
+                        articleAutosaveForm.requestSubmit();
+                    } else if (autosaveQueued) {
+                        window.setTimeout(saveArticleDraft, 0);
+                    }
+                }
+            };
+
+            const queueArticleAutosave = (delay = 1200) => {
+                if (isSubmitting) {
+                    return;
+                }
+
+                window.clearTimeout(autosaveTimer);
+
+                if (!canAutosaveDraft()) {
+                    updateAutosaveStatus('Lengkapi judul, penulis, bidang, ringkasan, dan isi agar tersimpan otomatis.');
+
+                    return;
+                }
+
+                updateAutosaveStatus('Perubahan terdeteksi, menunggu autosave...');
+                autosaveTimer = window.setTimeout(saveArticleDraft, delay);
+            };
+
+            articleAutosaveForm.addEventListener('input', () => queueArticleAutosave());
+            articleAutosaveForm.addEventListener('change', (event) => {
+                queueArticleAutosave(event.target === imageFileInput ? 0 : 600);
+            });
+
+            articleAutosaveForm.addEventListener('submit', (event) => {
+                window.clearTimeout(autosaveTimer);
+                autosaveQueued = false;
+
+                if (event.defaultPrevented || !canAutosaveDraft()) {
+                    return;
+                }
+
+                if (autosaveRequestInFlight) {
+                    event.preventDefault();
+                    pendingExplicitSubmission = true;
+                    updateAutosaveStatus('Menyelesaikan autosave sebelum artikel disimpan...');
+
+                    return;
+                }
+
+                isSubmitting = true;
+                updateAutosaveStatus('Menyimpan artikel...');
+            });
+
+            window.addEventListener('pagehide', () => {
+                if (isSubmitting || !canAutosaveDraft()) {
+                    return;
+                }
+
+                window.clearTimeout(autosaveTimer);
+                navigator.sendBeacon?.(autosaveUrl, buildAutosaveData(false));
+            });
+        }
+
         window.initializeArticleCalendar = () => {
             const calendar = document.querySelector('[data-article-calendar]');
 
