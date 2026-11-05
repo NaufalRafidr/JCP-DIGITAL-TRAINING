@@ -2,6 +2,7 @@
 
 use App\Models\Article;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -63,6 +64,25 @@ it('autosaves completed article fields into one reusable draft', function () {
     $this->get(route('artikel.show', ['article' => $article->slug]))->assertNotFound();
 });
 
+it('keeps a local publication schedule when an article is autosaved', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+
+    $this->actingAs($admin)->postJson(route('admin.articles.autosave'), [
+        'autosave_token' => '10000000-0000-4000-8000-000000000005',
+        'title' => 'Draft Terjadwal Otomatis',
+        'category' => 'Umum',
+        'excerpt' => 'Ringkasan draft terjadwal otomatis.',
+        'content' => '<p>Isi draft terjadwal otomatis.</p>',
+        'published_at' => '2026-11-05T08:30',
+        'published_at_timezone' => 'Asia/Makassar',
+    ])->assertOk();
+
+    $article = Article::query()->where('title', 'Draft Terjadwal Otomatis')->firstOrFail();
+
+    expect($article->status)->toBe('Draft')
+        ->and($article->published_at?->format('Y-m-d H:i'))->toBe('2026-11-05 07:30');
+});
+
 it('publishes an autosaved draft without creating a duplicate article', function () {
     Storage::fake('public');
     $admin = User::factory()->create(['is_admin' => true]);
@@ -86,7 +106,8 @@ it('publishes an autosaved draft without creating a duplicate article', function
         'category' => 'Teknologi',
         'excerpt' => 'Ringkasan artikel dengan foto autosave.',
         'content' => '<p>Isi artikel dengan foto autosave.</p>',
-        'published_at' => today()->toDateString(),
+        'published_at' => now()->format('Y-m-d\TH:i'),
+        'published_at_timezone' => config('app.timezone'),
         'status' => 'Publish',
     ]);
 
@@ -105,7 +126,8 @@ it('creates a published article that appears on the user article page', function
         'category' => 'Digital Marketing',
         'excerpt' => 'Ringkasan panduan konten digital.',
         'content' => 'Isi lengkap panduan konten digital.',
-        'published_at' => today()->toDateString(),
+        'published_at' => now()->format('Y-m-d\TH:i'),
+        'published_at_timezone' => config('app.timezone'),
         'status' => 'Publish',
     ]);
 
@@ -121,7 +143,7 @@ it('creates a published article that appears on the user article page', function
 
 it('supports rich text, scheduled publication, and image URLs', function () {
     $admin = User::factory()->create(['is_admin' => true]);
-    $scheduledDate = today()->addDay()->toDateString();
+    $scheduledDate = now()->addDay()->format('Y-m-d\TH:i');
 
     $response = $this->actingAs($admin)->post(route('admin.articles.store'), [
         'title' => 'Artikel Terjadwal',
@@ -131,6 +153,7 @@ it('supports rich text, scheduled publication, and image URLs', function () {
         'content' => '<p>Isi <strong>tebal</strong> dan <em>miring</em>.</p><script>alert("xss")</script>',
         'image_url' => 'https://example.com/article.jpg',
         'published_at' => $scheduledDate,
+        'published_at_timezone' => config('app.timezone'),
         'status' => 'Draft',
     ]);
 
@@ -147,7 +170,7 @@ it('supports rich text, scheduled publication, and image URLs', function () {
 
 it('allows only one article to be scheduled per day', function () {
     $admin = User::factory()->create(['is_admin' => true]);
-    $scheduledDate = today()->addDays(2)->toDateString();
+    $scheduledDate = now()->addDays(2)->format('Y-m-d\TH:i');
     Article::create([
         'title' => 'Artikel Pertama',
         'slug' => 'artikel-pertama',
@@ -165,6 +188,7 @@ it('allows only one article to be scheduled per day', function () {
         'excerpt' => 'Ringkasan kedua.',
         'content' => 'Konten kedua.',
         'published_at' => $scheduledDate,
+        'published_at_timezone' => config('app.timezone'),
         'status' => 'Draft',
     ]);
 
@@ -188,6 +212,33 @@ it('publishes scheduled articles when the scheduler command runs', function () {
     expect($article->refresh()->status)->toBe('Publish');
 });
 
+it('uses the computer timezone and waits until the scheduled minute to publish', function () {
+    $this->travelTo(Carbon::create(2026, 11, 4, 10, 0, 0, 'Asia/Jakarta'));
+    $admin = User::factory()->create(['is_admin' => true]);
+
+    $this->actingAs($admin)->post(route('admin.articles.store'), [
+        'title' => 'Artikel Waktu Lokal',
+        'category' => 'Umum',
+        'excerpt' => 'Ringkasan artikel waktu lokal.',
+        'content' => 'Konten artikel waktu lokal.',
+        'published_at' => '2026-11-04T12:00',
+        'published_at_timezone' => 'Asia/Makassar',
+        'status' => 'Terjadwalkan',
+    ])->assertRedirect(route('admin.dashboard', ['tab' => 'artikel']));
+
+    $article = Article::query()->where('title', 'Artikel Waktu Lokal')->firstOrFail();
+
+    expect($article->published_at?->format('Y-m-d H:i'))->toBe('2026-11-04 11:00')
+        ->and($article->status)->toBe('Draft');
+
+    $this->artisan('articles:publish-scheduled')->assertSuccessful();
+    expect($article->refresh()->status)->toBe('Draft');
+
+    $this->travelTo(Carbon::create(2026, 11, 4, 11, 0, 0, 'Asia/Jakarta'));
+    $this->artisan('articles:publish-scheduled')->assertSuccessful();
+    expect($article->refresh()->status)->toBe('Publish');
+});
+
 it('updates an article from the admin dashboard', function () {
     $admin = User::factory()->create(['is_admin' => true]);
     $article = Article::create([
@@ -205,7 +256,8 @@ it('updates an article from the admin dashboard', function () {
         'category' => 'Artificial Intelligence',
         'excerpt' => 'Ringkasan baru.',
         'content' => 'Konten baru.',
-        'published_at' => today()->toDateString(),
+        'published_at' => now()->format('Y-m-d\TH:i'),
+        'published_at_timezone' => config('app.timezone'),
         'status' => 'Draft',
     ]);
 
@@ -226,7 +278,7 @@ it('allows changing an article publication schedule while editing', function () 
         'published_at' => today(),
         'status' => 'Publish',
     ]);
-    $scheduledDate = today()->addDays(3)->toDateString();
+    $scheduledDate = now()->addDays(3)->format('Y-m-d\TH:i');
 
     $this->actingAs($admin)->put(route('admin.articles.update', $article), [
         'title' => $article->title,
@@ -234,11 +286,12 @@ it('allows changing an article publication schedule while editing', function () 
         'excerpt' => $article->excerpt,
         'content' => $article->content,
         'published_at' => $scheduledDate,
+        'published_at_timezone' => config('app.timezone'),
         'status' => 'Terjadwalkan',
     ])->assertRedirect(route('admin.dashboard', ['tab' => 'artikel']));
 
     expect($article->refresh()->status)->toBe('Draft')
-        ->and($article->published_at?->toDateString())->toBe($scheduledDate);
+        ->and($article->published_at?->format('Y-m-d\TH:i'))->toBe($scheduledDate);
 
     $this->actingAs($admin)->put(route('admin.articles.update', $article), [
         'title' => $article->title,
@@ -357,7 +410,8 @@ it('stores an article photo and opens the published article detail page', functi
         'excerpt' => 'Drone membantu dokumentasi berbagai kegiatan.',
         'content' => "Pembahasan lengkap tentang penggunaan drone.\n\nContoh penerapannya ada di sini.",
         'image' => UploadedFile::fake()->image('drone-event.jpg'),
-        'published_at' => today()->toDateString(),
+        'published_at' => now()->format('Y-m-d\TH:i'),
+        'published_at_timezone' => config('app.timezone'),
         'status' => 'Publish',
     ]);
 

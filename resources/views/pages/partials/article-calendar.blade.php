@@ -42,7 +42,7 @@
             <div class="space-y-2">
                 @forelse($articleCalendarArticles as $calendarArticle)
                     <div class="rounded-xl border border-white bg-white p-3">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-[#087F78]">{{ $calendarArticle->published_at?->format('d M Y') }}</p>
+                        <time data-article-local-time datetime="{{ $calendarArticle->published_at?->toIso8601String() }}" class="text-[10px] font-bold uppercase tracking-wider text-[#087F78]">{{ $calendarArticle->published_at?->format('d M Y, H:i') }}</time>
                         <p class="mt-1 text-xs font-bold leading-relaxed text-[#10243A]">{{ $calendarArticle->title }}</p>
                         <span class="mt-2 inline-flex rounded-full px-2 py-1 text-[10px] font-bold {{ $calendarArticle->status === 'Publish' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">{{ $calendarArticle->status === 'Publish' ? 'Publish' : 'Terjadwalkan' }}</span>
                     </div>

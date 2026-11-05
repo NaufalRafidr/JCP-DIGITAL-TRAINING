@@ -795,6 +795,7 @@
                     <input name="autosave_token" type="hidden" value="{{ old('autosave_token') }}" data-article-autosave-token>
                     <input name="image_url_changed" type="hidden" value="{{ old('image_url') ? '1' : '0' }}" data-article-image-url-changed>
                     <input id="add_article_inline_status" name="status" type="hidden" value="{{ old('status', 'Draft') }}">
+                    <input name="published_at_timezone" type="hidden" data-article-timezone>
                     <div class="grid gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)]">
                         <div class="space-y-5">
                             <div>
@@ -846,9 +847,9 @@
                                 <p class="mt-1 text-xs text-slate-500">Jika file dan URL diisi, file akan digunakan.</p>
                             </div>
                             <div>
-                                <label for="add_article_published_at_inline" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Tanggal tayang / jadwal</label>
-                                <input id="add_article_published_at_inline" name="published_at" type="date" value="{{ old('published_at') }}" min="{{ now()->toDateString() }}" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
-                                <p class="mt-1 text-xs text-slate-500">Satu tanggal hanya dapat berisi satu artikel.</p>
+                                <label for="add_article_published_at_inline" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Tanggal dan jam tayang / jadwal</label>
+                                <input id="add_article_published_at_inline" data-article-published-at data-min-local-now name="published_at" type="datetime-local" step="60" value="{{ old('published_at') }}" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                                <p class="mt-1 text-xs text-slate-500">Mengikuti zona waktu komputer. Satu tanggal hanya dapat berisi satu artikel.</p>
                             </div>
                         </div>
                     </div>
@@ -946,7 +947,13 @@
                             </div>
                         </div>
                         <div class="mt-4 border-t border-slate-100 pt-4 text-sm text-slate-600 md:col-span-2 md:mt-0 md:border-t-0 md:pt-0">{{ $article->category }}</div>
-                        <div class="mt-4 border-t border-slate-100 pt-4 text-sm text-slate-600 md:col-span-2 md:mt-0 md:border-t-0 md:pt-0">{{ $article->published_at?->format('d M Y') ?? 'Belum dijadwalkan' }}</div>
+                        <div class="mt-4 border-t border-slate-100 pt-4 text-sm text-slate-600 md:col-span-2 md:mt-0 md:border-t-0 md:pt-0">
+                            @if($article->published_at)
+                                <time data-article-local-time datetime="{{ $article->published_at->toIso8601String() }}">{{ $article->published_at->format('d M Y, H:i') }}</time>
+                            @else
+                                Belum dijadwalkan
+                            @endif
+                        </div>
                         <div class="mt-4 border-t border-slate-100 pt-4 md:col-span-1 md:mt-0 md:border-t-0 md:pt-0">
                             <span class="rounded-full px-3 py-1.5 text-xs font-extrabold {{ $articleStatusClasses }}">{{ $articleStatusLabel }}</span>
                         </div>
@@ -975,6 +982,7 @@
                                 <form action="{{ route('admin.articles.update', $article) }}" method="POST" enctype="multipart/form-data" onsubmit="return validateRichEditor(this)" class="mt-5 space-y-5">
                                     @csrf
                                     @method('PUT')
+                                    <input name="published_at_timezone" type="hidden" data-article-timezone>
                                     <div data-article-image-preview data-current-source="{{ $article->image_url ?: ($article->image_path ? Storage::disk('public')->url($article->image_path) : '') }}" class="hidden overflow-hidden rounded-xl border border-slate-200 bg-white">
                                         <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-3 py-2 text-xs font-semibold">
                                             <span class="text-slate-600">Pratinjau gambar artikel</span>
@@ -1012,8 +1020,8 @@
                                             </select>
                                         </div>
                                         <div>
-                                            <label for="inline_article_published_at_{{ $article->id }}" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Tanggal publish / jadwal</label>
-                                            <input id="inline_article_published_at_{{ $article->id }}" name="published_at" type="date" value="{{ $article->published_at?->format('Y-m-d') }}" min="{{ now()->toDateString() }}" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                                            <label for="inline_article_published_at_{{ $article->id }}" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Tanggal dan jam publish / jadwal</label>
+                                            <input id="inline_article_published_at_{{ $article->id }}" data-article-published-at data-published-at-iso="{{ $article->published_at?->toIso8601String() }}" name="published_at" type="datetime-local" step="60" value="{{ $article->published_at?->format('Y-m-d\TH:i') }}" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                                         </div>
                                         <div>
                                             <label for="inline_article_image_{{ $article->id }}" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Ganti foto utama</label>
@@ -2530,6 +2538,7 @@
 
             <form action="{{ route('admin.articles.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                 @csrf
+                <input name="published_at_timezone" type="hidden" data-article-timezone>
                 <div>
                     <label for="add_article_title" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Judul artikel *</label>
                     <input id="add_article_title" name="title" type="text" required maxlength="255" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
@@ -2559,8 +2568,8 @@
                 </div>
                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
-                        <label for="add_article_published_at" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Tanggal tayang</label>
-                        <input id="add_article_published_at" name="published_at" type="date" value="{{ date('Y-m-d') }}" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                        <label for="add_article_published_at" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Tanggal dan jam tayang</label>
+                        <input id="add_article_published_at" data-article-published-at data-min-local-now name="published_at" type="datetime-local" step="60" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                     </div>
                     <div>
                         <label for="add_article_status" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Status *</label>
@@ -2594,6 +2603,7 @@
             <form id="editArticleForm" method="POST" enctype="multipart/form-data" class="space-y-4">
                 @csrf
                 @method('PUT')
+                <input name="published_at_timezone" type="hidden" data-article-timezone>
                 <div>
                     <label for="edit_article_title" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Judul artikel *</label>
                     <input id="edit_article_title" name="title" type="text" required maxlength="255" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
@@ -2622,8 +2632,8 @@
                 </div>
                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
-                        <label for="edit_article_published_at" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Tanggal publish / jadwal</label>
-                        <input id="edit_article_published_at" name="published_at" type="date" min="{{ now()->toDateString() }}" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                        <label for="edit_article_published_at" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Tanggal dan jam publish / jadwal</label>
+                        <input id="edit_article_published_at" data-article-published-at name="published_at" type="datetime-local" step="60" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                     </div>
                     <div>
                         <label for="edit_article_status" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Status *</label>
@@ -2820,6 +2830,51 @@
         function closeAddArticleModal() {
             document.getElementById('addArticleModal').classList.add('hidden');
         }
+        function browserTimezone() {
+            return Intl.DateTimeFormat().resolvedOptions().timeZone || @json(config('app.timezone'));
+        }
+        function localDateTimeValue(date = new Date()) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+        function initializeArticleDateTimes(scope = document) {
+            const timezone = browserTimezone();
+
+            scope.querySelectorAll('[data-article-timezone]').forEach((input) => {
+                input.value = timezone;
+            });
+
+            scope.querySelectorAll('[data-article-published-at]').forEach((input) => {
+                if (input.dataset.publishedAtIso) {
+                    const scheduledAt = new Date(input.dataset.publishedAtIso);
+                    if (!Number.isNaN(scheduledAt.getTime())) {
+                        input.value = localDateTimeValue(scheduledAt);
+                    }
+                }
+
+                if (input.hasAttribute('data-min-local-now')) {
+                    input.min = localDateTimeValue();
+                }
+            });
+
+            scope.querySelectorAll('[data-article-local-time]').forEach((time) => {
+                const publishedAt = new Date(time.dateTime);
+                if (!Number.isNaN(publishedAt.getTime())) {
+                    time.textContent = publishedAt.toLocaleString('id-ID', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    });
+                }
+            });
+        }
         function publishArticleNow(button) {
             const form = button.closest('form');
             const statusInput = form?.querySelector('[name="status"]');
@@ -2829,11 +2884,8 @@
                 return;
             }
 
-            const now = new Date();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
             statusInput.value = 'Publish';
-            publishedAtInput.value = `${now.getFullYear()}-${month}-${day}`;
+            publishedAtInput.value = localDateTimeValue();
             form.requestSubmit();
         }
         function submitArticleAction(status, requiresSchedule) {
@@ -2853,10 +2905,7 @@
             }
 
             if (status === 'Publish' && !publishedAtInput.value) {
-                const now = new Date();
-                const month = String(now.getMonth() + 1).padStart(2, '0');
-                const day = String(now.getDate()).padStart(2, '0');
-                publishedAtInput.value = `${now.getFullYear()}-${month}-${day}`;
+                publishedAtInput.value = localDateTimeValue();
             }
 
             statusInput.value = status;
@@ -3051,7 +3100,6 @@
             const buildAutosaveData = (includeImage = true) => {
                 syncRichEditors(articleAutosaveForm);
                 const formData = new FormData(articleAutosaveForm);
-                formData.delete('published_at');
                 formData.delete('status');
 
                 if (!includeImage) {
@@ -3196,7 +3244,11 @@
                         return;
                     }
 
-                    dateInput.value = dayButton.dataset.articleCalendarDate || '';
+                    const selectedDate = dayButton.dataset.articleCalendarDate || '';
+                    const selectedTime = dateInput.value.includes('T')
+                        ? dateInput.value.split('T')[1]
+                        : localDateTimeValue().split('T')[1];
+                    dateInput.value = selectedDate ? `${selectedDate}T${selectedTime}` : '';
                     dateInput.dispatchEvent(new Event('change', { bubbles: true }));
                     dateInput.focus();
                 });
@@ -3248,6 +3300,7 @@
                         calendar.replaceWith(nextCalendar);
                         url.searchParams.delete('calendar_only');
                         window.history.replaceState({}, '', url);
+                        initializeArticleDateTimes(nextCalendar);
                         window.initializeArticleCalendar();
                     } catch (error) {
                         calendar.classList.remove('pointer-events-none', 'opacity-60');
@@ -3256,6 +3309,7 @@
                 });
             });
         };
+        initializeArticleDateTimes();
         window.initializeArticleCalendar();
         function openEditArticleModal(article) {
             const form = document.getElementById('editArticleForm');
@@ -3265,7 +3319,10 @@
             document.getElementById('edit_article_image_url').value = article.image_url || '';
             document.getElementById('edit_article_excerpt').value = article.excerpt || '';
             document.getElementById('edit_article_content').value = article.content || '';
-            document.getElementById('edit_article_published_at').value = article.published_at ? String(article.published_at).slice(0, 10) : '';
+            const publishedAt = article.published_at ? new Date(article.published_at) : null;
+            document.getElementById('edit_article_published_at').value = publishedAt && !Number.isNaN(publishedAt.getTime())
+                ? localDateTimeValue(publishedAt)
+                : '';
             document.getElementById('edit_article_status').value = article.status === 'Draft' && article.published_at
                 ? 'Terjadwalkan'
                 : (article.status || 'Draft');

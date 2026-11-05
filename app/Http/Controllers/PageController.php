@@ -33,7 +33,7 @@ class PageController extends Controller
         $articles = Article::query()
             ->where('status', 'Publish')
             ->where(function ($query) {
-                $query->whereNull('published_at')->orWhereDate('published_at', '<=', today());
+                $query->whereNull('published_at')->orWhere('published_at', '<=', now());
             })
             ->latest('published_at')
             ->latest('id')
@@ -49,7 +49,7 @@ class PageController extends Controller
     {
         abort_unless(
             $article->status === 'Publish'
-                && ($article->published_at === null || $article->published_at->lte(today())),
+                && ($article->published_at === null || $article->published_at->lte(now())),
             404,
         );
 
@@ -113,8 +113,8 @@ class PageController extends Controller
         $articleCalendarArticles = Article::query()
             ->whereNotNull('published_at')
             ->whereBetween('published_at', [
-                $articleCalendarMonth->toDateString(),
-                $articleCalendarMonth->copy()->endOfMonth()->toDateString(),
+                $articleCalendarMonth->copy()->startOfMonth(),
+                $articleCalendarMonth->copy()->endOfMonth(),
             ])
             ->orderBy('published_at')
             ->orderBy('id')

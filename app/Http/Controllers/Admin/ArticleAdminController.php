@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Article;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,7 +27,6 @@ class ArticleAdminController extends Controller
             ? null
             : Article::query()
                 ->where('autosave_token', $autosaveToken)
-                ->where('status', 'Draft')
                 ->first();
         $oldImagePath = null;
         $imagePath = $draft?->image_path;
@@ -41,15 +42,20 @@ class ArticleAdminController extends Controller
             $imageUrl = $validated['image_url'] ?? null;
         }
 
-        unset($validated['image'], $validated['autosave_token'], $validated['image_url_changed']);
+        $publicationTimezone = $validated['published_at_timezone'] ?? config('app.timezone');
+        $publishedAt = $this->normalizePublicationDateTime($validated['published_at'] ?? null, $publicationTimezone);
 
-        $publishedAt = $validated['published_at'] ?? ($validated['status'] === 'Publish' ? today()->toDateString() : null);
+        unset($validated['image'], $validated['autosave_token'], $validated['image_url_changed'], $validated['published_at_timezone']);
 
-        if ($validated['status'] === 'Publish' && $publishedAt !== null && $publishedAt > today()->toDateString()) {
+        if ($validated['status'] === 'Publish' && $publishedAt === null) {
+            $publishedAt = CarbonImmutable::now(config('app.timezone'));
+        }
+
+        if ($validated['status'] === 'Publish' && $publishedAt?->isFuture()) {
             $validated['status'] = 'Draft';
         }
 
-        $this->ensurePublicationDateAvailable($publishedAt, $draft);
+        $this->ensurePublicationDateAvailable($publishedAt, $publicationTimezone, $draft);
 
         $article = $draft ?? new Article;
         $article->fill([
@@ -85,28 +91,24 @@ class ArticleAdminController extends Controller
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,avif', 'max:10240'],
             'image_url' => ['nullable', 'url', 'max:2048'],
             'image_url_changed' => ['nullable', 'boolean'],
+            'published_at' => ['nullable', 'date_format:Y-m-d\TH:i'],
+            'published_at_timezone' => ['nullable', 'timezone'],
         ]);
 
+        $publicationTimezone = $validated['published_at_timezone'] ?? config('app.timezone');
+        $publishedAt = $this->normalizePublicationDateTime($validated['published_at'] ?? null, $publicationTimezone);
         $sanitizedContent = $this->sanitizeRichText($validated['content']);
-        $article = Article::query()->firstOrCreate(
-            ['autosave_token' => $validated['autosave_token']],
-            [
-                'title' => $validated['title'],
-                'author' => $validated['author'] ?? null,
-                'slug' => $this->uniqueSlug($validated['title']),
-                'category' => $validated['category'],
-                'excerpt' => $validated['excerpt'],
-                'content' => $sanitizedContent,
-                'published_at' => null,
-                'status' => 'Draft',
-            ],
-        );
+        $article = Article::query()->where('autosave_token', $validated['autosave_token'])->first();
 
-        if ($article->exists && $article->status !== 'Draft') {
+        if ($article !== null && $article->status !== 'Draft') {
             return response()->json([
                 'message' => 'Artikel ini sudah dipublikasikan dan tidak dapat ditimpa oleh autosave.',
             ], 409);
         }
+
+        $this->ensurePublicationDateAvailable($publishedAt, $publicationTimezone, $article);
+
+        $article ??= new Article(['autosave_token' => $validated['autosave_token']]);
 
         $oldImagePath = null;
         $imagePath = $article->image_path;
@@ -131,7 +133,7 @@ class ArticleAdminController extends Controller
             'content' => $sanitizedContent,
             'image_path' => $imagePath,
             'image_url' => $imageUrl,
-            'published_at' => null,
+            'published_at' => $publishedAt,
             'status' => 'Draft',
         ])->save();
 
@@ -167,17 +169,20 @@ class ArticleAdminController extends Controller
             $imageUrl = $validated['image_url'];
         }
 
-        unset($validated['image'], $validated['autosave_token'], $validated['image_url_changed']);
+        $publicationTimezone = $validated['published_at_timezone'] ?? config('app.timezone');
+        $publishedAt = $this->normalizePublicationDateTime($validated['published_at'] ?? null, $publicationTimezone);
 
-        $publishedAt = $validated['status'] === 'Publish'
-            ? ($validated['published_at'] ?? today()->toDateString())
-            : ($validated['published_at'] ?? null);
+        unset($validated['image'], $validated['autosave_token'], $validated['image_url_changed'], $validated['published_at_timezone']);
 
-        if ($validated['status'] === 'Publish' && $publishedAt > today()->toDateString()) {
+        if ($validated['status'] === 'Publish' && $publishedAt === null) {
+            $publishedAt = CarbonImmutable::now(config('app.timezone'));
+        }
+
+        if ($validated['status'] === 'Publish' && $publishedAt?->isFuture()) {
             $validated['status'] = 'Draft';
         }
 
-        $this->ensurePublicationDateAvailable($publishedAt, $article);
+        $this->ensurePublicationDateAvailable($publishedAt, $publicationTimezone, $article);
 
         $article->update([
             ...$validated,
@@ -214,7 +219,7 @@ class ArticleAdminController extends Controller
     }
 
     /**
-     * @return array{title: string, author: ?string, category: string, excerpt: string, content: string, published_at: ?string, status: string, image_url: ?string, autosave_token?: string, image_url_changed?: bool, image?: UploadedFile}
+     * @return array{title: string, author: ?string, category: string, excerpt: string, content: string, published_at: ?string, published_at_timezone?: string, status: string, image_url: ?string, autosave_token?: string, image_url_changed?: bool, image?: UploadedFile}
      */
     private function validateArticle(Request $request, ?Article $article = null): array
     {
@@ -226,7 +231,8 @@ class ArticleAdminController extends Controller
             'content' => 'required|string',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,avif|max:10240',
             'image_url' => 'nullable|url|max:2048',
-            'published_at' => 'nullable|date|date_format:Y-m-d',
+            'published_at' => 'nullable|date_format:Y-m-d\TH:i',
+            'published_at_timezone' => ['nullable', 'timezone'],
             'status' => 'required|in:Publish,Draft,Terjadwalkan',
             'autosave_token' => ['nullable', 'uuid'],
             'image_url_changed' => ['nullable', 'boolean'],
@@ -235,7 +241,7 @@ class ArticleAdminController extends Controller
         if ($validated['status'] === 'Terjadwalkan') {
             if (($validated['published_at'] ?? null) === null) {
                 throw ValidationException::withMessages([
-                    'published_at' => 'Isi tanggal tayang untuk menjadwalkan artikel.',
+                    'published_at' => 'Isi tanggal dan jam tayang untuk menjadwalkan artikel.',
                 ]);
             }
 
@@ -247,13 +253,34 @@ class ArticleAdminController extends Controller
         return $validated;
     }
 
-    private function ensurePublicationDateAvailable(?string $publishedAt, ?Article $ignore = null): void
+    private function normalizePublicationDateTime(?string $publishedAt, string $timezone): ?CarbonImmutable
     {
+        if ($publishedAt === null) {
+            return null;
+        }
+
+        return CarbonImmutable::createFromFormat('!Y-m-d\TH:i', $publishedAt, $timezone)
+            ->setTimezone(config('app.timezone'));
+    }
+
+    private function ensurePublicationDateAvailable(
+        ?CarbonInterface $publishedAt,
+        string $publicationTimezone,
+        ?Article $ignore = null,
+    ): void {
         if ($publishedAt === null) {
             return;
         }
 
-        $query = Article::query()->whereDate('published_at', $publishedAt);
+        $dayStart = CarbonImmutable::instance($publishedAt)
+            ->setTimezone($publicationTimezone)
+            ->startOfDay()
+            ->setTimezone(config('app.timezone'));
+        $dayEnd = $dayStart
+            ->setTimezone($publicationTimezone)
+            ->endOfDay()
+            ->setTimezone(config('app.timezone'));
+        $query = Article::query()->whereBetween('published_at', [$dayStart, $dayEnd]);
 
         if ($ignore !== null) {
             $query->whereKeyNot($ignore->getKey());

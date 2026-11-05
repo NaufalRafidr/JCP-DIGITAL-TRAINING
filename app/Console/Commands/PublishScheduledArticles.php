@@ -19,7 +19,7 @@ class PublishScheduledArticles extends Command
         $publishedCount = Article::query()
             ->where('status', 'Draft')
             ->whereNotNull('published_at')
-            ->whereDate('published_at', '<=', today())
+            ->where('published_at', '<=', now())
             ->update(['status' => 'Publish']);
 
         $this->info($publishedCount.' artikel terjadwal berhasil dipublikasikan.');
