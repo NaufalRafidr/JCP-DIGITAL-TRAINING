@@ -59,6 +59,135 @@ document.addEventListener('click', (event) => {
 
 initializeHomeSchedulePagination();
 
+const initializeTravelPackageCarousels = () => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    document.querySelectorAll('[data-travel-package-carousel]').forEach((carousel) => {
+        if (!(carousel instanceof HTMLElement)) {
+            return;
+        }
+
+        const slides = Array.from(carousel.querySelectorAll('[data-travel-package-slide]'));
+        const dots = Array.from(carousel.querySelectorAll('[data-travel-package-dot]'));
+
+        if (slides.length < 2) {
+            return;
+        }
+
+        const interval = Math.max(Number(carousel.dataset.carouselInterval) || 2500, 2000);
+        let activeIndex = 0;
+        let intervalId = null;
+
+        const showSlide = (requestedIndex) => {
+            activeIndex = (requestedIndex + slides.length) % slides.length;
+
+            slides.forEach((slide, index) => {
+                const isActive = index === activeIndex;
+
+                slide.classList.toggle('opacity-100', isActive);
+                slide.classList.toggle('opacity-0', ! isActive);
+                slide.setAttribute('aria-hidden', String(! isActive));
+            });
+
+            dots.forEach((dot, index) => {
+                const isActive = index === activeIndex;
+
+                dot.classList.toggle('w-7', isActive);
+                dot.classList.toggle('w-2.5', ! isActive);
+                dot.classList.toggle('opacity-100', isActive);
+                dot.classList.toggle('opacity-55', ! isActive);
+                dot.setAttribute('aria-current', String(isActive));
+            });
+        };
+
+        const stopCarousel = () => {
+            if (intervalId !== null) {
+                window.clearInterval(intervalId);
+                intervalId = null;
+            }
+        };
+
+        const startCarousel = () => {
+            stopCarousel();
+
+            if (prefersReducedMotion.matches || document.hidden) {
+                return;
+            }
+
+            intervalId = window.setInterval(() => showSlide(activeIndex + 1), interval);
+        };
+
+        dots.forEach((dot) => {
+            dot.addEventListener('click', () => {
+                showSlide(Number(dot.dataset.slideIndex) || 0);
+                startCarousel();
+            });
+        });
+
+        carousel.addEventListener('mouseenter', stopCarousel);
+        carousel.addEventListener('mouseleave', startCarousel);
+        carousel.addEventListener('focusin', stopCarousel);
+        carousel.addEventListener('focusout', (event) => {
+            if (!(event.relatedTarget instanceof Node) || ! carousel.contains(event.relatedTarget)) {
+                startCarousel();
+            }
+        });
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopCarousel();
+            } else {
+                startCarousel();
+            }
+        });
+        prefersReducedMotion.addEventListener('change', startCarousel);
+        startCarousel();
+    });
+};
+
+const initializeTravelPackageImagePreviews = () => {
+    document.querySelectorAll('[data-travel-package-image-input]').forEach((input) => {
+        if (!(input instanceof HTMLInputElement)) {
+            return;
+        }
+
+        const preview = input.parentElement?.querySelector('[data-travel-package-image-preview]');
+
+        if (!(preview instanceof HTMLElement)) {
+            return;
+        }
+
+        let previewUrls = [];
+
+        input.addEventListener('change', () => {
+            previewUrls.forEach((url) => URL.revokeObjectURL(url));
+            previewUrls = [];
+            preview.replaceChildren();
+
+            Array.from(input.files || []).forEach((file, index) => {
+                const imageUrl = URL.createObjectURL(file);
+                const card = document.createElement('div');
+                const image = document.createElement('img');
+                const label = document.createElement('p');
+
+                previewUrls.push(imageUrl);
+                card.className = 'overflow-hidden rounded-xl border border-slate-200 bg-white';
+                image.src = imageUrl;
+                image.alt = `Preview background baru ${index + 1}`;
+                image.className = 'h-28 w-full object-cover';
+                label.textContent = file.name;
+                label.className = 'truncate px-3 py-2 text-xs font-semibold text-slate-600';
+                card.append(image, label);
+                preview.append(card);
+            });
+
+            preview.classList.toggle('hidden', preview.childElementCount === 0);
+        });
+    });
+};
+
+initializeTravelPackageCarousels();
+initializeTravelPackageImagePreviews();
+
 document.addEventListener('click', (event) => {
     if (!(event.target instanceof Element)) {
         return;

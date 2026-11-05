@@ -133,41 +133,74 @@
          04 / PAKET PELATIHAN & WISATA
          ======================================================== -->
     @php
-        $packageLink = config('services.whatsapp.admin_number')
+        $travelPackageBadge = $jcpProfile->travel_package_badge ?: 'Paket pelatihan + wisata';
+        $travelPackageTitle = $jcpProfile->travel_package_title ?: 'Bikin liburanmu lebih meriah dengan pelatihan bersama JCP Digital Training';
+        $travelPackageDescription = $jcpProfile->travel_package_description ?: 'Gabungkan pengalaman belajar, team building, dan eksplorasi destinasi dalam satu perjalanan yang berkesan.';
+        $travelPackageFeatures = collect($jcpProfile->travel_package_features ?: [
+            'Kelas praktis',
+            'Custom itinerary',
+            'Untuk tim & komunitas',
+        ])->filter()->values();
+        $travelPackageBackgrounds = collect($jcpProfile->travel_package_background_images ?: [])
+            ->filter(fn ($path) => is_string($path) && $path !== '')
+            ->map(fn ($path) => Storage::disk('public')->url($path))
+            ->values();
+
+        if ($travelPackageBackgrounds->isEmpty()) {
+            $travelPackageBackgrounds->push(asset('images/training-travel-package-banner.png'));
+        }
+
+        $defaultPackageLink = config('services.whatsapp.admin_number')
             ? 'https://wa.me/'.preg_replace('/\D+/', '', config('services.whatsapp.admin_number')).'?text='.rawurlencode('Halo Admin JCP Digital Training, saya tertarik dengan paket pelatihan dan wisata.')
             : route('corporate');
-        $packageTarget = config('services.whatsapp.admin_number') ? '_blank' : '_self';
+        $packageLink = $jcpProfile->travel_package_button_url ?: $defaultPackageLink;
+        $packageTarget = $jcpProfile->travel_package_button_url || config('services.whatsapp.admin_number') ? '_blank' : '_self';
+        $packageButtonText = $jcpProfile->travel_package_button_text ?: 'Konsultasikan paket';
     @endphp
-    <section class="relative isolate overflow-hidden rounded-[28px] bg-[#10243A] text-white shadow-xl sm:rounded-3xl">
-        <img
-            src="{{ asset('images/training-travel-package-banner.png') }}"
-            alt="Paket pelatihan dan wisata bersama JCP Digital Training"
-            loading="lazy"
-            decoding="async"
-            class="absolute inset-0 h-full w-full object-cover object-center sm:object-right"
-        >
-        <div class="absolute inset-0 -z-0 bg-gradient-to-r from-[#10243A]/95 via-[#10243A]/75 to-[#10243A]/15"></div>
+    <section data-travel-package-carousel data-carousel-interval="2500" aria-roledescription="carousel" aria-label="Paket pelatihan dan wisata" class="relative isolate overflow-hidden rounded-[28px] bg-[#10243A] text-white shadow-xl sm:rounded-3xl">
+        <div class="absolute inset-0 z-0">
+            @foreach($travelPackageBackgrounds as $background)
+                <img
+                    data-travel-package-slide
+                    src="{{ $background }}"
+                    alt=""
+                    loading="{{ $loop->first ? 'eager' : 'lazy' }}"
+                    decoding="async"
+                    aria-hidden="{{ $loop->first ? 'false' : 'true' }}"
+                    class="absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-1000 ease-in-out motion-reduce:transition-none sm:object-right {{ $loop->first ? 'opacity-100' : 'opacity-0' }}"
+                >
+            @endforeach
+        </div>
+        <div class="absolute inset-0 z-10 bg-gradient-to-r from-[#10243A]/95 via-[#10243A]/75 to-[#10243A]/15"></div>
 
-        <div class="relative z-10 max-w-2xl space-y-5 p-7 sm:p-10 lg:p-14">
+        <div class="relative z-20 max-w-2xl space-y-5 p-7 sm:p-10 lg:p-14">
             <span class="inline-flex rounded-full border border-teal-300/30 bg-[#087F78]/90 px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-teal-50 shadow-sm sm:text-xs">
-                Paket pelatihan + wisata
+                {{ $travelPackageBadge }}
             </span>
             <h2 class="max-w-xl text-2xl font-extrabold leading-tight tracking-tight sm:text-3xl lg:text-4xl">
-                Bikin liburanmu lebih meriah dengan pelatihan bersama JCP Digital Training
+                {{ $travelPackageTitle }}
             </h2>
             <p class="max-w-lg text-sm leading-relaxed text-slate-200 sm:text-base">
-                Gabungkan pengalaman belajar, team building, dan eksplorasi destinasi dalam satu perjalanan yang berkesan.
+                {{ $travelPackageDescription }}
             </p>
             <div class="flex flex-wrap gap-2 text-xs font-semibold text-teal-50">
-                <span class="rounded-full bg-white/10 px-3 py-1.5 ring-1 ring-white/15">Kelas praktis</span>
-                <span class="rounded-full bg-white/10 px-3 py-1.5 ring-1 ring-white/15">Custom itinerary</span>
-                <span class="rounded-full bg-white/10 px-3 py-1.5 ring-1 ring-white/15">Untuk tim & komunitas</span>
+                @foreach($travelPackageFeatures as $feature)
+                    <span class="rounded-full bg-white/10 px-3 py-1.5 ring-1 ring-white/15">{{ $feature }}</span>
+                @endforeach
             </div>
             <a href="{{ $packageLink }}" target="{{ $packageTarget }}" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-xl bg-[#E5AD49] px-5 py-3 text-sm font-extrabold text-[#10243A] shadow-lg transition hover:bg-[#F1C36D] focus:outline-none focus:ring-2 focus:ring-[#E5AD49] focus:ring-offset-2 focus:ring-offset-[#10243A]">
-                Konsultasikan paket
+                {{ $packageButtonText }}
                 <span aria-hidden="true">&rarr;</span>
             </a>
         </div>
+
+        @if($travelPackageBackgrounds->count() > 1)
+            <div class="absolute bottom-5 right-5 z-30 flex items-center gap-2 rounded-full bg-[#10243A]/55 px-3 py-2 backdrop-blur-sm" aria-label="Pilih gambar background">
+                @foreach($travelPackageBackgrounds as $background)
+                    <button type="button" data-travel-package-dot data-slide-index="{{ $loop->index }}" aria-label="Tampilkan gambar {{ $loop->iteration }}" aria-current="{{ $loop->first ? 'true' : 'false' }}" class="h-2.5 rounded-full bg-white transition-[width,opacity] duration-300 motion-reduce:transition-none {{ $loop->first ? 'w-7 opacity-100' : 'w-2.5 opacity-55 hover:opacity-100' }}"></button>
+                @endforeach
+            </div>
+        @endif
     </section>
 
     <!-- ========================================================
