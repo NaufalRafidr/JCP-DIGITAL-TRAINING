@@ -98,6 +98,7 @@
                  - Program
                  - Jadwal / Batch
                  - Pendaftaran
+                 - Beranda
                  - Artikel
                  - Profil JCP
                  - Pengaturan
@@ -126,6 +127,10 @@
 
                 <a href="{{ route('admin.dashboard', ['tab' => 'pendaftaran']) }}" class="block rounded-xl px-4 py-2.5 transition-all {{ $activeTab === 'pendaftaran' ? 'border border-[#087F78]/40 bg-[#087F78]/25 font-semibold text-white shadow-xs' : 'px-3 py-2 text-slate-300 hover:text-white' }}">
                     Pendaftaran
+                </a>
+
+                <a href="{{ route('admin.dashboard', ['tab' => 'beranda']) }}" class="block rounded-xl px-4 py-2.5 transition-all {{ $activeTab === 'beranda' ? 'border border-[#087F78]/40 bg-[#087F78]/25 font-semibold text-white shadow-xs' : 'px-3 py-2 text-slate-300 hover:text-white' }}">
+                    Beranda
                 </a>
 
                 <a href="{{ route('admin.dashboard', ['tab' => 'artikel']) }}" class="block rounded-xl px-4 py-2.5 transition-all {{ $activeTab === 'artikel' ? 'border border-[#087F78]/40 bg-[#087F78]/25 font-semibold text-white shadow-xs' : 'px-3 py-2 text-slate-300 hover:text-white' }}">
@@ -278,6 +283,135 @@
                 </section>
             </div>
 
+        @elseif($activeTab === 'beranda')
+            @php
+                $heroCustomPreview = $jcpProfile->hero_image_url
+                    ?: ($jcpProfile->hero_image ? Storage::disk('public')->url($jcpProfile->hero_image) : null);
+                $travelPackageBackgroundImages = collect($jcpProfile->travel_package_background_images ?: [])
+                    ->filter(fn ($image) => is_string($image) && $image !== '')
+                    ->values();
+            @endphp
+            <div class="max-w-5xl">
+                <div class="pb-8">
+                    <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#087F78]">Konten halaman utama</p>
+                    <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-[#10243A] sm:text-4xl">Beranda</h1>
+                    <p class="mt-2 text-sm text-slate-500">Kelola gambar hero serta banner paket pelatihan dan wisata.</p>
+                </div>
+
+                <form action="{{ route('admin.homepage.update') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+                    @csrf
+                    @method('PUT')
+
+                    <section data-homepage-hero-editor data-existing-hero="{{ $heroCustomPreview }}" class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                        <div>
+                            <h2 class="text-xl font-extrabold text-[#10243A]">Gambar hero beranda</h2>
+                            <p class="mt-1 text-sm leading-relaxed text-slate-500">Pilih file dari komputer atau gunakan URL gambar. Gambar bawaan tidak ditampilkan dalam editor ini.</p>
+                        </div>
+
+                        <div class="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 sm:p-5">
+                            <img data-homepage-hero-preview src="{{ $heroCustomPreview ?: '' }}" alt="Pratinjau gambar hero beranda" class="h-44 w-full rounded-2xl border border-slate-200 object-cover object-center sm:h-60 {{ $heroCustomPreview ? '' : 'hidden' }}">
+                            <p data-homepage-hero-empty class="flex h-32 items-center justify-center rounded-2xl border border-dashed border-slate-300 text-center text-sm font-semibold text-slate-500 {{ $heroCustomPreview ? 'hidden' : '' }}">Belum ada gambar hero custom.</p>
+
+                            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label for="hero_image" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Pilih gambar</label>
+                                    <input id="hero_image" data-homepage-hero-file name="hero_image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-[#E2F6F2] file:px-3 file:py-2 file:font-semibold file:text-[#087F78]">
+                                </div>
+                                <div>
+                                    <label for="hero_image_url" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Atau URL gambar</label>
+                                    <input id="hero_image_url" data-homepage-hero-url name="hero_image_url" type="url" value="{{ old('hero_image_url', $jcpProfile->hero_image_url) }}" maxlength="2048" placeholder="https://contoh.com/gambar-hero.jpg" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                                </div>
+                            </div>
+
+                            @if($jcpProfile->hero_image || $jcpProfile->hero_image_url)
+                                <label class="mt-4 flex items-center gap-2 text-sm font-semibold text-rose-600">
+                                    <input data-homepage-hero-remove name="remove_hero_image" type="checkbox" value="1" class="h-4 w-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500">
+                                    Hapus gambar custom dan gunakan gambar default beranda
+                                </label>
+                            @endif
+                        </div>
+                    </section>
+
+                    <section data-travel-package-image-editor class="space-y-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                        <div>
+                            <h2 class="text-xl font-extrabold text-[#10243A]">Banner paket pelatihan dan wisata</h2>
+                            <p class="mt-1 text-sm leading-relaxed text-slate-500">Atur tulisan dan background yang berganti otomatis. Tombol langsung menggunakan nomor WhatsApp admin yang sudah dikonfigurasi.</p>
+                        </div>
+
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label for="travel_package_badge" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Label banner</label>
+                                <input id="travel_package_badge" name="travel_package_badge" type="text" value="{{ old('travel_package_badge', $jcpProfile->travel_package_badge ?: 'Paket pelatihan + wisata') }}" maxlength="100" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                            </div>
+                            <div>
+                                <label for="travel_package_button_text" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Tulisan tombol WhatsApp</label>
+                                <input id="travel_package_button_text" name="travel_package_button_text" type="text" value="{{ old('travel_package_button_text', $jcpProfile->travel_package_button_text ?: 'Konsultasikan paket') }}" maxlength="100" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="travel_package_title" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Judul banner</label>
+                            <input id="travel_package_title" name="travel_package_title" type="text" value="{{ old('travel_package_title', $jcpProfile->travel_package_title ?: 'Bikin liburanmu lebih meriah dengan pelatihan bersama JCP Digital Training') }}" maxlength="255" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                        </div>
+
+                        <div>
+                            <label for="travel_package_description" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Deskripsi banner</label>
+                            <textarea id="travel_package_description" name="travel_package_description" rows="3" maxlength="1000" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">{{ old('travel_package_description', $jcpProfile->travel_package_description ?: 'Gabungkan pengalaman belajar, team building, dan eksplorasi destinasi dalam satu perjalanan yang berkesan.') }}</textarea>
+                        </div>
+
+                        @if($travelPackageBackgroundImages->isNotEmpty())
+                            <div>
+                                <p class="mb-2 text-xs font-bold uppercase tracking-wider text-slate-600">Background custom tersimpan</p>
+                                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                    @foreach($travelPackageBackgroundImages as $backgroundImage)
+                                        @php
+                                            $backgroundPreview = in_array(strtolower((string) parse_url($backgroundImage, PHP_URL_SCHEME)), ['http', 'https'], true)
+                                                ? $backgroundImage
+                                                : Storage::disk('public')->url($backgroundImage);
+                                        @endphp
+                                        <label class="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                                            <img src="{{ $backgroundPreview }}" alt="Background paket wisata {{ $loop->iteration }}" class="h-28 w-full object-cover">
+                                            <span class="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-rose-600">
+                                                <input name="remove_travel_package_background_images[]" type="checkbox" value="{{ $backgroundImage }}" class="h-4 w-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500">
+                                                Hapus saat disimpan
+                                            </span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @else
+                            <p class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-center text-sm text-slate-500">Belum ada background custom. Gambar bawaan hanya digunakan di beranda sampai background pertama disimpan.</p>
+                        @endif
+
+                        <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 sm:p-5">
+                            <p class="text-sm font-bold text-[#10243A]">Tambah background</p>
+                            <p class="mt-1 text-xs leading-relaxed text-slate-500">Seperti galeri, Anda dapat memilih beberapa foto, memilih folder foto dari komputer, atau memasukkan URL gambar.</p>
+
+                            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label for="travel_package_background_images" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Pilih foto</label>
+                                    <input id="travel_package_background_images" data-travel-package-image-input name="travel_package_background_images[]" type="file" multiple accept="image/jpeg,image/png,image/webp,image/avif" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-[#E2F6F2] file:px-3 file:py-2 file:font-semibold file:text-[#087F78]">
+                                </div>
+                                <div>
+                                    <label for="travel_package_background_folder" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Atau pilih folder foto</label>
+                                    <input id="travel_package_background_folder" data-travel-package-image-input name="travel_package_background_folder[]" type="file" webkitdirectory directory multiple accept="image/jpeg,image/png,image/webp,image/avif" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-[#E2F6F2] file:px-3 file:py-2 file:font-semibold file:text-[#087F78]">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="travel_package_background_urls" class="mb-1 mt-4 block text-xs font-bold uppercase tracking-wider text-slate-600">URL gambar</label>
+                                <textarea id="travel_package_background_urls" data-travel-package-image-urls name="travel_package_background_urls" rows="3" maxlength="20000" placeholder="Satu URL gambar per baris: https://contoh.com/background.jpg" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">{{ old('travel_package_background_urls') }}</textarea>
+                            </div>
+
+                            <p class="mt-2 text-xs text-slate-500">Maksimal delapan background custom tersimpan, masing-masing file maksimal 10 MB. Klik Hapus pada preview untuk mengeluarkan gambar dari pilihan sebelum disimpan. Gambar bawaan tidak akan ikut ditampilkan setelah background custom tersimpan.</p>
+                            <div data-travel-package-image-preview class="mt-4 hidden grid gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
+                        </div>
+                    </section>
+
+                    <button type="submit" class="rounded-xl bg-[#087F78] px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-[#066761]">Simpan beranda</button>
+                </form>
+            </div>
+
         @elseif($activeTab === 'profil')
             <div class="max-w-4xl">
                 <div class="pb-8">
@@ -286,7 +420,7 @@
                     <p class="mt-2 text-sm text-slate-500">Perbarui informasi yang tampil pada halaman Tentang untuk pengguna.</p>
                 </div>
 
-                <form action="{{ route('admin.profile.update') }}" method="POST" enctype="multipart/form-data" class="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                <form action="{{ route('admin.profile.update') }}" method="POST" class="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
                     @csrf
                     @method('PUT')
 
@@ -298,107 +432,6 @@
                         <div class="sm:col-span-2">
                             <label for="tagline" class="mb-1 block text-sm font-semibold text-slate-700">Deskripsi singkat</label>
                             <textarea id="tagline" name="tagline" rows="3" maxlength="500" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">{{ old('tagline', $jcpProfile->tagline) }}</textarea>
-                        </div>
-                        <div class="sm:col-span-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 sm:p-5">
-                            <div class="mb-4">
-                                <label class="block text-sm font-semibold text-slate-700">Gambar hero beranda</label>
-                                <p class="mt-1 text-xs leading-relaxed text-slate-500">Gambar ini tampil di banner utama beranda. Gunakan JPG, PNG, WEBP, atau AVIF maksimal 10 MB.</p>
-                            </div>
-
-                            @php
-                                $heroPreview = $jcpProfile->hero_image_url
-                                    ?: ($jcpProfile->hero_image
-                                        ? Storage::disk('public')->url($jcpProfile->hero_image)
-                                        : asset('images/jcp-hero-banner.jpg'));
-                            @endphp
-                            <img src="{{ $heroPreview }}" alt="Pratinjau gambar hero beranda" class="mb-4 h-40 w-full rounded-2xl border border-slate-200 object-cover object-center sm:h-52">
-
-                            <label for="hero_image" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Upload gambar baru</label>
-                            <input id="hero_image" name="hero_image" type="file" accept=".jpg,.jpeg,.png,.webp,.avif,image/jpeg,image/png,image/webp,image/avif" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-[#E2F6F2] file:px-3 file:py-2 file:font-semibold file:text-[#087F78]">
-
-                            <label for="hero_image_url" class="mt-4 mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Atau gunakan URL gambar</label>
-                            <input id="hero_image_url" name="hero_image_url" type="url" value="{{ old('hero_image_url', $jcpProfile->hero_image_url) }}" placeholder="https://contoh.com/gambar-hero.jpg" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
-
-                            @if($jcpProfile->hero_image || $jcpProfile->hero_image_url)
-                                <label class="mt-4 flex items-center gap-2 text-sm font-semibold text-rose-600">
-                                    <input name="remove_hero_image" type="checkbox" value="1" class="h-4 w-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500">
-                                    Hapus gambar custom dan gunakan gambar default beranda
-                                </label>
-                            @endif
-                        </div>
-                        @php
-                            $travelPackageFeaturesValue = old('travel_package_features', implode(PHP_EOL, $jcpProfile->travel_package_features ?: [
-                                'Kelas praktis',
-                                'Custom itinerary',
-                                'Untuk tim & komunitas',
-                            ]));
-                            $travelPackageBackgroundImages = collect($jcpProfile->travel_package_background_images ?: [])
-                                ->filter(fn ($path) => is_string($path) && $path !== '')
-                                ->values();
-                        @endphp
-                        <div class="sm:col-span-2 space-y-5 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
-                            <div>
-                                <p class="text-sm font-bold text-[#10243A]">Banner paket pelatihan dan wisata</p>
-                                <p class="mt-1 text-xs leading-relaxed text-slate-500">Atur seluruh tulisan, tombol, dan beberapa background yang berganti otomatis pada halaman beranda.</p>
-                            </div>
-
-                            <div class="grid gap-4 sm:grid-cols-2">
-                                <div>
-                                    <label for="travel_package_badge" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Label banner</label>
-                                    <input id="travel_package_badge" name="travel_package_badge" type="text" value="{{ old('travel_package_badge', $jcpProfile->travel_package_badge ?: 'Paket pelatihan + wisata') }}" maxlength="100" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
-                                </div>
-                                <div>
-                                    <label for="travel_package_button_text" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Tulisan tombol</label>
-                                    <input id="travel_package_button_text" name="travel_package_button_text" type="text" value="{{ old('travel_package_button_text', $jcpProfile->travel_package_button_text ?: 'Konsultasikan paket') }}" maxlength="100" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
-                                </div>
-                            </div>
-
-                            <div>
-                                <label for="travel_package_title" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Judul banner</label>
-                                <input id="travel_package_title" name="travel_package_title" type="text" value="{{ old('travel_package_title', $jcpProfile->travel_package_title ?: 'Bikin liburanmu lebih meriah dengan pelatihan bersama JCP Digital Training') }}" maxlength="255" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
-                            </div>
-
-                            <div>
-                                <label for="travel_package_description" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Deskripsi banner</label>
-                                <textarea id="travel_package_description" name="travel_package_description" rows="3" maxlength="1000" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">{{ old('travel_package_description', $jcpProfile->travel_package_description ?: 'Gabungkan pengalaman belajar, team building, dan eksplorasi destinasi dalam satu perjalanan yang berkesan.') }}</textarea>
-                            </div>
-
-                            <div class="grid gap-4 sm:grid-cols-2">
-                                <div>
-                                    <label for="travel_package_features" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Keunggulan</label>
-                                    <textarea id="travel_package_features" name="travel_package_features" rows="5" maxlength="500" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">{{ $travelPackageFeaturesValue }}</textarea>
-                                    <p class="mt-1 text-xs text-slate-500">Satu keunggulan per baris, maksimal lima baris.</p>
-                                </div>
-                                <div>
-                                    <label for="travel_package_button_url" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Link tombol</label>
-                                    <input id="travel_package_button_url" name="travel_package_button_url" type="url" value="{{ old('travel_package_button_url', $jcpProfile->travel_package_button_url) }}" maxlength="2048" placeholder="https://wa.me/..." class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
-                                    <p class="mt-1 text-xs leading-relaxed text-slate-500">Kosongkan untuk memakai WhatsApp admin atau halaman Corporate.</p>
-                                </div>
-                            </div>
-
-                            @if($travelPackageBackgroundImages->isNotEmpty())
-                                <div>
-                                    <p class="mb-2 text-xs font-bold uppercase tracking-wider text-slate-600">Background tersimpan</p>
-                                    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                        @foreach($travelPackageBackgroundImages as $backgroundImage)
-                                            <label class="overflow-hidden rounded-xl border border-slate-200 bg-white">
-                                                <img src="{{ Storage::disk('public')->url($backgroundImage) }}" alt="Background paket wisata {{ $loop->iteration }}" class="h-28 w-full object-cover">
-                                                <span class="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-rose-600">
-                                                    <input name="remove_travel_package_background_images[]" type="checkbox" value="{{ $backgroundImage }}" class="h-4 w-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500">
-                                                    Hapus saat disimpan
-                                                </span>
-                                            </label>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endif
-
-                            <div>
-                                <label for="travel_package_background_images" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Tambah background</label>
-                                <input id="travel_package_background_images" data-travel-package-image-input name="travel_package_background_images[]" type="file" multiple accept=".jpg,.jpeg,.png,.webp,.avif,image/jpeg,image/png,image/webp,image/avif" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-[#E2F6F2] file:px-3 file:py-2 file:font-semibold file:text-[#087F78]">
-                                <p class="mt-1 text-xs text-slate-500">Pilih beberapa gambar sekaligus. Maksimal delapan background tersimpan, masing-masing 10 MB.</p>
-                                <div data-travel-package-image-preview class="mt-3 hidden grid gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
-                            </div>
                         </div>
                         <div class="sm:col-span-2">
                             <label for="vision_title" class="mb-1 block text-sm font-semibold text-slate-700">Judul visi dan komitmen</label>

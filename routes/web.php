@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\ArticleAdminController;
 use App\Http\Controllers\Admin\CourseAdminController;
 use App\Http\Controllers\Admin\CourseSessionAdminController;
 use App\Http\Controllers\Admin\GalleryAdminController;
+use App\Http\Controllers\Admin\HomepageAdminController;
 use App\Http\Controllers\Admin\JcpProfileAdminController;
 use App\Http\Controllers\Admin\RegistrationAdminController;
 use App\Http\Controllers\Auth\AdminLoginController;
@@ -49,6 +50,7 @@ Route::post('/admin/logout', [AdminLoginController::class, 'destroy'])->middlewa
 Route::middleware('admin')->group(function () {
     Route::get('/admin', [PageController::class, 'admin'])->name('admin.dashboard');
     Route::put('/admin/account', [AdminAccountController::class, 'update'])->name('admin.account.update');
+    Route::put('/admin/homepage', [HomepageAdminController::class, 'update'])->name('admin.homepage.update');
     Route::put('/admin/profile', [JcpProfileAdminController::class, 'update'])->name('admin.profile.update');
     Route::post('/admin/articles/autosave', [ArticleAdminController::class, 'autosave'])->name('admin.articles.autosave');
     Route::post('/admin/articles', [ArticleAdminController::class, 'store'])->name('admin.articles.store');

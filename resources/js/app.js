@@ -145,12 +145,15 @@ const initializeTravelPackageCarousels = () => {
 };
 
 const initializeTravelPackageImagePreviews = () => {
-    document.querySelectorAll('[data-travel-package-image-input]').forEach((input) => {
-        if (!(input instanceof HTMLInputElement)) {
+    document.querySelectorAll('[data-travel-package-image-editor]').forEach((editor) => {
+        if (!(editor instanceof HTMLElement)) {
             return;
         }
 
-        const preview = input.parentElement?.querySelector('[data-travel-package-image-preview]');
+        const inputs = Array.from(editor.querySelectorAll('[data-travel-package-image-input]'))
+            .filter((input) => input instanceof HTMLInputElement);
+        const urlsInput = editor.querySelector('[data-travel-package-image-urls]');
+        const preview = editor.querySelector('[data-travel-package-image-preview]');
 
         if (!(preview instanceof HTMLElement)) {
             return;
@@ -158,35 +161,159 @@ const initializeTravelPackageImagePreviews = () => {
 
         let previewUrls = [];
 
-        input.addEventListener('change', () => {
+        const renderPreviews = () => {
             previewUrls.forEach((url) => URL.revokeObjectURL(url));
             previewUrls = [];
             preview.replaceChildren();
 
-            Array.from(input.files || []).forEach((file, index) => {
+            const selectedFiles = inputs.flatMap((input) => Array.from(input.files || []).map((file, fileIndex) => ({
+                file,
+                fileIndex,
+                input,
+            })));
+            const remoteUrls = urlsInput instanceof HTMLTextAreaElement
+                ? urlsInput.value.split(/\r?\n/).map((url) => url.trim()).filter(Boolean)
+                : [];
+
+            selectedFiles.forEach(({ file, fileIndex, input }, index) => {
                 const imageUrl = URL.createObjectURL(file);
                 const card = document.createElement('div');
                 const image = document.createElement('img');
                 const label = document.createElement('p');
+                const removeButton = document.createElement('button');
 
                 previewUrls.push(imageUrl);
-                card.className = 'overflow-hidden rounded-xl border border-slate-200 bg-white';
+                card.className = 'relative overflow-hidden rounded-xl border border-slate-200 bg-white';
                 image.src = imageUrl;
                 image.alt = `Preview background baru ${index + 1}`;
                 image.className = 'h-28 w-full object-cover';
                 label.textContent = file.name;
-                label.className = 'truncate px-3 py-2 text-xs font-semibold text-slate-600';
-                card.append(image, label);
+                label.className = 'truncate px-3 py-2 pr-16 text-xs font-semibold text-slate-600';
+                removeButton.type = 'button';
+                removeButton.textContent = 'Hapus';
+                removeButton.setAttribute('aria-label', `Hapus ${file.name} dari pilihan background`);
+                removeButton.className = 'absolute bottom-1.5 right-2 rounded-lg bg-rose-50 px-2 py-1 text-[11px] font-bold text-rose-700 transition-colors hover:bg-rose-100 focus:outline-none focus:ring-2 focus:ring-rose-500/30';
+                removeButton.addEventListener('click', () => {
+                    const retainedFiles = new DataTransfer();
+
+                    Array.from(input.files || []).forEach((selectedFile, selectedFileIndex) => {
+                        if (selectedFileIndex !== fileIndex) {
+                            retainedFiles.items.add(selectedFile);
+                        }
+                    });
+
+                    input.files = retainedFiles.files;
+                    renderPreviews();
+                });
+                card.append(image, label, removeButton);
+                preview.append(card);
+            });
+
+            remoteUrls.forEach((url, index) => {
+                const card = document.createElement('div');
+                const image = document.createElement('img');
+                const label = document.createElement('p');
+                const removeButton = document.createElement('button');
+
+                card.className = 'relative overflow-hidden rounded-xl border border-slate-200 bg-white';
+                image.src = url;
+                image.alt = `Preview URL background ${index + 1}`;
+                image.className = 'h-28 w-full object-cover';
+                label.textContent = url;
+                label.className = 'truncate px-3 py-2 pr-16 text-xs font-semibold text-slate-600';
+                removeButton.type = 'button';
+                removeButton.textContent = 'Hapus';
+                removeButton.setAttribute('aria-label', `Hapus URL background ${index + 1}`);
+                removeButton.className = 'absolute bottom-1.5 right-2 rounded-lg bg-rose-50 px-2 py-1 text-[11px] font-bold text-rose-700 transition-colors hover:bg-rose-100 focus:outline-none focus:ring-2 focus:ring-rose-500/30';
+                removeButton.addEventListener('click', () => {
+                    if (!(urlsInput instanceof HTMLTextAreaElement)) {
+                        return;
+                    }
+
+                    urlsInput.value = remoteUrls
+                        .filter((remoteUrl, remoteUrlIndex) => remoteUrlIndex !== index)
+                        .join('\n');
+                    renderPreviews();
+                });
+                card.append(image, label, removeButton);
                 preview.append(card);
             });
 
             preview.classList.toggle('hidden', preview.childElementCount === 0);
-        });
+        };
+
+        inputs.forEach((input) => input.addEventListener('change', renderPreviews));
+
+        if (urlsInput instanceof HTMLTextAreaElement) {
+            urlsInput.addEventListener('input', renderPreviews);
+            renderPreviews();
+        }
+    });
+};
+
+const initializeHomepageHeroPreviews = () => {
+    document.querySelectorAll('[data-homepage-hero-editor]').forEach((editor) => {
+        if (!(editor instanceof HTMLElement)) {
+            return;
+        }
+
+        const fileInput = editor.querySelector('[data-homepage-hero-file]');
+        const urlInput = editor.querySelector('[data-homepage-hero-url]');
+        const removeInput = editor.querySelector('[data-homepage-hero-remove]');
+        const preview = editor.querySelector('[data-homepage-hero-preview]');
+        const emptyState = editor.querySelector('[data-homepage-hero-empty]');
+
+        if (!(fileInput instanceof HTMLInputElement)
+            || !(urlInput instanceof HTMLInputElement)
+            || !(preview instanceof HTMLImageElement)
+            || !(emptyState instanceof HTMLElement)) {
+            return;
+        }
+
+        let objectUrl = null;
+
+        const renderPreview = () => {
+            if (objectUrl !== null) {
+                URL.revokeObjectURL(objectUrl);
+                objectUrl = null;
+            }
+
+            const selectedFile = fileInput.files?.[0];
+            const shouldRemove = removeInput instanceof HTMLInputElement && removeInput.checked;
+            let imageUrl = shouldRemove ? '' : urlInput.value.trim();
+
+            if (! shouldRemove && selectedFile instanceof File) {
+                objectUrl = URL.createObjectURL(selectedFile);
+                imageUrl = objectUrl;
+            } else if (! shouldRemove && imageUrl === '') {
+                imageUrl = editor.dataset.existingHero || '';
+            }
+
+            if (imageUrl === '') {
+                preview.removeAttribute('src');
+                preview.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+
+                return;
+            }
+
+            preview.src = imageUrl;
+            preview.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+        };
+
+        fileInput.addEventListener('change', renderPreview);
+        urlInput.addEventListener('input', renderPreview);
+
+        if (removeInput instanceof HTMLInputElement) {
+            removeInput.addEventListener('change', renderPreview);
+        }
     });
 };
 
 initializeTravelPackageCarousels();
 initializeTravelPackageImagePreviews();
+initializeHomepageHeroPreviews();
 
 document.addEventListener('click', (event) => {
     if (!(event.target instanceof Element)) {

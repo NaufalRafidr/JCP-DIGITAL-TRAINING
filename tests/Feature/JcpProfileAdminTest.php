@@ -39,7 +39,7 @@ it('updates the JCP profile and renders the changes on the about page', function
         ->assertDontSee($profileStatistics['practice_label']);
 });
 
-it('does not show profile statistics fields in the admin profile form', function () {
+it('separates homepage content from the JCP profile form', function () {
     $admin = User::factory()->create(['is_admin' => true]);
 
     $this->actingAs($admin)
@@ -47,40 +47,52 @@ it('does not show profile statistics fields in the admin profile form', function
         ->assertOk()
         ->assertDontSee('Statistik profil')
         ->assertDontSee('name="programs_stat"', false)
+        ->assertDontSee('name="hero_image"', false)
+        ->assertDontSee('name="travel_package_title"', false);
+
+    $this->actingAs($admin)
+        ->get(route('admin.dashboard', ['tab' => 'beranda']))
+        ->assertOk()
+        ->assertSeeInOrder(['Beranda', 'Artikel'])
+        ->assertSee('name="hero_image"', false)
         ->assertSee('name="travel_package_title"', false)
         ->assertSee('name="travel_package_background_images[]"', false)
+        ->assertSee('name="travel_package_background_folder[]"', false)
+        ->assertSee('name="travel_package_background_urls"', false)
+        ->assertDontSee('name="travel_package_features"', false)
+        ->assertDontSee('name="travel_package_button_url"', false)
         ->assertSee('multiple', false);
 });
 
-it('stores and replaces the homepage hero image from the admin profile form', function () {
+it('stores and replaces the homepage hero image from the homepage form', function () {
     Storage::fake('public');
     $admin = User::factory()->create(['is_admin' => true]);
     $profile = JcpProfile::query()->firstOrFail();
-    $profilePayload = [
-        'organization_name' => $profile->organization_name,
-        'tagline' => $profile->tagline,
-        'vision_title' => $profile->vision_title,
-        'vision_content' => $profile->vision_content,
+    $homepagePayload = [
+        'travel_package_badge' => 'Paket pelatihan + wisata',
+        'travel_package_title' => 'Pelatihan bersama JCP',
+        'travel_package_description' => 'Pelatihan dan perjalanan yang berkesan.',
+        'travel_package_button_text' => 'Konsultasikan paket',
     ];
 
-    $createResponse = $this->actingAs($admin)->put(route('admin.profile.update'), [
-        ...$profilePayload,
+    $createResponse = $this->actingAs($admin)->put(route('admin.homepage.update'), [
+        ...$homepagePayload,
         'hero_image' => UploadedFile::fake()->image('homepage-hero.jpg'),
     ]);
 
     $firstImagePath = $profile->refresh()->hero_image;
 
-    $createResponse->assertRedirect(route('admin.dashboard', ['tab' => 'profil']));
+    $createResponse->assertRedirect(route('admin.dashboard', ['tab' => 'beranda']));
     Storage::disk('public')->assertExists($firstImagePath);
 
-    $updateResponse = $this->actingAs($admin)->put(route('admin.profile.update'), [
-        ...$profilePayload,
+    $updateResponse = $this->actingAs($admin)->put(route('admin.homepage.update'), [
+        ...$homepagePayload,
         'hero_image' => UploadedFile::fake()->image('homepage-hero-new.jpg'),
     ]);
 
     $updatedProfile = $profile->refresh();
 
-    $updateResponse->assertRedirect(route('admin.dashboard', ['tab' => 'profil']));
+    $updateResponse->assertRedirect(route('admin.dashboard', ['tab' => 'beranda']));
     Storage::disk('public')->assertMissing($firstImagePath);
     Storage::disk('public')->assertExists($updatedProfile->hero_image);
     $this->get(route('home'))
@@ -88,38 +100,35 @@ it('stores and replaces the homepage hero image from the admin profile form', fu
         ->assertSee(Storage::disk('public')->url($updatedProfile->hero_image), false);
 });
 
-it('updates travel package content and shows multiple rotating backgrounds on the homepage', function () {
+it('updates homepage content from files folders and URLs without showing the default background', function () {
     Storage::fake('public');
+    config(['services.whatsapp.admin_number' => '628111222333']);
     $admin = User::factory()->create(['is_admin' => true]);
     $profile = JcpProfile::query()->firstOrFail();
 
-    $response = $this->actingAs($admin)->put(route('admin.profile.update'), [
-        'organization_name' => $profile->organization_name,
-        'tagline' => $profile->tagline,
-        'vision_title' => $profile->vision_title,
-        'vision_content' => $profile->vision_content,
+    $response = $this->actingAs($admin)->put(route('admin.homepage.update'), [
         'travel_package_badge' => 'Belajar Sambil Berwisata',
         'travel_package_title' => 'Paket outing kreatif untuk tim Anda',
         'travel_package_description' => 'Pelatihan praktis yang dipadukan dengan perjalanan berkesan.',
-        'travel_package_features' => "Workshop pilihan\nItinerary fleksibel\nPendamping profesional",
         'travel_package_button_text' => 'Hubungi tim kami',
-        'travel_package_button_url' => 'https://example.com/paket-wisata',
         'travel_package_background_images' => [
             UploadedFile::fake()->image('wisata-satu.jpg'),
+        ],
+        'travel_package_background_folder' => [
             UploadedFile::fake()->image('wisata-dua.jpg'),
         ],
+        'travel_package_background_urls' => 'https://example.com/wisata-tiga.jpg',
     ]);
 
     $updatedProfile = $profile->refresh();
     $backgroundImages = $updatedProfile->travel_package_background_images;
 
-    $response->assertRedirect(route('admin.dashboard', ['tab' => 'profil']));
-    expect($updatedProfile->travel_package_features)->toBe([
-        'Workshop pilihan',
-        'Itinerary fleksibel',
-        'Pendamping profesional',
-    ])->and($backgroundImages)->toHaveCount(2);
-    Storage::disk('public')->assertExists($backgroundImages);
+    $response->assertRedirect(route('admin.dashboard', ['tab' => 'beranda']));
+    expect($updatedProfile->travel_package_features)->toBe([])
+        ->and($updatedProfile->travel_package_button_url)->toBeNull()
+        ->and($backgroundImages)->toHaveCount(3)
+        ->and($backgroundImages[2])->toBe('https://example.com/wisata-tiga.jpg');
+    Storage::disk('public')->assertExists(array_slice($backgroundImages, 0, 2));
 
     $homeResponse = $this->get(route('home'));
 
@@ -127,11 +136,42 @@ it('updates travel package content and shows multiple rotating backgrounds on th
         ->assertSee('Belajar Sambil Berwisata')
         ->assertSee('Paket outing kreatif untuk tim Anda')
         ->assertSee('Hubungi tim kami')
-        ->assertSee('https://example.com/paket-wisata', false)
+        ->assertSee('https://wa.me/628111222333', false)
         ->assertSee(Storage::disk('public')->url($backgroundImages[0]), false)
         ->assertSee(Storage::disk('public')->url($backgroundImages[1]), false)
+        ->assertSee('https://example.com/wisata-tiga.jpg', false)
+        ->assertDontSee('images/training-travel-package-banner.png', false)
         ->assertSee('data-travel-package-carousel', false);
-    expect(substr_count($homeResponse->getContent(), 'data-travel-package-slide'))->toBe(2);
+    expect(substr_count($homeResponse->getContent(), 'data-travel-package-slide'))->toBe(3);
+});
+
+it('rejects more than eight combined homepage backgrounds without storing new files', function () {
+    Storage::fake('public');
+    $admin = User::factory()->create(['is_admin' => true]);
+    $profile = JcpProfile::query()->firstOrFail();
+    $existingBackgrounds = collect(range(1, 7))
+        ->map(fn (int $number): string => 'jcp/travel-package/existing-'.$number.'.jpg')
+        ->all();
+    $profile->update(['travel_package_background_images' => $existingBackgrounds]);
+
+    $response = $this->actingAs($admin)->from(route('admin.dashboard', ['tab' => 'beranda']))
+        ->put(route('admin.homepage.update'), [
+            'travel_package_badge' => 'Paket pelatihan + wisata',
+            'travel_package_title' => 'Pelatihan bersama JCP',
+            'travel_package_description' => 'Pelatihan dan perjalanan yang berkesan.',
+            'travel_package_button_text' => 'Konsultasikan paket',
+            'travel_package_background_images' => [
+                UploadedFile::fake()->image('tambahan-satu.jpg'),
+                UploadedFile::fake()->image('tambahan-dua.jpg'),
+            ],
+        ]);
+
+    $response->assertRedirect(route('admin.dashboard', ['tab' => 'beranda']))
+        ->assertSessionHasErrors([
+            'travel_package_background_images' => 'Maksimal delapan gambar background dapat disimpan.',
+        ]);
+    expect($profile->refresh()->travel_package_background_images)->toBe($existingBackgrounds);
+    expect(Storage::disk('public')->allFiles('jcp/travel-package'))->toBe([]);
 });
 
 it('removes only selected travel package backgrounds', function () {
@@ -146,15 +186,15 @@ it('removes only selected travel package backgrounds', function () {
         'travel_package_background_images' => [$firstBackground, $secondBackground],
     ]);
 
-    $response = $this->actingAs($admin)->put(route('admin.profile.update'), [
-        'organization_name' => $profile->organization_name,
-        'tagline' => $profile->tagline,
-        'vision_title' => $profile->vision_title,
-        'vision_content' => $profile->vision_content,
+    $response = $this->actingAs($admin)->put(route('admin.homepage.update'), [
+        'travel_package_badge' => 'Paket pelatihan + wisata',
+        'travel_package_title' => 'Pelatihan bersama JCP',
+        'travel_package_description' => 'Pelatihan dan perjalanan yang berkesan.',
+        'travel_package_button_text' => 'Konsultasikan paket',
         'remove_travel_package_background_images' => [$firstBackground],
     ]);
 
-    $response->assertRedirect(route('admin.dashboard', ['tab' => 'profil']));
+    $response->assertRedirect(route('admin.dashboard', ['tab' => 'beranda']));
     expect($profile->refresh()->travel_package_background_images)->toBe([$secondBackground]);
     Storage::disk('public')->assertMissing($firstBackground);
     Storage::disk('public')->assertExists($secondBackground);
@@ -164,8 +204,10 @@ it('forbids non-admin users from updating the JCP profile', function () {
     $user = User::factory()->create(['is_admin' => false]);
 
     $response = $this->actingAs($user)->put(route('admin.profile.update'), []);
+    $homepageResponse = $this->actingAs($user)->put(route('admin.homepage.update'), []);
 
     $response->assertForbidden();
+    $homepageResponse->assertForbidden();
 });
 
 it('escapes user-provided JCP profile content on public pages', function () {
@@ -175,9 +217,15 @@ it('escapes user-provided JCP profile content on public pages', function () {
     $this->actingAs($admin)->put(route('admin.profile.update'), [
         'organization_name' => $dangerousText,
         'tagline' => 'Deskripsi aman.',
-        'travel_package_title' => $dangerousText,
         'vision_title' => 'Judul aman.',
         'vision_content' => 'Isi aman.',
+    ]);
+
+    $this->actingAs($admin)->put(route('admin.homepage.update'), [
+        'travel_package_badge' => 'Paket pelatihan + wisata',
+        'travel_package_title' => $dangerousText,
+        'travel_package_description' => 'Deskripsi aman.',
+        'travel_package_button_text' => 'Konsultasikan paket',
     ]);
 
     $this->get(route('tentang'))

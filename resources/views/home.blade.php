@@ -136,14 +136,11 @@
         $travelPackageBadge = $jcpProfile->travel_package_badge ?: 'Paket pelatihan + wisata';
         $travelPackageTitle = $jcpProfile->travel_package_title ?: 'Bikin liburanmu lebih meriah dengan pelatihan bersama JCP Digital Training';
         $travelPackageDescription = $jcpProfile->travel_package_description ?: 'Gabungkan pengalaman belajar, team building, dan eksplorasi destinasi dalam satu perjalanan yang berkesan.';
-        $travelPackageFeatures = collect($jcpProfile->travel_package_features ?: [
-            'Kelas praktis',
-            'Custom itinerary',
-            'Untuk tim & komunitas',
-        ])->filter()->values();
         $travelPackageBackgrounds = collect($jcpProfile->travel_package_background_images ?: [])
             ->filter(fn ($path) => is_string($path) && $path !== '')
-            ->map(fn ($path) => Storage::disk('public')->url($path))
+            ->map(fn ($path) => in_array(strtolower((string) parse_url($path, PHP_URL_SCHEME)), ['http', 'https'], true)
+                ? $path
+                : Storage::disk('public')->url($path))
             ->values();
 
         if ($travelPackageBackgrounds->isEmpty()) {
@@ -153,8 +150,8 @@
         $defaultPackageLink = config('services.whatsapp.admin_number')
             ? 'https://wa.me/'.preg_replace('/\D+/', '', config('services.whatsapp.admin_number')).'?text='.rawurlencode('Halo Admin JCP Digital Training, saya tertarik dengan paket pelatihan dan wisata.')
             : route('corporate');
-        $packageLink = $jcpProfile->travel_package_button_url ?: $defaultPackageLink;
-        $packageTarget = $jcpProfile->travel_package_button_url || config('services.whatsapp.admin_number') ? '_blank' : '_self';
+        $packageLink = $defaultPackageLink;
+        $packageTarget = config('services.whatsapp.admin_number') ? '_blank' : '_self';
         $packageButtonText = $jcpProfile->travel_package_button_text ?: 'Konsultasikan paket';
     @endphp
     <section data-travel-package-carousel data-carousel-interval="2500" aria-roledescription="carousel" aria-label="Paket pelatihan dan wisata" class="relative isolate overflow-hidden rounded-[28px] bg-[#10243A] text-white shadow-xl sm:rounded-3xl">
@@ -183,11 +180,6 @@
             <p class="max-w-lg text-sm leading-relaxed text-slate-200 sm:text-base">
                 {{ $travelPackageDescription }}
             </p>
-            <div class="flex flex-wrap gap-2 text-xs font-semibold text-teal-50">
-                @foreach($travelPackageFeatures as $feature)
-                    <span class="rounded-full bg-white/10 px-3 py-1.5 ring-1 ring-white/15">{{ $feature }}</span>
-                @endforeach
-            </div>
             <a href="{{ $packageLink }}" target="{{ $packageTarget }}" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-xl bg-[#E5AD49] px-5 py-3 text-sm font-extrabold text-[#10243A] shadow-lg transition hover:bg-[#F1C36D] focus:outline-none focus:ring-2 focus:ring-[#E5AD49] focus:ring-offset-2 focus:ring-offset-[#10243A]">
                 {{ $packageButtonText }}
                 <span aria-hidden="true">&rarr;</span>
