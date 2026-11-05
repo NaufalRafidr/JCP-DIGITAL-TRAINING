@@ -170,19 +170,26 @@ class ArticleAdminController extends Controller
         }
 
         $publicationTimezone = $validated['published_at_timezone'] ?? config('app.timezone');
-        $publishedAt = $this->normalizePublicationDateTime($validated['published_at'] ?? null, $publicationTimezone);
+        $submittedDateTime = $this->normalizePublicationDateTime($validated['published_at'] ?? null, $publicationTimezone);
+        $isPublishedArticle = $article->status === 'Publish';
+        $publishedAt = $isPublishedArticle ? $article->published_at : $submittedDateTime;
+        $editedAt = $isPublishedArticle ? $submittedDateTime : $article->edited_at;
 
         unset($validated['image'], $validated['autosave_token'], $validated['image_url_changed'], $validated['published_at_timezone']);
 
-        if ($validated['status'] === 'Publish' && $publishedAt === null) {
-            $publishedAt = CarbonImmutable::now(config('app.timezone'));
-        }
+        if ($isPublishedArticle) {
+            $validated['status'] = 'Publish';
+        } else {
+            if ($validated['status'] === 'Publish' && $publishedAt === null) {
+                $publishedAt = CarbonImmutable::now(config('app.timezone'));
+            }
 
-        if ($validated['status'] === 'Publish' && $publishedAt?->isFuture()) {
-            $validated['status'] = 'Draft';
-        }
+            if ($validated['status'] === 'Publish' && $publishedAt?->isFuture()) {
+                $validated['status'] = 'Draft';
+            }
 
-        $this->ensurePublicationDateAvailable($publishedAt, $publicationTimezone, $article);
+            $this->ensurePublicationDateAvailable($publishedAt, $publicationTimezone, $article);
+        }
 
         $article->update([
             ...$validated,
@@ -190,6 +197,7 @@ class ArticleAdminController extends Controller
             'image_url' => $imageUrl,
             'slug' => $this->uniqueSlug($validated['title'], $article),
             'published_at' => $publishedAt,
+            'edited_at' => $editedAt,
             'autosave_token' => null,
         ]);
 
@@ -231,11 +239,16 @@ class ArticleAdminController extends Controller
             'content' => 'required|string',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,avif|max:10240',
             'image_url' => 'nullable|url|max:2048',
-            'published_at' => 'nullable|date_format:Y-m-d\TH:i',
+            'published_at' => [
+                $article?->status === 'Publish' ? 'required' : 'nullable',
+                'date_format:Y-m-d\TH:i',
+            ],
             'published_at_timezone' => ['nullable', 'timezone'],
             'status' => 'required|in:Publish,Draft,Terjadwalkan',
             'autosave_token' => ['nullable', 'uuid'],
             'image_url_changed' => ['nullable', 'boolean'],
+        ], [
+            'published_at.required' => 'Isi tanggal dan jam edit artikel.',
         ]);
 
         if ($validated['status'] === 'Terjadwalkan') {

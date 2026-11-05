@@ -20,11 +20,13 @@ class Article extends Model
         'image_url',
         'reading_time',
         'published_at',
+        'edited_at',
         'status',
         'autosave_token',
     ];
 
     protected $casts = [
         'published_at' => 'datetime',
+        'edited_at' => 'datetime',
     ];
 }

@@ -772,6 +772,8 @@
         @elseif($activeTab === 'artikel')
             @php
                 $isEditingArticle = $selectedArticle !== null && request()->boolean('edit_article');
+                $isEditingPublishedArticle = $isEditingArticle && $selectedArticle->status === 'Publish';
+                $articleEditTimestamp = $isEditingPublishedArticle ? now() : null;
                 $articleFormStatus = old('status', $isEditingArticle
                     ? ($selectedArticle->status === 'Publish' ? 'Publish' : ($selectedArticle->published_at ? 'Terjadwalkan' : 'Draft'))
                     : 'Draft');
@@ -861,9 +863,13 @@
                                 <p class="mt-1 text-xs text-slate-500">Jika file dan URL diisi, file akan digunakan.</p>
                             </div>
                             <div>
-                                <label for="add_article_published_at_inline" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Tanggal dan jam tayang / jadwal</label>
-                                <input id="add_article_published_at_inline" data-article-published-at @if($isEditingArticle) data-published-at-iso="{{ $selectedArticle->published_at?->toIso8601String() }}" @else data-min-local-now @endif name="published_at" type="datetime-local" step="60" value="{{ old('published_at', $isEditingArticle ? $selectedArticle->published_at?->format('Y-m-d\TH:i') : '') }}" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
-                                <p class="mt-1 text-xs text-slate-500">Mengikuti zona waktu komputer. Satu tanggal hanya dapat berisi satu artikel.</p>
+                                <label for="add_article_published_at_inline" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">{{ $isEditingPublishedArticle ? 'Tanggal dan jam edit' : 'Tanggal dan jam tayang / jadwal' }}</label>
+                                <input id="add_article_published_at_inline" data-article-published-at @if(old('published_at') === null && $isEditingArticle) data-published-at-iso="{{ $isEditingPublishedArticle ? $articleEditTimestamp->toIso8601String() : $selectedArticle->published_at?->toIso8601String() }}" @elseif(! $isEditingArticle) data-min-local-now @endif name="published_at" type="datetime-local" step="60" value="{{ old('published_at', $isEditingPublishedArticle ? $articleEditTimestamp->format('Y-m-d\TH:i') : ($isEditingArticle ? $selectedArticle->published_at?->format('Y-m-d\TH:i') : '')) }}" @required($isEditingPublishedArticle) class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                                @if($isEditingPublishedArticle)
+                                    <p class="mt-1 text-xs leading-5 text-slate-500">Waktu terbit pertama tetap <time data-article-local-time datetime="{{ $selectedArticle->published_at?->toIso8601String() }}">{{ $selectedArticle->published_at?->format('d M Y, H:i') }}</time>. Waktu di atas hanya menjadi keterangan revisi.</p>
+                                @else
+                                    <p class="mt-1 text-xs text-slate-500">Mengikuti zona waktu komputer. Satu tanggal hanya dapat berisi satu artikel.</p>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -889,9 +895,11 @@
                         @if($isEditingArticle)
                             <a href="{{ route('admin.dashboard', ['tab' => 'artikel', 'article_id' => $selectedArticle->id]) }}" class="rounded-xl px-5 py-2.5 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-100">Batal edit</a>
                         @endif
-                        <button type="button" onclick="submitArticleAction('Draft', false)" class="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 transition-colors hover:border-[#10243A] hover:bg-slate-50">Simpan draft</button>
-                        <button type="button" onclick="submitArticleAction('Draft', true)" class="rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-white transition-colors hover:bg-amber-600">Jadwalkan</button>
-                        <button type="button" onclick="submitArticleAction('Publish', false)" class="rounded-xl bg-[#087F78] px-5 py-2.5 text-xs font-bold text-white transition-colors hover:bg-[#066761]">Publish sekarang</button>
+                        @if(! $isEditingPublishedArticle)
+                            <button type="button" onclick="submitArticleAction('Draft', false)" class="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 transition-colors hover:border-[#10243A] hover:bg-slate-50">Simpan draft</button>
+                            <button type="button" onclick="submitArticleAction('Draft', true)" class="rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-white transition-colors hover:bg-amber-600">Jadwalkan</button>
+                            <button type="button" onclick="submitArticleAction('Publish', false)" class="rounded-xl bg-[#087F78] px-5 py-2.5 text-xs font-bold text-white transition-colors hover:bg-[#066761]">Publish sekarang</button>
+                        @endif
                         @if($isEditingArticle)
                             <button type="submit" class="rounded-xl bg-[#10243A] px-5 py-2.5 text-xs font-bold text-white transition-colors hover:bg-[#18334F]">Simpan perubahan</button>
                         @endif
@@ -1014,6 +1022,9 @@
                                             <span class="rounded-full px-3 py-1.5 {{ $articleStatusClasses }}">{{ $articleStatusLabel }}</span>
                                             @if($article->published_at)
                                                 <time data-article-local-time datetime="{{ $article->published_at->toIso8601String() }}" class="rounded-full bg-[#E2F6F2] px-3 py-1.5 text-[#087F78]">{{ $article->published_at->format('d M Y, H:i') }}</time>
+                                            @endif
+                                            @if($article->edited_at)
+                                                <span class="rounded-full bg-sky-50 px-3 py-1.5 text-sky-700">Diedit {{ $article->edited_at->format('d M Y, H:i') }}</span>
                                             @endif
                                         </div>
                                         <div>

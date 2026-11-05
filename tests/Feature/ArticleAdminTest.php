@@ -240,14 +240,16 @@ it('uses the computer timezone and waits until the scheduled minute to publish',
 });
 
 it('updates an article from the admin dashboard', function () {
+    $this->travelTo(Carbon::create(2026, 11, 5, 9, 15, 0, config('app.timezone')));
     $admin = User::factory()->create(['is_admin' => true]);
+    $originalPublicationDate = '2026-11-01 08:30:00';
     $article = Article::create([
         'title' => 'Judul Lama',
         'slug' => 'judul-lama',
         'category' => 'Umum',
         'excerpt' => 'Ringkasan lama.',
         'content' => 'Konten lama.',
-        'published_at' => today(),
+        'published_at' => $originalPublicationDate,
         'status' => 'Publish',
     ]);
 
@@ -256,7 +258,7 @@ it('updates an article from the admin dashboard', function () {
         'category' => 'Artificial Intelligence',
         'excerpt' => 'Ringkasan baru.',
         'content' => 'Konten baru.',
-        'published_at' => now()->format('Y-m-d\TH:i'),
+        'published_at' => '2026-11-05T09:15',
         'published_at_timezone' => config('app.timezone'),
         'status' => 'Draft',
     ]);
@@ -264,19 +266,49 @@ it('updates an article from the admin dashboard', function () {
     $response->assertRedirect(route('admin.dashboard', ['tab' => 'artikel']));
     expect($article->refresh()->title)->toBe('Judul Baru')
         ->and($article->slug)->toBe('judul-baru')
-        ->and($article->status)->toBe('Draft');
+        ->and($article->status)->toBe('Publish')
+        ->and($article->published_at?->format('Y-m-d H:i:s'))->toBe($originalPublicationDate)
+        ->and($article->edited_at?->format('Y-m-d H:i'))->toBe('2026-11-05 09:15');
 });
 
-it('allows changing an article publication schedule while editing', function () {
+it('requires a revision time when editing a published article', function () {
     $admin = User::factory()->create(['is_admin' => true]);
     $article = Article::create([
-        'title' => 'Artikel yang Bisa Dijadwalkan',
-        'slug' => 'artikel-yang-bisa-dijadwalkan',
+        'title' => 'Artikel Publish Tetap',
+        'slug' => 'artikel-publish-tetap',
+        'category' => 'Umum',
+        'excerpt' => 'Ringkasan sebelum diedit.',
+        'content' => 'Konten sebelum diedit.',
+        'published_at' => '2026-11-01 08:30:00',
+        'status' => 'Publish',
+    ]);
+
+    $response = $this->actingAs($admin)->put(route('admin.articles.update', $article), [
+        'title' => 'Judul Tidak Boleh Tersimpan',
+        'category' => $article->category,
+        'excerpt' => $article->excerpt,
+        'content' => $article->content,
+        'status' => 'Publish',
+    ]);
+
+    $response->assertSessionHasErrors([
+        'published_at' => 'Isi tanggal dan jam edit artikel.',
+    ]);
+    expect($article->refresh()->title)->toBe('Artikel Publish Tetap')
+        ->and($article->published_at?->format('Y-m-d H:i:s'))->toBe('2026-11-01 08:30:00')
+        ->and($article->edited_at)->toBeNull();
+});
+
+it('allows changing a draft article publication schedule while editing', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+    $article = Article::create([
+        'title' => 'Draft yang Bisa Dijadwalkan',
+        'slug' => 'draft-yang-bisa-dijadwalkan',
         'category' => 'Umum',
         'excerpt' => 'Ringkasan artikel.',
         'content' => 'Konten artikel.',
-        'published_at' => today(),
-        'status' => 'Publish',
+        'published_at' => now()->addDay(),
+        'status' => 'Draft',
     ]);
     $scheduledDate = now()->addDays(3)->format('Y-m-d\TH:i');
 
@@ -304,6 +336,24 @@ it('allows changing an article publication schedule while editing', function () 
 
     expect($article->refresh()->status)->toBe('Draft')
         ->and($article->published_at)->toBeNull();
+});
+
+it('shows the revision time without replacing the original publication time', function () {
+    $article = Article::create([
+        'title' => 'Artikel yang Sudah Direvisi',
+        'slug' => 'artikel-yang-sudah-direvisi',
+        'category' => 'Umum',
+        'excerpt' => 'Ringkasan artikel revisi.',
+        'content' => 'Konten artikel revisi.',
+        'published_at' => '2026-11-01 08:30:00',
+        'edited_at' => '2026-11-05 09:15:00',
+        'status' => 'Publish',
+    ]);
+
+    $this->get(route('artikel.show', ['article' => $article->slug]))
+        ->assertOk()
+        ->assertSee('01 Nov 2026')
+        ->assertSee('Diedit pada 05 Nov 2026, 09:15');
 });
 
 it('renders a read-only article preview that can be toggled inside its dashboard card', function () {
@@ -380,6 +430,9 @@ it('loads the selected article into the top editor when edit is requested', func
         ->assertSee('value="Tim Editorial"', false)
         ->assertSee('Ringkasan yang dimuat ke editor.')
         ->assertSee('Isi yang dimuat ke editor.')
+        ->assertSee('Tanggal dan jam edit')
+        ->assertSee('Waktu terbit pertama tetap')
+        ->assertDontSee("onclick=\"submitArticleAction('Draft', true)\"", false)
         ->assertSee('Simpan perubahan')
         ->assertDontSee('data-article-autosave-url=', false);
 });

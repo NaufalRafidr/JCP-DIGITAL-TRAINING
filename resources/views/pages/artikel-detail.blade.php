@@ -21,6 +21,9 @@
                 <span class="mx-2">•</span>{{ $article->author }}
             @endif
         </p>
+        @if($article->edited_at)
+            <p class="mt-2 text-xs font-medium text-slate-400">Diedit pada {{ $article->edited_at->format('d M Y, H:i') }}</p>
+        @endif
     </header>
 
     @if($article->image_path || $article->image_url)
