@@ -11,6 +11,9 @@
     <div class="p-5">
         <div class="flex items-start justify-between gap-3">
             <div>
+                @if($showCategory ?? false)
+                    <p class="mb-1 text-xs font-bold uppercase tracking-wider text-[#087F78]">{{ $folder->category?->short_name ?: $folder->category?->name ?: 'Lainnya' }}</p>
+                @endif
                 <h3 class="text-lg font-bold text-[#10243A] group-hover:text-[#087F78]">{{ $folder->name }}</h3>
                 <p class="mt-1 line-clamp-2 text-sm leading-5 text-slate-500">{{ $folder->description ? \Illuminate\Support\Str::limit($folder->description, 105) : 'Album foto kegiatan JCP Training.' }}</p>
             </div>

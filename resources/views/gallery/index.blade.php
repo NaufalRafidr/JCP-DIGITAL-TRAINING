@@ -27,41 +27,64 @@
     @if($foldersByCategory->isEmpty() && $uncategorizedFolders->isEmpty())
         <div class="rounded-3xl border border-dashed border-slate-300 p-12 text-center text-slate-500">Belum ada album foto yang tersedia.</div>
     @else
-        @foreach($categories as $category)
-            @php($categoryFolders = $foldersByCategory->get($category->id, collect()))
-            @if($categoryFolders->isNotEmpty())
-                <section class="space-y-5" aria-labelledby="gallery-category-{{ $category->id }}">
+        @if($selectedCategorySlug === null)
+            @php
+                $allGalleryFolders = $categories
+                    ->flatMap(fn ($category) => $foldersByCategory->get($category->id, collect()))
+                    ->concat($uncategorizedFolders)
+                    ->values();
+            @endphp
+            <section class="space-y-5" aria-labelledby="gallery-all-folders">
+                <div class="flex items-end justify-between gap-4 border-b border-slate-200 pb-3">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#087F78]">Galeri</p>
+                        <h2 id="gallery-all-folders" class="mt-1 text-2xl font-extrabold text-[#10243A]">Semua album</h2>
+                    </div>
+                    <span class="text-sm font-semibold text-slate-400">{{ $allGalleryFolders->count() }} folder</span>
+                </div>
+                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    @foreach($allGalleryFolders as $folder)
+                        @include('gallery.partials.folder-card', ['folder' => $folder, 'showCategory' => true])
+                    @endforeach
+                </div>
+            </section>
+        @else
+            @foreach($categories as $category)
+                @php($categoryFolders = $foldersByCategory->get($category->id, collect()))
+                @if($categoryFolders->isNotEmpty())
+                    <section class="space-y-5" aria-labelledby="gallery-category-{{ $category->id }}">
+                        <div class="flex items-end justify-between gap-4 border-b border-slate-200 pb-3">
+                            <div>
+                                <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#087F78]">Bidang</p>
+                                <h2 id="gallery-category-{{ $category->id }}" class="mt-1 text-2xl font-extrabold text-[#10243A]">{{ $category->short_name ?: $category->name }}</h2>
+                            </div>
+                            <span class="text-sm font-semibold text-slate-400">{{ $categoryFolders->count() }} folder</span>
+                        </div>
+                        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                            @foreach($categoryFolders as $folder)
+                                @include('gallery.partials.folder-card', ['folder' => $folder])
+                            @endforeach
+                        </div>
+                    </section>
+                @endif
+            @endforeach
+
+            @if($uncategorizedFolders->isNotEmpty())
+                <section class="space-y-5" aria-labelledby="gallery-category-uncategorized">
                     <div class="flex items-end justify-between gap-4 border-b border-slate-200 pb-3">
                         <div>
-                            <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#087F78]">Bidang</p>
-                            <h2 id="gallery-category-{{ $category->id }}" class="mt-1 text-2xl font-extrabold text-[#10243A]">{{ $category->short_name ?: $category->name }}</h2>
+                            <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Bidang</p>
+                            <h2 id="gallery-category-uncategorized" class="mt-1 text-2xl font-extrabold text-[#10243A]">Lainnya</h2>
                         </div>
-                        <span class="text-sm font-semibold text-slate-400">{{ $categoryFolders->count() }} folder</span>
+                        <span class="text-sm font-semibold text-slate-400">{{ $uncategorizedFolders->count() }} folder</span>
                     </div>
                     <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                        @foreach($categoryFolders as $folder)
+                        @foreach($uncategorizedFolders as $folder)
                             @include('gallery.partials.folder-card', ['folder' => $folder])
                         @endforeach
                     </div>
                 </section>
             @endif
-        @endforeach
-
-        @if($uncategorizedFolders->isNotEmpty())
-            <section class="space-y-5" aria-labelledby="gallery-category-uncategorized">
-                <div class="flex items-end justify-between gap-4 border-b border-slate-200 pb-3">
-                    <div>
-                        <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Bidang</p>
-                        <h2 id="gallery-category-uncategorized" class="mt-1 text-2xl font-extrabold text-[#10243A]">Lainnya</h2>
-                    </div>
-                    <span class="text-sm font-semibold text-slate-400">{{ $uncategorizedFolders->count() }} folder</span>
-                </div>
-                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    @foreach($uncategorizedFolders as $folder)
-                        @include('gallery.partials.folder-card', ['folder' => $folder])
-                    @endforeach
-                </div>
-            </section>
         @endif
     @endif
 </section>
