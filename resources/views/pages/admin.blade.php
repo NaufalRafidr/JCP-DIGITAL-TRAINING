@@ -770,6 +770,16 @@
             </div>
 
         @elseif($activeTab === 'artikel')
+            @php
+                $isEditingArticle = $selectedArticle !== null && request()->boolean('edit_article');
+                $articleFormStatus = old('status', $isEditingArticle
+                    ? ($selectedArticle->status === 'Publish' ? 'Publish' : ($selectedArticle->published_at ? 'Terjadwalkan' : 'Draft'))
+                    : 'Draft');
+                $articleFormContent = old('content', $isEditingArticle ? $selectedArticle->content : '');
+                $articleFormImageSource = $isEditingArticle
+                    ? ($selectedArticle->image_url ?: ($selectedArticle->image_path ? Storage::disk('public')->url($selectedArticle->image_path) : ''))
+                    : '';
+            @endphp
             <div class="flex flex-col justify-between gap-4 pb-8 sm:flex-row sm:items-end">
                 <div>
                     <h1 class="text-3xl font-extrabold tracking-tight text-[#10243A] sm:text-4xl">Kelola Artikel</h1>
@@ -777,57 +787,61 @@
                 </div>
             </div>
 
-            <section class="mb-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+            <section id="articleEditor" data-article-editor-mode="{{ $isEditingArticle ? 'edit' : 'create' }}" class="mb-8 scroll-mt-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
                 <div class="mb-6 flex flex-col justify-between gap-3 border-b border-slate-100 pb-5 sm:flex-row sm:items-start">
                     <div>
-                        <p class="text-xs font-bold uppercase tracking-wider text-[#087F78]">Editor artikel</p>
-                        <h2 class="mt-1 text-2xl font-extrabold tracking-tight text-[#10243A]">Tulis artikel baru.</h2>
-                        <p class="mt-1 text-sm text-slate-500">Simpan sebagai draft, jadwalkan, atau publikasikan sekarang.</p>
+                        <p class="text-xs font-bold uppercase tracking-wider text-[#087F78]">{{ $isEditingArticle ? 'Edit artikel' : 'Editor artikel' }}</p>
+                        <h2 class="mt-1 text-2xl font-extrabold tracking-tight text-[#10243A]">{{ $isEditingArticle ? 'Perbarui '.$selectedArticle->title : 'Tulis artikel baru.' }}</h2>
+                        <p class="mt-1 text-sm text-slate-500">{{ $isEditingArticle ? 'Data artikel telah dimuat. Perbarui bagian yang diperlukan lalu simpan.' : 'Simpan sebagai draft, jadwalkan, atau publikasikan sekarang.' }}</p>
                     </div>
                     <div class="flex flex-col items-start gap-2 sm:items-end">
                         <span class="rounded-full bg-[#E2F6F2] px-3 py-1.5 text-xs font-bold text-[#087F78]">Maksimal 1 artikel per hari</span>
-                        <p id="articleAutosaveStatus" role="status" aria-live="polite" class="text-xs font-semibold text-slate-500">Perubahan lengkap akan otomatis disimpan sebagai Draft.</p>
+                        <p id="articleAutosaveStatus" role="status" aria-live="polite" class="text-xs font-semibold text-slate-500">{{ $isEditingArticle ? 'Mode edit aktif.' : 'Perubahan lengkap akan otomatis disimpan sebagai Draft.' }}</p>
                     </div>
                 </div>
 
-                <form id="addArticleInlineForm" data-article-autosave-url="{{ route('admin.articles.autosave') }}" action="{{ route('admin.articles.store') }}" method="POST" enctype="multipart/form-data" onsubmit="return validateRichEditor(this)" class="space-y-5">
+                <form id="addArticleInlineForm" @if(! $isEditingArticle) data-article-autosave-url="{{ route('admin.articles.autosave') }}" @endif action="{{ $isEditingArticle ? route('admin.articles.update', $selectedArticle) : route('admin.articles.store') }}" method="POST" enctype="multipart/form-data" onsubmit="return validateRichEditor(this)" class="space-y-5">
                     @csrf
-                    <input name="autosave_token" type="hidden" value="{{ old('autosave_token') }}" data-article-autosave-token>
-                    <input name="image_url_changed" type="hidden" value="{{ old('image_url') ? '1' : '0' }}" data-article-image-url-changed>
-                    <input id="add_article_inline_status" name="status" type="hidden" value="{{ old('status', 'Draft') }}">
+                    @if($isEditingArticle)
+                        @method('PUT')
+                    @else
+                        <input name="autosave_token" type="hidden" value="{{ old('autosave_token') }}" data-article-autosave-token>
+                    @endif
+                    <input name="image_url_changed" type="hidden" value="{{ old('image_url') !== null ? '1' : '0' }}" data-article-image-url-changed>
+                    <input id="add_article_inline_status" name="status" type="hidden" value="{{ $articleFormStatus }}">
                     <input name="published_at_timezone" type="hidden" data-article-timezone>
                     <div class="grid gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)]">
                         <div class="space-y-5">
                             <div>
                                 <label for="add_article_title_inline" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Judul artikel *</label>
-                                <input id="add_article_title_inline" name="title" type="text" value="{{ old('title') }}" required maxlength="255" placeholder="Contoh: Tips Memotret dengan Drone" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                                <input id="add_article_title_inline" name="title" type="text" value="{{ old('title', $isEditingArticle ? $selectedArticle->title : '') }}" required maxlength="255" placeholder="Contoh: Tips Memotret dengan Drone" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                             </div>
                             <div class="grid gap-4 sm:grid-cols-2">
                                 <div>
-                                    <label for="add_article_author_inline" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Penulis / tim *</label>
-                                    <input id="add_article_author_inline" name="author" type="text" value="{{ old('author') }}" required maxlength="100" placeholder="Contoh: Tim Media JCP" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                                    <label for="add_article_author_inline" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Penulis / tim{{ $isEditingArticle ? '' : ' *' }}</label>
+                                    <input id="add_article_author_inline" name="author" type="text" value="{{ old('author', $isEditingArticle ? $selectedArticle->author : '') }}" @required(! $isEditingArticle) maxlength="100" placeholder="Contoh: Tim Media JCP" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                                 </div>
                                 <div>
                                     <label for="add_article_category_inline" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Bidang pelatihan *</label>
                                     <select id="add_article_category_inline" name="category" required class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                                         <option value="">Pilih bidang pelatihan</option>
                                         @foreach($categories as $category)
-                                            <option value="{{ $category->name }}" @selected(old('category') === $category->name)>{{ $category->name }}</option>
+                                            <option value="{{ $category->name }}" @selected(old('category', $isEditingArticle ? $selectedArticle->category : '') === $category->name)>{{ $category->name }}</option>
                                         @endforeach
-                                        @if(old('category') && ! $categories->contains('name', old('category')))
-                                            <option value="{{ old('category') }}" selected>{{ old('category') }}</option>
+                                        @if(old('category', $isEditingArticle ? $selectedArticle->category : '') && ! $categories->contains('name', old('category', $isEditingArticle ? $selectedArticle->category : '')))
+                                            <option value="{{ old('category', $selectedArticle?->category) }}" selected>{{ old('category', $selectedArticle?->category) }}</option>
                                         @endif
                                     </select>
                                 </div>
                             </div>
                             <div>
                                 <label for="add_article_excerpt_inline" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Ringkasan singkat *</label>
-                                <textarea id="add_article_excerpt_inline" name="excerpt" rows="3" maxlength="500" required placeholder="Tuliskan 2–3 kalimat ringkasan yang muncul pada kartu artikel." class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">{{ old('excerpt') }}</textarea>
+                                <textarea id="add_article_excerpt_inline" name="excerpt" rows="3" maxlength="500" required placeholder="Tuliskan 2–3 kalimat ringkasan yang muncul pada kartu artikel." class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">{{ old('excerpt', $isEditingArticle ? $selectedArticle->excerpt : '') }}</textarea>
                             </div>
                         </div>
 
                         <div class="space-y-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-4 sm:p-5">
-                            <div data-article-image-preview data-new-article-preview class="hidden overflow-hidden rounded-xl border border-slate-200 bg-white">
+                            <div data-article-image-preview @if(! $isEditingArticle) data-new-article-preview @endif data-current-source="{{ $articleFormImageSource }}" class="hidden overflow-hidden rounded-xl border border-slate-200 bg-white">
                                 <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-3 py-2 text-xs font-semibold">
                                     <span class="text-slate-600">Pratinjau gambar artikel</span>
                                     <span data-article-image-preview-status class="rounded-full bg-amber-50 px-2 py-1 text-amber-700">Belum disimpan</span>
@@ -836,19 +850,19 @@
                                 <p data-article-image-preview-error class="hidden px-4 py-6 text-center text-xs font-semibold text-rose-700">Gambar tidak dapat dimuat. Periksa kembali file atau link gambar.</p>
                             </div>
                             <div>
-                                <label for="add_article_image_inline" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Gambar utama</label>
+                                <label for="add_article_image_inline" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">{{ $isEditingArticle ? 'Ganti gambar utama' : 'Gambar utama' }}</label>
                                 <input id="add_article_image_inline" data-article-image-file name="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-2 file:font-semibold file:text-[#087F78]">
                                 <p class="mt-1 text-xs text-slate-500">Pilih file gambar maksimal 10 MB.</p>
                             </div>
                             <div class="flex items-center gap-3 text-[10px] font-bold uppercase tracking-wider text-slate-400"><span class="h-px flex-1 bg-slate-200"></span>atau<span class="h-px flex-1 bg-slate-200"></span></div>
                             <div>
                                 <label for="add_article_image_url_inline" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">URL gambar</label>
-                                <input id="add_article_image_url_inline" data-article-image-url name="image_url" type="url" value="{{ old('image_url') }}" maxlength="2048" placeholder="https://contoh.com/gambar.jpg" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                                <input id="add_article_image_url_inline" data-article-image-url name="image_url" type="url" value="{{ old('image_url', $isEditingArticle ? $selectedArticle->image_url : '') }}" maxlength="2048" placeholder="https://contoh.com/gambar.jpg" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                                 <p class="mt-1 text-xs text-slate-500">Jika file dan URL diisi, file akan digunakan.</p>
                             </div>
                             <div>
                                 <label for="add_article_published_at_inline" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Tanggal dan jam tayang / jadwal</label>
-                                <input id="add_article_published_at_inline" data-article-published-at data-min-local-now name="published_at" type="datetime-local" step="60" value="{{ old('published_at') }}" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
+                                <input id="add_article_published_at_inline" data-article-published-at @if($isEditingArticle) data-published-at-iso="{{ $selectedArticle->published_at?->toIso8601String() }}" @else data-min-local-now @endif name="published_at" type="datetime-local" step="60" value="{{ old('published_at', $isEditingArticle ? $selectedArticle->published_at?->format('Y-m-d\TH:i') : '') }}" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                                 <p class="mt-1 text-xs text-slate-500">Mengikuti zona waktu komputer. Satu tanggal hanya dapat berisi satu artikel.</p>
                             </div>
                         </div>
@@ -865,16 +879,22 @@
                                 <button type="button" data-rich-command="insertOrderedList" class="rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-white">1. List</button>
                                 <button type="button" data-rich-command="formatBlock" data-rich-value="blockquote" class="rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-white">Kutipan</button>
                             </div>
-                            <div contenteditable="true" data-rich-surface data-placeholder="Tuliskan isi artikel dengan format yang Anda butuhkan..." oninput="this.nextElementSibling.value = this.innerHTML" class="min-h-56 px-4 py-4 text-sm leading-7 outline-none empty:before:text-slate-400 empty:before:content-[attr(data-placeholder)]">{{ old('content') }}</div>
-                            <input type="hidden" name="content" data-rich-value value="{{ old('content') }}">
+                            <div contenteditable="true" data-rich-surface data-placeholder="Tuliskan isi artikel dengan format yang Anda butuhkan..." oninput="this.nextElementSibling.value = this.innerHTML" class="min-h-56 px-4 py-4 text-sm leading-7 outline-none empty:before:text-slate-400 empty:before:content-[attr(data-placeholder)]">@if(old('content') !== null){{ old('content') }}@else{!! $articleFormContent !!}@endif</div>
+                            <input type="hidden" name="content" data-rich-value value="{{ $articleFormContent }}">
                         </div>
                         <p class="mt-1 text-xs text-slate-500">Gunakan toolbar untuk bold, italic, garis bawah, daftar, dan kutipan.</p>
                     </div>
 
                     <div class="flex flex-wrap justify-end gap-3 border-t border-slate-100 pt-5">
+                        @if($isEditingArticle)
+                            <a href="{{ route('admin.dashboard', ['tab' => 'artikel', 'article_id' => $selectedArticle->id]) }}" class="rounded-xl px-5 py-2.5 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-100">Batal edit</a>
+                        @endif
                         <button type="button" onclick="submitArticleAction('Draft', false)" class="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 transition-colors hover:border-[#10243A] hover:bg-slate-50">Simpan draft</button>
                         <button type="button" onclick="submitArticleAction('Draft', true)" class="rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-white transition-colors hover:bg-amber-600">Jadwalkan</button>
                         <button type="button" onclick="submitArticleAction('Publish', false)" class="rounded-xl bg-[#087F78] px-5 py-2.5 text-xs font-bold text-white transition-colors hover:bg-[#066761]">Publish sekarang</button>
+                        @if($isEditingArticle)
+                            <button type="submit" class="rounded-xl bg-[#10243A] px-5 py-2.5 text-xs font-bold text-white transition-colors hover:bg-[#18334F]">Simpan perubahan</button>
+                        @endif
                     </div>
                 </form>
             </section>
@@ -934,7 +954,7 @@
                             default => 'draft',
                         };
                     @endphp
-                    <article data-article-card data-article-title="{{ $article->title }}" data-article-filter-status="{{ $articleFilterStatus }}" class="admin-editor-card cursor-pointer rounded-2xl border bg-white px-5 py-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] transition-all hover:border-[#087F78]/50 hover:shadow-md md:grid md:grid-cols-12 md:items-center md:px-8 {{ $selectedArticle?->id === $article->id ? 'border-[#087F78] ring-2 ring-[#087F78]/10' : 'border-slate-200/90' }}" data-editor-url="{{ route('admin.dashboard', $articleEditorQuery) }}" tabindex="0" role="button" aria-expanded="{{ $selectedArticle?->id === $article->id ? 'true' : 'false' }}" aria-label="Edit artikel {{ $article->title }}">
+                    <article data-article-card data-article-title="{{ $article->title }}" data-article-filter-status="{{ $articleFilterStatus }}" class="admin-editor-card cursor-pointer rounded-2xl border bg-white px-5 py-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] transition-all hover:border-[#087F78]/50 hover:shadow-md md:grid md:grid-cols-12 md:items-center md:px-8 {{ $selectedArticle?->id === $article->id ? 'border-[#087F78] ring-2 ring-[#087F78]/10' : 'border-slate-200/90' }}" data-editor-url="{{ route('admin.dashboard', $articleEditorQuery) }}" tabindex="0" role="button" aria-expanded="{{ $selectedArticle?->id === $article->id ? 'true' : 'false' }}" aria-label="Preview artikel {{ $article->title }}">
                         <div class="flex min-w-0 items-center gap-3 md:col-span-5 md:pr-4">
                             @if($article->image_path || $article->image_url)
                                 <img src="{{ $article->image_url ?: Storage::disk('public')->url($article->image_path) }}" alt="{{ $article->title }}" class="h-14 w-20 shrink-0 rounded-xl object-cover">
@@ -973,90 +993,39 @@
                             <div class="admin-editor-panel mt-6 border-t border-slate-100 pt-6 md:col-span-12" data-editor-panel>
                                 <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
                                     <div>
-                                        <p class="text-xs font-bold uppercase tracking-wider text-[#087F78]">Pengaturan artikel</p>
-                                        <h3 class="mt-1 text-xl font-extrabold text-[#10243A]">Edit artikel</h3>
+                                        <p class="text-xs font-bold uppercase tracking-wider text-[#087F78]">Preview artikel</p>
+                                        <h3 class="mt-1 text-xl font-extrabold text-[#10243A]">{{ $article->title }}</h3>
                                     </div>
                                     <a href="{{ route('admin.dashboard', ['tab' => 'artikel']) }}" data-close-editor class="inline-flex w-fit items-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:border-[#087F78]/40 hover:bg-[#E2F6F2] hover:text-[#087F78]">Tutup</a>
                                 </div>
 
-                                <form action="{{ route('admin.articles.update', $article) }}" method="POST" enctype="multipart/form-data" onsubmit="return validateRichEditor(this)" class="mt-5 space-y-5">
-                                    @csrf
-                                    @method('PUT')
-                                    <input name="published_at_timezone" type="hidden" data-article-timezone>
-                                    <div data-article-image-preview data-current-source="{{ $article->image_url ?: ($article->image_path ? Storage::disk('public')->url($article->image_path) : '') }}" class="hidden overflow-hidden rounded-xl border border-slate-200 bg-white">
-                                        <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-3 py-2 text-xs font-semibold">
-                                            <span class="text-slate-600">Pratinjau gambar artikel</span>
-                                            <span data-article-image-preview-status class="rounded-full bg-slate-100 px-2 py-1 text-slate-600">Gambar saat ini</span>
-                                        </div>
-                                        <img data-article-image-preview-image src="" alt="Pratinjau gambar utama {{ $article->title }}" class="h-48 w-full object-cover">
-                                        <p data-article-image-preview-error class="hidden px-4 py-6 text-center text-xs font-semibold text-rose-700">Gambar tidak dapat dimuat. Periksa kembali file atau link gambar.</p>
-                                    </div>
-                                    <div class="grid gap-4 sm:grid-cols-2">
-                                        <div class="sm:col-span-2">
-                                            <label for="inline_article_title_{{ $article->id }}" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Judul artikel *</label>
-                                            <input id="inline_article_title_{{ $article->id }}" name="title" type="text" value="{{ $article->title }}" required maxlength="255" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
-                                        </div>
-                                        <div>
-                                            <label for="inline_article_author_{{ $article->id }}" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Penulis / tim</label>
-                                            <input id="inline_article_author_{{ $article->id }}" name="author" type="text" value="{{ $article->author }}" maxlength="100" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
-                                        </div>
-                                        <div>
-                                            <label for="inline_article_category_{{ $article->id }}" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Bidang pelatihan *</label>
-                                            <select id="inline_article_category_{{ $article->id }}" name="category" required class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
-                                                @if(! $categories->contains('name', $article->category))
-                                                    <option value="{{ $article->category }}" selected>{{ $article->category }}</option>
-                                                @endif
-                                                @foreach($categories as $category)
-                                                    <option value="{{ $category->name }}" @selected($article->category === $category->name)>{{ $category->name }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label for="inline_article_status_{{ $article->id }}" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Status *</label>
-                                            <select id="inline_article_status_{{ $article->id }}" name="status" required class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
-                                                <option value="Publish" @selected($article->status === 'Publish')>Publish</option>
-                                                <option value="Draft" @selected($article->status === 'Draft' && $article->published_at === null)>Draft</option>
-                                                <option value="Terjadwalkan" @selected($article->status === 'Draft' && $article->published_at !== null)>Terjadwalkan</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label for="inline_article_published_at_{{ $article->id }}" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Tanggal dan jam publish / jadwal</label>
-                                            <input id="inline_article_published_at_{{ $article->id }}" data-article-published-at data-published-at-iso="{{ $article->published_at?->toIso8601String() }}" name="published_at" type="datetime-local" step="60" value="{{ $article->published_at?->format('Y-m-d\TH:i') }}" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
-                                        </div>
-                                        <div>
-                                            <label for="inline_article_image_{{ $article->id }}" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Ganti foto utama</label>
-                                            <input id="inline_article_image_{{ $article->id }}" data-article-image-file name="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-2 file:font-semibold file:text-[#087F78]">
-                                        </div>
-                                        <div>
-                                            <label for="inline_article_image_url_{{ $article->id }}" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">URL gambar</label>
-                                            <input id="inline_article_image_url_{{ $article->id }}" data-article-image-url name="image_url" type="url" value="{{ $article->image_url }}" maxlength="2048" placeholder="https://contoh.com/gambar.jpg" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
-                                        </div>
-                                    </div>
+                                <div class="mt-5 grid gap-5 lg:grid-cols-[minmax(240px,0.7fr)_minmax(0,1.3fr)]">
                                     <div>
-                                        <label for="inline_article_excerpt_{{ $article->id }}" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Ringkasan artikel *</label>
-                                        <textarea id="inline_article_excerpt_{{ $article->id }}" name="excerpt" rows="3" maxlength="500" required class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">{{ $article->excerpt }}</textarea>
+                                        @if($article->image_path || $article->image_url)
+                                            <img src="{{ $article->image_url ?: Storage::disk('public')->url($article->image_path) }}" alt="{{ $article->title }}" class="h-64 w-full rounded-2xl object-cover">
+                                        @else
+                                            <div class="flex h-64 w-full items-center justify-center rounded-2xl bg-[#10243A] text-sm font-extrabold tracking-wider text-teal-100">JCP DIGITAL TRAINING</div>
+                                        @endif
                                     </div>
-                                    <div>
-                                        <label class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Isi artikel *</label>
-                                        <div data-rich-editor class="overflow-hidden rounded-xl border border-slate-200 focus-within:border-[#087F78]">
-                                            <div class="flex flex-wrap items-center gap-1 border-b border-slate-200 bg-slate-50 p-2">
-                                                <button type="button" data-rich-command="bold" class="rounded-lg px-3 py-1.5 text-sm font-bold text-slate-700 hover:bg-white">B</button>
-                                                <button type="button" data-rich-command="italic" class="rounded-lg px-3 py-1.5 text-sm italic text-slate-700 hover:bg-white">I</button>
-                                                <button type="button" data-rich-command="underline" class="rounded-lg px-3 py-1.5 text-sm underline text-slate-700 hover:bg-white">U</button>
-                                                <button type="button" data-rich-command="insertUnorderedList" class="rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-white">• List</button>
-                                                <button type="button" data-rich-command="insertOrderedList" class="rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-white">1. List</button>
-                                                <button type="button" data-rich-command="formatBlock" data-rich-value="blockquote" class="rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-white">Kutipan</button>
-                                            </div>
-                                            <div contenteditable="true" data-rich-surface oninput="this.nextElementSibling.value = this.innerHTML" class="min-h-56 px-4 py-4 text-sm leading-7 outline-none">{!! $article->content !!}</div>
-                                            <input type="hidden" name="content" data-rich-value value="{{ $article->content }}">
+                                    <div class="space-y-5">
+                                        <div class="flex flex-wrap gap-2 text-xs font-bold">
+                                            <span class="rounded-full bg-slate-100 px-3 py-1.5 text-slate-700">{{ $article->category }}</span>
+                                            <span class="rounded-full px-3 py-1.5 {{ $articleStatusClasses }}">{{ $articleStatusLabel }}</span>
+                                            @if($article->published_at)
+                                                <time data-article-local-time datetime="{{ $article->published_at->toIso8601String() }}" class="rounded-full bg-[#E2F6F2] px-3 py-1.5 text-[#087F78]">{{ $article->published_at->format('d M Y, H:i') }}</time>
+                                            @endif
                                         </div>
+                                        <div>
+                                            <p class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ $article->author ?: 'Tanpa nama penulis' }}</p>
+                                            <p class="mt-2 text-sm leading-7 text-slate-600">{{ $article->excerpt }}</p>
+                                        </div>
+                                        <div class="border-t border-slate-100 pt-5 text-sm leading-7 text-slate-700 [&_blockquote]:border-l-4 [&_blockquote]:border-[#087F78]/30 [&_blockquote]:pl-4 [&_li]:mb-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pl-5">{!! $article->content !!}</div>
                                     </div>
-                                    <div class="flex justify-end gap-3 border-t border-slate-100 pt-5">
-                                        <a href="{{ route('admin.dashboard', ['tab' => 'artikel']) }}" data-close-editor class="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-100">Batal</a>
-                                        <button type="button" onclick="publishArticleNow(this)" class="rounded-xl bg-[#087F78] px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#066761]">Publish sekarang</button>
-                                        <button type="submit" class="rounded-xl bg-[#087F78] px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#066761]">Simpan artikel</button>
-                                    </div>
-                                </form>
+                                </div>
+                                <div class="mt-6 flex justify-end border-t border-slate-100 pt-5">
+                                    <a href="{{ route('admin.dashboard', ['tab' => 'artikel', 'article_id' => $article->id, 'edit_article' => 1]).'#articleEditor' }}" data-start-article-edit class="inline-flex items-center rounded-xl bg-[#087F78] px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-[#066761]">Edit artikel</a>
+                                </div>
+
                             </div>
                         @endif
                     </article>
@@ -3049,7 +3018,7 @@
         });
 
         const articleAutosaveForm = document.getElementById('addArticleInlineForm');
-        if (articleAutosaveForm) {
+        if (articleAutosaveForm?.dataset.articleAutosaveUrl) {
             const autosaveUrl = articleAutosaveForm.dataset.articleAutosaveUrl;
             const autosaveTokenInput = articleAutosaveForm.querySelector('[data-article-autosave-token]');
             const autosaveStatus = document.getElementById('articleAutosaveStatus');
@@ -4007,6 +3976,12 @@
                 return;
             }
 
+            if (document.querySelector('[data-article-editor-mode="edit"]')) {
+                sessionStorage.removeItem(adminScrollStorageKey);
+
+                return;
+            }
+
             const storedScrollTop = sessionStorage.getItem(adminScrollStorageKey);
 
             if (storedScrollTop === null) {
@@ -4022,6 +3997,16 @@
         };
 
         restoreAdminScrollPosition();
+
+        const activeArticleEditor = document.querySelector('[data-article-editor-mode="edit"]');
+        if (activeArticleEditor) {
+            sessionStorage.removeItem(adminScrollStorageKey);
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    activeArticleEditor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+            });
+        }
         document.querySelectorAll('[data-registration-url]').forEach((registrationCard) => {
             const openRegistrationDetails = () => {
                 saveAdminScrollPosition();

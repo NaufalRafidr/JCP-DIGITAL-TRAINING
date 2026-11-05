@@ -306,7 +306,7 @@ it('allows changing an article publication schedule while editing', function () 
         ->and($article->published_at)->toBeNull();
 });
 
-it('opens the selected article editor inside its dashboard card', function () {
+it('opens a read-only article preview inside its dashboard card', function () {
     $admin = User::factory()->create(['is_admin' => true]);
     $article = Article::create([
         'title' => 'Artikel Editor',
@@ -328,15 +328,48 @@ it('opens the selected article editor inside its dashboard card', function () {
         ->assertSee('data-rich-editor', false)
         ->assertSee('onsubmit="return validateRichEditor(this)"', false)
         ->assertSee('data-article-calendar-date=', false)
-        ->assertSee('Pengaturan artikel')
+        ->assertSee('Preview artikel')
         ->assertSee('Artikel Editor')
         ->assertSee('Ringkasan artikel editor.')
         ->assertSee('Isi artikel editor.')
-        ->assertSee('publishArticleNow', false)
+        ->assertSee('data-start-article-edit', false)
         ->assertSee('data-delete-type="Artikel"', false)
         ->assertSee('data-delete-name="Artikel Editor"', false)
         ->assertSee('data-editor-url=', false)
-        ->assertSee('data-close-editor', false);
+        ->assertSee('data-close-editor', false)
+        ->assertDontSee('inline_article_title_', false);
+});
+
+it('loads the selected article into the top editor when edit is requested', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+    $article = Article::create([
+        'title' => 'Artikel Siap Diedit',
+        'author' => 'Tim Editorial',
+        'slug' => 'artikel-siap-diedit',
+        'category' => 'Teknologi',
+        'excerpt' => 'Ringkasan yang dimuat ke editor.',
+        'content' => '<p>Isi yang dimuat ke editor.</p>',
+        'published_at' => today(),
+        'status' => 'Publish',
+    ]);
+
+    $response = $this->actingAs($admin)->get(route('admin.dashboard', [
+        'tab' => 'artikel',
+        'article_id' => $article->id,
+        'edit_article' => 1,
+    ]));
+
+    $response->assertOk()
+        ->assertSee('data-article-editor-mode="edit"', false)
+        ->assertSee('Mode edit aktif.')
+        ->assertSee('Perbarui Artikel Siap Diedit')
+        ->assertSee('action="'.route('admin.articles.update', $article).'"', false)
+        ->assertSee('value="Artikel Siap Diedit"', false)
+        ->assertSee('value="Tim Editorial"', false)
+        ->assertSee('Ringkasan yang dimuat ke editor.')
+        ->assertSee('Isi yang dimuat ke editor.')
+        ->assertSee('Simpan perubahan')
+        ->assertDontSee('data-article-autosave-url=', false);
 });
 
 it('filters the article list by status and title', function () {
