@@ -317,6 +317,14 @@ it('renders a read-only article preview that can be toggled inside its dashboard
         'published_at' => today(),
         'status' => 'Publish',
     ]);
+    $collapsedArticle = Article::create([
+        'title' => 'Artikel Preview Tertutup',
+        'slug' => 'artikel-preview-tertutup',
+        'category' => 'Teknologi',
+        'excerpt' => 'Ringkasan artikel yang belum dibuka.',
+        'content' => 'Isi artikel yang belum dibuka.',
+        'status' => 'Draft',
+    ]);
 
     $response = $this->actingAs($admin)->get(route('admin.dashboard', [
         'tab' => 'artikel',
@@ -338,7 +346,8 @@ it('renders a read-only article preview that can be toggled inside its dashboard
         ->assertSee('data-article-id="'.$article->id.'"', false)
         ->assertSee('data-article-preview-panel', false)
         ->assertSee('data-close-article-preview', false)
-        ->assertSee('aria-expanded="true"', false)
+        ->assertSee('aria-controls="article-preview-'.$article->id.'" aria-expanded="true"', false)
+        ->assertSee('aria-controls="article-preview-'.$collapsedArticle->id.'" aria-expanded="false"', false)
         ->assertDontSee('data-editor-url=', false)
         ->assertDontSee('inline_article_title_', false);
 });
