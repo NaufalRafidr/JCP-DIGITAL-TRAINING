@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class ArticleAdminController extends Controller
@@ -169,11 +170,15 @@ class ArticleAdminController extends Controller
             $imageUrl = $validated['image_url'];
         }
 
-        $publicationTimezone = $validated['published_at_timezone'] ?? config('app.timezone');
-        $submittedDateTime = $this->normalizePublicationDateTime($validated['published_at'] ?? null, $publicationTimezone);
         $isPublishedArticle = $article->status === 'Publish';
+        $publicationTimezone = $validated['published_at_timezone'] ?? config('app.timezone');
+        $submittedDateTime = $isPublishedArticle
+            ? null
+            : $this->normalizePublicationDateTime($validated['published_at'] ?? null, $publicationTimezone);
         $publishedAt = $isPublishedArticle ? $article->published_at : $submittedDateTime;
-        $editedAt = $isPublishedArticle ? $submittedDateTime : $article->edited_at;
+        $editedAt = $isPublishedArticle
+            ? CarbonImmutable::now(config('app.timezone'))
+            : $article->edited_at;
 
         unset($validated['image'], $validated['autosave_token'], $validated['image_url_changed'], $validated['published_at_timezone']);
 
@@ -240,15 +245,14 @@ class ArticleAdminController extends Controller
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,avif|max:10240',
             'image_url' => 'nullable|url|max:2048',
             'published_at' => [
-                $article?->status === 'Publish' ? 'required' : 'nullable',
+                Rule::excludeIf($article?->status === 'Publish'),
+                'nullable',
                 'date_format:Y-m-d\TH:i',
             ],
             'published_at_timezone' => ['nullable', 'timezone'],
             'status' => 'required|in:Publish,Draft,Terjadwalkan',
             'autosave_token' => ['nullable', 'uuid'],
             'image_url_changed' => ['nullable', 'boolean'],
-        ], [
-            'published_at.required' => 'Isi tanggal dan jam edit artikel.',
         ]);
 
         if ($validated['status'] === 'Terjadwalkan') {

@@ -773,7 +773,6 @@
             @php
                 $isEditingArticle = $selectedArticle !== null && request()->boolean('edit_article');
                 $isEditingPublishedArticle = $isEditingArticle && $selectedArticle->status === 'Publish';
-                $articleEditTimestamp = $isEditingPublishedArticle ? now() : null;
                 $articleFormStatus = old('status', $isEditingArticle
                     ? ($selectedArticle->status === 'Publish' ? 'Publish' : ($selectedArticle->published_at ? 'Terjadwalkan' : 'Draft'))
                     : 'Draft');
@@ -862,15 +861,19 @@
                                 <input id="add_article_image_url_inline" data-article-image-url name="image_url" type="url" value="{{ old('image_url', $isEditingArticle ? $selectedArticle->image_url : '') }}" maxlength="2048" placeholder="https://contoh.com/gambar.jpg" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                                 <p class="mt-1 text-xs text-slate-500">Jika file dan URL diisi, file akan digunakan.</p>
                             </div>
-                            <div>
-                                <label for="add_article_published_at_inline" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">{{ $isEditingPublishedArticle ? 'Tanggal dan jam edit' : 'Tanggal dan jam tayang / jadwal' }}</label>
-                                <input id="add_article_published_at_inline" data-article-published-at @if(old('published_at') === null && $isEditingArticle) data-published-at-iso="{{ $isEditingPublishedArticle ? $articleEditTimestamp->toIso8601String() : $selectedArticle->published_at?->toIso8601String() }}" @elseif(! $isEditingArticle) data-min-local-now @endif name="published_at" type="datetime-local" step="60" value="{{ old('published_at', $isEditingPublishedArticle ? $articleEditTimestamp->format('Y-m-d\TH:i') : ($isEditingArticle ? $selectedArticle->published_at?->format('Y-m-d\TH:i') : '')) }}" @required($isEditingPublishedArticle) class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
-                                @if($isEditingPublishedArticle)
-                                    <p class="mt-1 text-xs leading-5 text-slate-500">Waktu terbit pertama tetap <time data-article-local-time datetime="{{ $selectedArticle->published_at?->toIso8601String() }}">{{ $selectedArticle->published_at?->format('d M Y, H:i') }}</time>. Waktu di atas hanya menjadi keterangan revisi.</p>
-                                @else
+                            @if($isEditingPublishedArticle)
+                                <div class="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3">
+                                    <p class="text-xs font-bold uppercase tracking-wider text-sky-800">Waktu edit otomatis</p>
+                                    <p class="mt-1 text-xs leading-5 text-sky-700">Tanggal dan jam edit akan dicatat otomatis saat tombol Simpan perubahan ditekan dan tidak dapat dipilih manual.</p>
+                                    <p class="mt-2 text-xs leading-5 text-slate-500">Waktu terbit pertama tetap <time data-article-local-time datetime="{{ $selectedArticle->published_at?->toIso8601String() }}">{{ $selectedArticle->published_at?->format('d M Y, H:i') }}</time>.</p>
+                                </div>
+                            @else
+                                <div>
+                                    <label for="add_article_published_at_inline" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">Tanggal dan jam tayang / jadwal</label>
+                                    <input id="add_article_published_at_inline" data-article-published-at @if(old('published_at') === null && $isEditingArticle) data-published-at-iso="{{ $selectedArticle->published_at?->toIso8601String() }}" @elseif(! $isEditingArticle) data-min-local-now @endif name="published_at" type="datetime-local" step="60" value="{{ old('published_at', $isEditingArticle ? $selectedArticle->published_at?->format('Y-m-d\TH:i') : '') }}" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">
                                     <p class="mt-1 text-xs text-slate-500">Mengikuti zona waktu komputer. Satu tanggal hanya dapat berisi satu artikel.</p>
-                                @endif
-                            </div>
+                                </div>
+                            @endif
                         </div>
                     </div>
 

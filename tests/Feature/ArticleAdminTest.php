@@ -258,7 +258,7 @@ it('updates an article from the admin dashboard', function () {
         'category' => 'Artificial Intelligence',
         'excerpt' => 'Ringkasan baru.',
         'content' => 'Konten baru.',
-        'published_at' => '2026-11-05T09:15',
+        'published_at' => '2030-12-31T23:59',
         'published_at_timezone' => config('app.timezone'),
         'status' => 'Draft',
     ]);
@@ -271,7 +271,8 @@ it('updates an article from the admin dashboard', function () {
         ->and($article->edited_at?->format('Y-m-d H:i'))->toBe('2026-11-05 09:15');
 });
 
-it('requires a revision time when editing a published article', function () {
+it('automatically records the revision time without a client timestamp', function () {
+    $this->travelTo(Carbon::create(2026, 11, 5, 10, 45, 0, config('app.timezone')));
     $admin = User::factory()->create(['is_admin' => true]);
     $article = Article::create([
         'title' => 'Artikel Publish Tetap',
@@ -284,19 +285,17 @@ it('requires a revision time when editing a published article', function () {
     ]);
 
     $response = $this->actingAs($admin)->put(route('admin.articles.update', $article), [
-        'title' => 'Judul Tidak Boleh Tersimpan',
+        'title' => 'Judul Otomatis Tersimpan',
         'category' => $article->category,
         'excerpt' => $article->excerpt,
         'content' => $article->content,
         'status' => 'Publish',
     ]);
 
-    $response->assertSessionHasErrors([
-        'published_at' => 'Isi tanggal dan jam edit artikel.',
-    ]);
-    expect($article->refresh()->title)->toBe('Artikel Publish Tetap')
+    $response->assertRedirect(route('admin.dashboard', ['tab' => 'artikel']));
+    expect($article->refresh()->title)->toBe('Judul Otomatis Tersimpan')
         ->and($article->published_at?->format('Y-m-d H:i:s'))->toBe('2026-11-01 08:30:00')
-        ->and($article->edited_at)->toBeNull();
+        ->and($article->edited_at?->format('Y-m-d H:i'))->toBe('2026-11-05 10:45');
 });
 
 it('allows changing a draft article publication schedule while editing', function () {
@@ -430,8 +429,10 @@ it('loads the selected article into the top editor when edit is requested', func
         ->assertSee('value="Tim Editorial"', false)
         ->assertSee('Ringkasan yang dimuat ke editor.')
         ->assertSee('Isi yang dimuat ke editor.')
-        ->assertSee('Tanggal dan jam edit')
+        ->assertSee('Waktu edit otomatis')
+        ->assertSee('tidak dapat dipilih manual')
         ->assertSee('Waktu terbit pertama tetap')
+        ->assertDontSee('id="add_article_published_at_inline"', false)
         ->assertDontSee("onclick=\"submitArticleAction('Draft', true)\"", false)
         ->assertSee('Simpan perubahan')
         ->assertDontSee('data-article-autosave-url=', false);
