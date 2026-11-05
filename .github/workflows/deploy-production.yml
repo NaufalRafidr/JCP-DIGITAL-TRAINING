@@ -146,6 +146,21 @@ jobs:
               exit 1
           fi
           "${compose[@]}" exec -T app php artisan optimize:clear
+
+          if ! "${compose[@]}" ps --status running --services | grep -qx 'scheduler'; then
+              echo "Container scheduler tidak berjalan." >&2
+              "${compose[@]}" logs --tail=100 scheduler >&2
+              exit 1
+          fi
+
+          schedule_output="$("${compose[@]}" exec -T scheduler php artisan schedule:list)"
+          echo "$schedule_output"
+          if ! grep -q 'articles:publish-scheduled' <<< "$schedule_output"; then
+              echo "Jadwal articles:publish-scheduled tidak terdaftar." >&2
+              exit 1
+          fi
+
+          "${compose[@]}" exec -T scheduler php artisan articles:publish-scheduled
           "${compose[@]}" ps
           REMOTE
 
