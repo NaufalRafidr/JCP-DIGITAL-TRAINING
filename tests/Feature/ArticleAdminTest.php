@@ -306,7 +306,7 @@ it('allows changing an article publication schedule while editing', function () 
         ->and($article->published_at)->toBeNull();
 });
 
-it('opens a read-only article preview inside its dashboard card', function () {
+it('renders a read-only article preview that can be toggled inside its dashboard card', function () {
     $admin = User::factory()->create(['is_admin' => true]);
     $article = Article::create([
         'title' => 'Artikel Editor',
@@ -335,8 +335,11 @@ it('opens a read-only article preview inside its dashboard card', function () {
         ->assertSee('data-start-article-edit', false)
         ->assertSee('data-delete-type="Artikel"', false)
         ->assertSee('data-delete-name="Artikel Editor"', false)
-        ->assertSee('data-editor-url=', false)
-        ->assertSee('data-close-editor', false)
+        ->assertSee('data-article-id="'.$article->id.'"', false)
+        ->assertSee('data-article-preview-panel', false)
+        ->assertSee('data-close-article-preview', false)
+        ->assertSee('aria-expanded="true"', false)
+        ->assertDontSee('data-editor-url=', false)
         ->assertDontSee('inline_article_title_', false);
 });
 

@@ -939,7 +939,7 @@
             <div data-article-list class="space-y-4">
                 @forelse($articles as $article)
                     @php
-                        $articleEditorQuery = ['tab' => 'artikel', 'article_id' => $article->id];
+                        $isArticlePreviewOpen = $selectedArticle?->id === $article->id && ! $isEditingArticle;
                         $articleStatusLabel = $article->status === 'Publish'
                             ? 'Publish'
                             : ($article->published_at !== null ? 'Terjadwalkan' : 'Draft');
@@ -954,7 +954,7 @@
                             default => 'draft',
                         };
                     @endphp
-                    <article data-article-card data-article-title="{{ $article->title }}" data-article-filter-status="{{ $articleFilterStatus }}" class="admin-editor-card cursor-pointer rounded-2xl border bg-white px-5 py-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] transition-all hover:border-[#087F78]/50 hover:shadow-md md:grid md:grid-cols-12 md:items-center md:px-8 {{ $selectedArticle?->id === $article->id ? 'border-[#087F78] ring-2 ring-[#087F78]/10' : 'border-slate-200/90' }}" data-editor-url="{{ route('admin.dashboard', $articleEditorQuery) }}" tabindex="0" role="button" aria-expanded="{{ $selectedArticle?->id === $article->id ? 'true' : 'false' }}" aria-label="Preview artikel {{ $article->title }}">
+                    <article data-article-card data-article-id="{{ $article->id }}" data-article-title="{{ $article->title }}" data-article-filter-status="{{ $articleFilterStatus }}" class="admin-editor-card cursor-pointer rounded-2xl border bg-white px-5 py-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] transition-all hover:border-[#087F78]/50 hover:shadow-md md:grid md:grid-cols-12 md:items-center md:px-8 {{ $isArticlePreviewOpen ? 'border-[#087F78] ring-2 ring-[#087F78]/10' : 'border-slate-200/90' }}" tabindex="0" role="button" aria-controls="article-preview-{{ $article->id }}" aria-expanded="{{ $isArticlePreviewOpen ? 'true' : 'false' }}" aria-label="Preview artikel {{ $article->title }}">
                         <div class="flex min-w-0 items-center gap-3 md:col-span-5 md:pr-4">
                             @if($article->image_path || $article->image_url)
                                 <img src="{{ $article->image_url ?: Storage::disk('public')->url($article->image_path) }}" alt="{{ $article->title }}" class="h-14 w-20 shrink-0 rounded-xl object-cover">
@@ -989,14 +989,15 @@
                             </form>
                         </div>
 
-                        @if($selectedArticle?->id === $article->id)
-                            <div class="admin-editor-panel mt-6 border-t border-slate-100 pt-6 md:col-span-12" data-editor-panel>
+                        <div id="article-preview-{{ $article->id }}" data-article-preview-panel class="grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none md:col-span-12 {{ $isArticlePreviewOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0' }}" aria-hidden="{{ $isArticlePreviewOpen ? 'false' : 'true' }}" @if(! $isArticlePreviewOpen) inert @endif>
+                            <div class="min-h-0 overflow-hidden">
+                            <div class="mt-6 border-t border-slate-100 pt-6">
                                 <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
                                     <div>
                                         <p class="text-xs font-bold uppercase tracking-wider text-[#087F78]">Preview artikel</p>
                                         <h3 class="mt-1 text-xl font-extrabold text-[#10243A]">{{ $article->title }}</h3>
                                     </div>
-                                    <a href="{{ route('admin.dashboard', ['tab' => 'artikel']) }}" data-close-editor class="inline-flex w-fit items-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:border-[#087F78]/40 hover:bg-[#E2F6F2] hover:text-[#087F78]">Tutup</a>
+                                    <button type="button" data-close-article-preview class="inline-flex w-fit items-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:border-[#087F78]/40 hover:bg-[#E2F6F2] hover:text-[#087F78]">Tutup</button>
                                 </div>
 
                                 <div class="mt-5 grid gap-5 lg:grid-cols-[minmax(240px,0.7fr)_minmax(0,1.3fr)]">
@@ -1027,7 +1028,8 @@
                                 </div>
 
                             </div>
-                        @endif
+                            </div>
+                        </div>
                     </article>
                 @empty
                     <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center text-sm text-slate-500">Belum ada artikel. Klik &quot;Tambah artikel&quot; untuk membuat artikel pertama.</div>
@@ -4195,6 +4197,93 @@
             const searchInput = articleManager.querySelector('#article_search');
             const emptyState = articleManager.querySelector('[data-article-filter-empty]');
             let activeFilter = articleManager.dataset.articleStatusFilter || 'all';
+            let expandedArticleCard = articleCards.find((card) => card.getAttribute('aria-expanded') === 'true') || null;
+
+            const updateArticlePreviewUrl = (card) => {
+                const url = new URL(window.location.href);
+
+                if (card) {
+                    url.searchParams.set('article_id', card.dataset.articleId);
+                } else {
+                    url.searchParams.delete('article_id');
+                }
+
+                url.searchParams.delete('edit_article');
+                window.history.replaceState(window.history.state, '', url.toString());
+            };
+
+            const setArticlePreviewState = (card, isExpanded) => {
+                const panel = card.querySelector('[data-article-preview-panel]');
+
+                if (!panel) {
+                    return;
+                }
+
+                card.setAttribute('aria-expanded', String(isExpanded));
+                card.classList.toggle('border-[#087F78]', isExpanded);
+                card.classList.toggle('ring-2', isExpanded);
+                card.classList.toggle('ring-[#087F78]/10', isExpanded);
+                card.classList.toggle('border-slate-200/90', !isExpanded);
+                panel.classList.toggle('grid-rows-[1fr]', isExpanded);
+                panel.classList.toggle('opacity-100', isExpanded);
+                panel.classList.toggle('grid-rows-[0fr]', !isExpanded);
+                panel.classList.toggle('opacity-0', !isExpanded);
+                panel.setAttribute('aria-hidden', String(!isExpanded));
+                panel.toggleAttribute('inert', !isExpanded);
+            };
+
+            const closeArticlePreview = (card, updateUrl = true) => {
+                setArticlePreviewState(card, false);
+
+                if (expandedArticleCard === card) {
+                    expandedArticleCard = null;
+                }
+
+                if (updateUrl) {
+                    updateArticlePreviewUrl(null);
+                }
+            };
+
+            const toggleArticlePreview = (card) => {
+                const willOpen = card.getAttribute('aria-expanded') !== 'true';
+
+                if (expandedArticleCard && expandedArticleCard !== card) {
+                    closeArticlePreview(expandedArticleCard, false);
+                }
+
+                if (willOpen) {
+                    setArticlePreviewState(card, true);
+                    expandedArticleCard = card;
+                    updateArticlePreviewUrl(card);
+                } else {
+                    closeArticlePreview(card);
+                }
+            };
+
+            articleCards.forEach((card) => {
+                card.addEventListener('click', (event) => {
+                    if (event.target.closest('a, button, form, select, input, textarea, label')) {
+                        return;
+                    }
+
+                    toggleArticlePreview(card);
+                });
+
+                card.addEventListener('keydown', (event) => {
+                    if (event.target !== card || !['Enter', ' '].includes(event.key)) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    toggleArticlePreview(card);
+                });
+
+                card.querySelector('[data-close-article-preview]')?.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    closeArticlePreview(card);
+                    card.focus({ preventScroll: true });
+                });
+            });
 
             const applyArticleFilter = () => {
                 const searchTerm = searchInput?.value.trim().toLocaleLowerCase() || '';
@@ -4207,6 +4296,10 @@
 
                     card.hidden = !isVisible;
                     visibleCount += isVisible ? 1 : 0;
+
+                    if (!isVisible && expandedArticleCard === card) {
+                        closeArticlePreview(card);
+                    }
                 });
 
                 filterButtons.forEach((button) => {
