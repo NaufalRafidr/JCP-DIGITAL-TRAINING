@@ -18,6 +18,7 @@ class JcpProfile extends Model
         'travel_package_button_text',
         'travel_package_button_url',
         'travel_package_background_images',
+        'travel_package_background_settings',
         'vision_title',
         'vision_content',
         'programs_stat',
@@ -31,5 +32,27 @@ class JcpProfile extends Model
     protected $casts = [
         'travel_package_features' => 'array',
         'travel_package_background_images' => 'array',
+        'travel_package_background_settings' => 'array',
     ];
+
+    public static function travelPackageBackgroundSettingsKey(string $background): string
+    {
+        return hash('sha256', $background);
+    }
+
+    /**
+     * @return array{position_x: int, position_y: int, scale: int}
+     */
+    public function travelPackageBackgroundSettings(string $background): array
+    {
+        $settings = $this->travel_package_background_settings[
+            self::travelPackageBackgroundSettingsKey($background)
+        ] ?? [];
+
+        return [
+            'position_x' => max(0, min(100, (int) ($settings['position_x'] ?? 50))),
+            'position_y' => max(0, min(100, (int) ($settings['position_y'] ?? 50))),
+            'scale' => max(100, min(200, (int) ($settings['scale'] ?? 100))),
+        ];
+    }
 }

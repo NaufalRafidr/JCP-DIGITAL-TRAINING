@@ -137,14 +137,24 @@
         $travelPackageTitle = $jcpProfile->travel_package_title ?: 'Bikin liburanmu lebih meriah dengan pelatihan bersama JCP Digital Training';
         $travelPackageDescription = $jcpProfile->travel_package_description ?: 'Gabungkan pengalaman belajar, team building, dan eksplorasi destinasi dalam satu perjalanan yang berkesan.';
         $travelPackageBackgrounds = collect($jcpProfile->travel_package_background_images ?: [])
-            ->filter(fn ($path) => is_string($path) && $path !== '')
-            ->map(fn ($path) => in_array(strtolower((string) parse_url($path, PHP_URL_SCHEME)), ['http', 'https'], true)
-                ? $path
-                : Storage::disk('public')->url($path))
+            ->filter(fn ($source) => is_string($source) && $source !== '')
+            ->map(function ($source) use ($jcpProfile) {
+                return [
+                    'source' => $source,
+                    'url' => in_array(strtolower((string) parse_url($source, PHP_URL_SCHEME)), ['http', 'https'], true)
+                        ? $source
+                        : Storage::disk('public')->url($source),
+                    'settings' => $jcpProfile->travelPackageBackgroundSettings($source),
+                ];
+            })
             ->values();
 
         if ($travelPackageBackgrounds->isEmpty()) {
-            $travelPackageBackgrounds->push(asset('images/training-travel-package-banner.png'));
+            $travelPackageBackgrounds->push([
+                'source' => 'default',
+                'url' => asset('images/training-travel-package-banner.png'),
+                'settings' => ['position_x' => 50, 'position_y' => 50, 'scale' => 100],
+            ]);
         }
 
         $defaultPackageLink = config('services.whatsapp.admin_number')
@@ -159,12 +169,13 @@
             @foreach($travelPackageBackgrounds as $background)
                 <img
                     data-travel-package-slide
-                    src="{{ $background }}"
+                    src="{{ $background['url'] }}"
                     alt=""
                     loading="{{ $loop->first ? 'eager' : 'lazy' }}"
                     decoding="async"
                     aria-hidden="{{ $loop->first ? 'false' : 'true' }}"
-                    class="absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-1000 ease-in-out motion-reduce:transition-none sm:object-right {{ $loop->first ? 'opacity-100' : 'opacity-0' }}"
+                    style="object-position: {{ $background['settings']['position_x'] }}% {{ $background['settings']['position_y'] }}%; transform: scale({{ $background['settings']['scale'] / 100 }});"
+                    class="absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out motion-reduce:transition-none {{ $loop->first ? 'opacity-100' : 'opacity-0' }}"
                 >
             @endforeach
         </div>

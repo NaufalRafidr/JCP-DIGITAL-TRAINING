@@ -41,6 +41,9 @@ it('updates the JCP profile and renders the changes on the about page', function
 
 it('separates homepage content from the JCP profile form', function () {
     $admin = User::factory()->create(['is_admin' => true]);
+    JcpProfile::query()->firstOrFail()->update([
+        'travel_package_background_images' => ['https://example.com/background.jpg'],
+    ]);
 
     $this->actingAs($admin)
         ->get(route('admin.dashboard', ['tab' => 'profil']))
@@ -59,6 +62,8 @@ it('separates homepage content from the JCP profile form', function () {
         ->assertSee('name="travel_package_background_images[]"', false)
         ->assertSee('name="travel_package_background_folder[]"', false)
         ->assertSee('name="travel_package_background_urls"', false)
+        ->assertSee('data-background-delete-selected', false)
+        ->assertSee('data-background-editor-canvas', false)
         ->assertDontSee('name="travel_package_features"', false)
         ->assertDontSee('name="travel_package_button_url"', false)
         ->assertSee('multiple', false);
@@ -200,14 +205,107 @@ it('removes only selected travel package backgrounds', function () {
     Storage::disk('public')->assertExists($secondBackground);
 });
 
+it('deletes selected homepage backgrounds immediately and removes their settings', function () {
+    Storage::fake('public');
+    $admin = User::factory()->create(['is_admin' => true]);
+    $profile = JcpProfile::query()->firstOrFail();
+    $firstBackground = 'jcp/travel-package/first.jpg';
+    $secondBackground = 'jcp/travel-package/second.jpg';
+    $remoteBackground = 'https://example.com/remote.jpg';
+    Storage::disk('public')->put($firstBackground, 'first');
+    Storage::disk('public')->put($secondBackground, 'second');
+    $profile->update([
+        'travel_package_background_images' => [$firstBackground, $secondBackground, $remoteBackground],
+        'travel_package_background_settings' => [
+            JcpProfile::travelPackageBackgroundSettingsKey($firstBackground) => [
+                'position_x' => 20,
+                'position_y' => 30,
+                'scale' => 120,
+            ],
+            JcpProfile::travelPackageBackgroundSettingsKey($secondBackground) => [
+                'position_x' => 60,
+                'position_y' => 70,
+                'scale' => 140,
+            ],
+            JcpProfile::travelPackageBackgroundSettingsKey($remoteBackground) => [
+                'position_x' => 40,
+                'position_y' => 50,
+                'scale' => 110,
+            ],
+        ],
+    ]);
+
+    $response = $this->actingAs($admin)->deleteJson(route('admin.homepage.backgrounds.destroy'), [
+        'backgrounds' => [$firstBackground, $remoteBackground],
+    ]);
+
+    $response->assertOk()
+        ->assertJson([
+            'deleted' => [$firstBackground, $remoteBackground],
+            'remaining_count' => 1,
+        ]);
+    $updatedProfile = $profile->refresh();
+    expect($updatedProfile->travel_package_background_images)->toBe([$secondBackground])
+        ->and($updatedProfile->travel_package_background_settings)->toHaveKey(
+            JcpProfile::travelPackageBackgroundSettingsKey($secondBackground),
+        )
+        ->and($updatedProfile->travel_package_background_settings)->not->toHaveKey(
+            JcpProfile::travelPackageBackgroundSettingsKey($firstBackground),
+        );
+    Storage::disk('public')->assertMissing($firstBackground);
+    Storage::disk('public')->assertExists($secondBackground);
+});
+
+it('updates homepage background position and scale and renders them on the banner', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+    $profile = JcpProfile::query()->firstOrFail();
+    $background = 'https://example.com/banner.jpg';
+    $profile->update(['travel_package_background_images' => [$background]]);
+
+    $response = $this->actingAs($admin)->putJson(route('admin.homepage.backgrounds.update'), [
+        'background' => $background,
+        'position_x' => 20,
+        'position_y' => 70,
+        'scale' => 135,
+    ]);
+
+    $response->assertOk()
+        ->assertJsonPath('settings.position_x', 20)
+        ->assertJsonPath('settings.position_y', 70)
+        ->assertJsonPath('settings.scale', 135);
+    expect($profile->refresh()->travelPackageBackgroundSettings($background))->toBe([
+        'position_x' => 20,
+        'position_y' => 70,
+        'scale' => 135,
+    ]);
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('object-position: 20% 70%; transform: scale(1.35);', false);
+});
+
+it('rejects homepage background settings for an unknown image', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+
+    $this->actingAs($admin)->putJson(route('admin.homepage.backgrounds.update'), [
+        'background' => 'jcp/travel-package/not-owned.jpg',
+        'position_x' => 50,
+        'position_y' => 50,
+        'scale' => 100,
+    ])->assertNotFound();
+});
+
 it('forbids non-admin users from updating the JCP profile', function () {
     $user = User::factory()->create(['is_admin' => false]);
 
     $response = $this->actingAs($user)->put(route('admin.profile.update'), []);
     $homepageResponse = $this->actingAs($user)->put(route('admin.homepage.update'), []);
+    $homepageBackgroundUpdateResponse = $this->actingAs($user)->putJson(route('admin.homepage.backgrounds.update'), []);
+    $homepageBackgroundDeleteResponse = $this->actingAs($user)->deleteJson(route('admin.homepage.backgrounds.destroy'), []);
 
     $response->assertForbidden();
     $homepageResponse->assertForbidden();
+    $homepageBackgroundUpdateResponse->assertForbidden();
+    $homepageBackgroundDeleteResponse->assertForbidden();
 });
 
 it('escapes user-provided JCP profile content on public pages', function () {

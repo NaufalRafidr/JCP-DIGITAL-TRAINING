@@ -311,9 +311,319 @@ const initializeHomepageHeroPreviews = () => {
     });
 };
 
+const initializeHomepageBackgroundManagers = () => {
+    document.querySelectorAll('[data-homepage-background-manager]').forEach((manager) => {
+        if (!(manager instanceof HTMLElement)) {
+            return;
+        }
+
+        const deleteUrl = manager.dataset.backgroundDeleteUrl;
+        const updateUrl = manager.dataset.backgroundUpdateUrl;
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        const list = manager.querySelector('[data-background-list]');
+        const storedSection = list?.parentElement;
+        const emptyState = manager.querySelector('[data-background-empty]');
+        const selectAll = manager.querySelector('[data-background-select-all]');
+        const deleteSelectedButton = manager.querySelector('[data-background-delete-selected]');
+        const selectionCount = manager.querySelector('[data-background-selection-count]');
+        const managerStatus = manager.querySelector('[data-background-manager-status]');
+        const modal = manager.querySelector('[data-background-editor-modal]');
+        const editorCanvas = manager.querySelector('[data-background-editor-canvas]');
+        const editorImage = manager.querySelector('[data-background-editor-image]');
+        const positionXInput = manager.querySelector('[data-background-position-x]');
+        const positionYInput = manager.querySelector('[data-background-position-y]');
+        const scaleInput = manager.querySelector('[data-background-scale]');
+        const positionXOutput = manager.querySelector('[data-background-position-x-output]');
+        const positionYOutput = manager.querySelector('[data-background-position-y-output]');
+        const scaleOutput = manager.querySelector('[data-background-scale-output]');
+        const editorStatus = manager.querySelector('[data-background-editor-status]');
+        const editorSaveButton = manager.querySelector('[data-background-editor-save]');
+        let activeEditorButton = null;
+        let activeBackgroundSource = '';
+        let dragState = null;
+
+        const showStatus = (element, message, isError = false) => {
+            if (!(element instanceof HTMLElement)) {
+                return;
+            }
+
+            element.textContent = message;
+            element.classList.remove('hidden', 'border-rose-200', 'bg-rose-50', 'text-rose-700', 'border-emerald-200', 'bg-emerald-50', 'text-emerald-700');
+            element.classList.add(
+                'border',
+                ...(isError
+                    ? ['border-rose-200', 'bg-rose-50', 'text-rose-700']
+                    : ['border-emerald-200', 'bg-emerald-50', 'text-emerald-700']),
+            );
+        };
+
+        const request = async (url, method, payload) => {
+            const response = await fetch(url, {
+                method,
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken || '',
+                },
+                body: JSON.stringify(payload),
+            });
+            const responseBody = await response.json().catch(() => ({}));
+
+            if (! response.ok) {
+                const validationMessage = responseBody.errors
+                    ? Object.values(responseBody.errors).flat()[0]
+                    : null;
+
+                throw new Error(validationMessage || responseBody.message || `Permintaan gagal (HTTP ${response.status}).`);
+            }
+
+            return responseBody;
+        };
+
+        const backgroundCards = () => Array.from(manager.querySelectorAll('[data-background-card]'));
+        const selectedInputs = () => Array.from(manager.querySelectorAll('[data-background-select]:checked'));
+
+        const updateSelection = () => {
+            const cards = backgroundCards();
+            const selected = selectedInputs();
+
+            if (selectionCount instanceof HTMLElement) {
+                selectionCount.textContent = selected.length === 0
+                    ? 'Belum ada gambar dipilih.'
+                    : `${selected.length} gambar dipilih.`;
+            }
+
+            if (deleteSelectedButton instanceof HTMLButtonElement) {
+                deleteSelectedButton.disabled = selected.length === 0;
+            }
+
+            if (selectAll instanceof HTMLInputElement) {
+                selectAll.checked = cards.length > 0 && selected.length === cards.length;
+                selectAll.indeterminate = selected.length > 0 && selected.length < cards.length;
+                selectAll.disabled = cards.length === 0;
+            }
+
+            storedSection?.classList.toggle('hidden', cards.length === 0);
+            emptyState?.classList.toggle('hidden', cards.length !== 0);
+        };
+
+        const deleteBackgrounds = async (backgrounds) => {
+            if (! deleteUrl || backgrounds.length === 0) {
+                return;
+            }
+
+            const confirmation = backgrounds.length === 1
+                ? 'Hapus background ini sekarang?'
+                : `Hapus ${backgrounds.length} background yang dipilih sekarang?`;
+
+            if (! window.confirm(confirmation)) {
+                return;
+            }
+
+            if (deleteSelectedButton instanceof HTMLButtonElement) {
+                deleteSelectedButton.disabled = true;
+            }
+
+            try {
+                const response = await request(deleteUrl, 'DELETE', { backgrounds });
+
+                backgroundCards().forEach((card) => {
+                    if (backgrounds.includes(card.dataset.backgroundSource || '')) {
+                        card.remove();
+                    }
+                });
+                showStatus(managerStatus, response.message || 'Background berhasil dihapus.');
+            } catch (error) {
+                showStatus(managerStatus, error instanceof Error ? error.message : 'Background gagal dihapus.', true);
+            } finally {
+                updateSelection();
+            }
+        };
+
+        const editorElementsAreValid = modal instanceof HTMLElement
+            && editorCanvas instanceof HTMLElement
+            && editorImage instanceof HTMLImageElement
+            && positionXInput instanceof HTMLInputElement
+            && positionYInput instanceof HTMLInputElement
+            && scaleInput instanceof HTMLInputElement
+            && positionXOutput instanceof HTMLOutputElement
+            && positionYOutput instanceof HTMLOutputElement
+            && scaleOutput instanceof HTMLOutputElement
+            && editorSaveButton instanceof HTMLButtonElement;
+
+        const renderEditorPreview = () => {
+            if (! editorElementsAreValid) {
+                return;
+            }
+
+            const positionX = Number(positionXInput.value);
+            const positionY = Number(positionYInput.value);
+            const scale = Number(scaleInput.value);
+
+            editorImage.style.objectPosition = `${positionX}% ${positionY}%`;
+            editorImage.style.transform = `scale(${scale / 100})`;
+            positionXOutput.value = String(positionX);
+            positionYOutput.value = String(positionY);
+            scaleOutput.value = String(scale);
+        };
+
+        const closeEditor = () => {
+            if (!(modal instanceof HTMLElement)) {
+                return;
+            }
+
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            activeEditorButton = null;
+            activeBackgroundSource = '';
+            dragState = null;
+        };
+
+        manager.addEventListener('change', (event) => {
+            if (!(event.target instanceof HTMLInputElement)) {
+                return;
+            }
+
+            if (event.target.matches('[data-background-select-all]')) {
+                manager.querySelectorAll('[data-background-select]').forEach((input) => {
+                    if (input instanceof HTMLInputElement) {
+                        input.checked = event.target.checked;
+                    }
+                });
+            }
+
+            if (event.target.matches('[data-background-select], [data-background-select-all]')) {
+                updateSelection();
+            }
+        });
+
+        manager.addEventListener('click', (event) => {
+            if (!(event.target instanceof Element)) {
+                return;
+            }
+
+            const deleteOneButton = event.target.closest('[data-background-delete-one]');
+            if (deleteOneButton instanceof HTMLButtonElement) {
+                deleteBackgrounds([deleteOneButton.dataset.backgroundSource || '']);
+
+                return;
+            }
+
+            if (event.target.closest('[data-background-delete-selected]')) {
+                deleteBackgrounds(selectedInputs().map((input) => input.value));
+
+                return;
+            }
+
+            const editorButton = event.target.closest('[data-background-editor-open]');
+            if (editorButton instanceof HTMLButtonElement && editorElementsAreValid) {
+                activeEditorButton = editorButton;
+                activeBackgroundSource = editorButton.dataset.backgroundSource || '';
+                editorImage.src = editorButton.dataset.backgroundUrl || '';
+                positionXInput.value = editorButton.dataset.positionX || '50';
+                positionYInput.value = editorButton.dataset.positionY || '50';
+                scaleInput.value = editorButton.dataset.scale || '100';
+                editorStatus?.classList.add('hidden');
+                renderEditorPreview();
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+
+            if (event.target.closest('[data-background-editor-close]') || event.target === modal) {
+                closeEditor();
+            }
+        });
+
+        if (editorElementsAreValid) {
+            [positionXInput, positionYInput, scaleInput].forEach((input) => {
+                input.addEventListener('input', renderEditorPreview);
+            });
+
+            editorCanvas.addEventListener('pointerdown', (event) => {
+                dragState = {
+                    pointerId: event.pointerId,
+                    startX: event.clientX,
+                    startY: event.clientY,
+                    positionX: Number(positionXInput.value),
+                    positionY: Number(positionYInput.value),
+                };
+                editorCanvas.setPointerCapture(event.pointerId);
+            });
+
+            editorCanvas.addEventListener('pointermove', (event) => {
+                if (dragState === null || dragState.pointerId !== event.pointerId) {
+                    return;
+                }
+
+                const bounds = editorCanvas.getBoundingClientRect();
+                const nextX = dragState.positionX - ((event.clientX - dragState.startX) / bounds.width) * 100;
+                const nextY = dragState.positionY - ((event.clientY - dragState.startY) / bounds.height) * 100;
+                positionXInput.value = String(Math.max(0, Math.min(100, Math.round(nextX))));
+                positionYInput.value = String(Math.max(0, Math.min(100, Math.round(nextY))));
+                renderEditorPreview();
+            });
+
+            const endDrag = (event) => {
+                if (dragState?.pointerId === event.pointerId) {
+                    dragState = null;
+                }
+            };
+
+            editorCanvas.addEventListener('pointerup', endDrag);
+            editorCanvas.addEventListener('pointercancel', endDrag);
+
+            editorSaveButton.addEventListener('click', async () => {
+                if (! updateUrl || activeBackgroundSource === '') {
+                    return;
+                }
+
+                editorSaveButton.disabled = true;
+
+                try {
+                    const response = await request(updateUrl, 'PUT', {
+                        background: activeBackgroundSource,
+                        position_x: Number(positionXInput.value),
+                        position_y: Number(positionYInput.value),
+                        scale: Number(scaleInput.value),
+                    });
+                    const settings = response.settings;
+                    const card = activeEditorButton?.closest('[data-background-card]');
+                    const cardImage = card?.querySelector('[data-background-card-image]');
+
+                    if (cardImage instanceof HTMLImageElement) {
+                        cardImage.style.objectPosition = `${settings.position_x}% ${settings.position_y}%`;
+                        cardImage.style.transform = `scale(${settings.scale / 100})`;
+                    }
+
+                    if (activeEditorButton instanceof HTMLButtonElement) {
+                        activeEditorButton.dataset.positionX = String(settings.position_x);
+                        activeEditorButton.dataset.positionY = String(settings.position_y);
+                        activeEditorButton.dataset.scale = String(settings.scale);
+                    }
+
+                    showStatus(editorStatus, response.message || 'Pengaturan gambar berhasil disimpan.');
+                } catch (error) {
+                    showStatus(editorStatus, error instanceof Error ? error.message : 'Pengaturan gambar gagal disimpan.', true);
+                } finally {
+                    editorSaveButton.disabled = false;
+                }
+            });
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && modal instanceof HTMLElement && ! modal.classList.contains('hidden')) {
+                closeEditor();
+            }
+        });
+
+        updateSelection();
+    });
+};
+
 initializeTravelPackageCarousels();
 initializeTravelPackageImagePreviews();
 initializeHomepageHeroPreviews();
+initializeHomepageBackgroundManagers();
 
 document.addEventListener('click', (event) => {
     if (!(event.target instanceof Element)) {

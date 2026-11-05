@@ -332,7 +332,13 @@
                         </div>
                     </section>
 
-                    <section data-travel-package-image-editor class="space-y-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                    <section
+                        data-travel-package-image-editor
+                        data-homepage-background-manager
+                        data-background-delete-url="{{ route('admin.homepage.backgrounds.destroy') }}"
+                        data-background-update-url="{{ route('admin.homepage.backgrounds.update') }}"
+                        class="space-y-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8"
+                    >
                         <div>
                             <h2 class="text-xl font-extrabold text-[#10243A]">Banner paket pelatihan dan wisata</h2>
                             <p class="mt-1 text-sm leading-relaxed text-slate-500">Atur tulisan dan background yang berganti otomatis. Tombol langsung menggunakan nomor WhatsApp admin yang sudah dikonfigurasi.</p>
@@ -361,27 +367,101 @@
 
                         @if($travelPackageBackgroundImages->isNotEmpty())
                             <div>
-                                <p class="mb-2 text-xs font-bold uppercase tracking-wider text-slate-600">Background custom tersimpan</p>
-                                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+                                    <div>
+                                        <p class="text-xs font-bold uppercase tracking-wider text-slate-600">Background custom tersimpan</p>
+                                        <p data-background-selection-count class="mt-1 text-xs text-slate-500">Belum ada gambar dipilih.</p>
+                                    </div>
+                                    <div class="flex flex-wrap items-center gap-3">
+                                        <label class="inline-flex cursor-pointer items-center gap-2 text-xs font-bold text-slate-600">
+                                            <input data-background-select-all type="checkbox" class="h-4 w-4 rounded border-slate-300 text-[#087F78] focus:ring-[#087F78]">
+                                            Pilih semua
+                                        </label>
+                                        <button data-background-delete-selected type="button" disabled class="rounded-xl border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-45">Hapus yang dipilih</button>
+                                    </div>
+                                </div>
+                                <div data-background-list class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                                     @foreach($travelPackageBackgroundImages as $backgroundImage)
                                         @php
                                             $backgroundPreview = in_array(strtolower((string) parse_url($backgroundImage, PHP_URL_SCHEME)), ['http', 'https'], true)
                                                 ? $backgroundImage
                                                 : Storage::disk('public')->url($backgroundImage);
+                                            $backgroundSettings = $jcpProfile->travelPackageBackgroundSettings($backgroundImage);
                                         @endphp
-                                        <label class="overflow-hidden rounded-xl border border-slate-200 bg-white">
-                                            <img src="{{ $backgroundPreview }}" alt="Background paket wisata {{ $loop->iteration }}" class="h-28 w-full object-cover">
-                                            <span class="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-rose-600">
-                                                <input name="remove_travel_package_background_images[]" type="checkbox" value="{{ $backgroundImage }}" class="h-4 w-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500">
-                                                Hapus saat disimpan
-                                            </span>
-                                        </label>
+                                        <article data-background-card data-background-source="{{ $backgroundImage }}" class="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                                            <div class="h-32 overflow-hidden bg-slate-100">
+                                                <img
+                                                    data-background-card-image
+                                                    src="{{ $backgroundPreview }}"
+                                                    alt="Background paket wisata {{ $loop->iteration }}"
+                                                    style="object-position: {{ $backgroundSettings['position_x'] }}% {{ $backgroundSettings['position_y'] }}%; transform: scale({{ $backgroundSettings['scale'] / 100 }});"
+                                                    class="h-full w-full object-cover"
+                                                >
+                                            </div>
+                                            <div class="space-y-2 p-3">
+                                                <label class="flex cursor-pointer items-center gap-2 text-xs font-semibold text-slate-600">
+                                                    <input data-background-select type="checkbox" value="{{ $backgroundImage }}" class="h-4 w-4 rounded border-slate-300 text-[#087F78] focus:ring-[#087F78]">
+                                                    Pilih gambar
+                                                </label>
+                                                <div class="flex gap-2">
+                                                    <button
+                                                        data-background-editor-open
+                                                        data-background-source="{{ $backgroundImage }}"
+                                                        data-background-url="{{ $backgroundPreview }}"
+                                                        data-position-x="{{ $backgroundSettings['position_x'] }}"
+                                                        data-position-y="{{ $backgroundSettings['position_y'] }}"
+                                                        data-scale="{{ $backgroundSettings['scale'] }}"
+                                                        type="button"
+                                                        class="flex-1 rounded-lg bg-[#E2F6F2] px-2 py-2 text-xs font-bold text-[#087F78] hover:bg-[#C9EEE8]"
+                                                    >Atur gambar</button>
+                                                    <button data-background-delete-one data-background-source="{{ $backgroundImage }}" type="button" class="rounded-lg bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100" aria-label="Hapus background {{ $loop->iteration }}">Hapus</button>
+                                                </div>
+                                            </div>
+                                        </article>
                                     @endforeach
                                 </div>
                             </div>
-                        @else
-                            <p class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-center text-sm text-slate-500">Belum ada background custom. Gambar bawaan hanya digunakan di beranda sampai background pertama disimpan.</p>
                         @endif
+                        <p data-background-empty class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-center text-sm text-slate-500 {{ $travelPackageBackgroundImages->isNotEmpty() ? 'hidden' : '' }}">Belum ada background custom. Gambar bawaan hanya digunakan di beranda sampai background pertama disimpan.</p>
+                        <p data-background-manager-status class="hidden rounded-xl px-4 py-3 text-sm font-semibold" role="status" aria-live="polite"></p>
+
+                        <div data-background-editor-modal class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="backgroundEditorTitle">
+                            <div class="w-full max-w-4xl rounded-3xl bg-white p-5 shadow-2xl sm:p-7">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div>
+                                        <p class="text-xs font-bold uppercase tracking-wider text-[#087F78]">Editor banner</p>
+                                        <h3 id="backgroundEditorTitle" class="mt-1 text-xl font-extrabold text-[#10243A]">Atur posisi dan ukuran gambar</h3>
+                                        <p class="mt-1 text-sm text-slate-500">Geser gambar langsung pada preview atau gunakan pengatur di bawahnya.</p>
+                                    </div>
+                                    <button data-background-editor-close type="button" aria-label="Tutup editor" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xl font-bold text-slate-600 hover:bg-slate-200">&times;</button>
+                                </div>
+
+                                <div data-background-editor-canvas class="mt-5 aspect-[5/2] cursor-grab touch-none overflow-hidden rounded-2xl bg-[#10243A] active:cursor-grabbing">
+                                    <img data-background-editor-image src="" alt="Preview background banner" class="h-full w-full select-none object-cover" draggable="false">
+                                </div>
+
+                                <div class="mt-5 grid gap-4 sm:grid-cols-3">
+                                    <label class="text-xs font-bold uppercase tracking-wider text-slate-600">
+                                        Fokus horizontal: <output data-background-position-x-output>50</output>%
+                                        <input data-background-position-x type="range" min="0" max="100" value="50" class="mt-2 w-full accent-[#087F78]">
+                                    </label>
+                                    <label class="text-xs font-bold uppercase tracking-wider text-slate-600">
+                                        Fokus vertikal: <output data-background-position-y-output>50</output>%
+                                        <input data-background-position-y type="range" min="0" max="100" value="50" class="mt-2 w-full accent-[#087F78]">
+                                    </label>
+                                    <label class="text-xs font-bold uppercase tracking-wider text-slate-600">
+                                        Ukuran: <output data-background-scale-output>100</output>%
+                                        <input data-background-scale type="range" min="100" max="200" step="5" value="100" class="mt-2 w-full accent-[#087F78]">
+                                    </label>
+                                </div>
+
+                                <p data-background-editor-status class="mt-4 hidden rounded-xl px-4 py-3 text-sm font-semibold" role="status" aria-live="polite"></p>
+                                <div class="mt-5 flex justify-end gap-3 border-t border-slate-100 pt-5">
+                                    <button data-background-editor-close type="button" class="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-100">Batal</button>
+                                    <button data-background-editor-save type="button" class="rounded-xl bg-[#087F78] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#066761]">Simpan posisi</button>
+                                </div>
+                            </div>
+                        </div>
 
                         <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 sm:p-5">
                             <p class="text-sm font-bold text-[#10243A]">Tambah background</p>

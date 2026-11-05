@@ -46,6 +46,11 @@ class HomepageAdminController extends Controller
         $requestedBackgroundRemovals = $validated['remove_travel_package_background_images'] ?? [];
         $backgroundImagesToRemove = array_values(array_intersect($existingBackgroundImages, $requestedBackgroundRemovals));
         $retainedBackgroundImages = array_values(array_diff($existingBackgroundImages, $backgroundImagesToRemove));
+        $backgroundSettings = $profile->travel_package_background_settings ?? [];
+
+        foreach ($backgroundImagesToRemove as $backgroundImageToRemove) {
+            unset($backgroundSettings[JcpProfile::travelPackageBackgroundSettingsKey($backgroundImageToRemove)]);
+        }
 
         if (count($retainedBackgroundImages) + count($backgroundUploads) + count($backgroundUrls) > 8) {
             throw ValidationException::withMessages([
@@ -97,6 +102,7 @@ class HomepageAdminController extends Controller
                     ...$newBackgroundImagePaths,
                     ...$backgroundUrls,
                 ])),
+                'travel_package_background_settings' => $backgroundSettings,
             ]);
         } catch (Throwable $exception) {
             Storage::disk('public')->delete([
