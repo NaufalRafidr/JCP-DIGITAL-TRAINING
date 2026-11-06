@@ -52,7 +52,7 @@
 
                 <!-- Desktop Nav Items: Beranda, Pelatihan⌄, Jadwal, Corporate, Artikel, Tentang -->
                 <nav class="hidden lg:flex items-center gap-7 lg:gap-9 text-[15px] font-semibold text-slate-700">
-                    <a href="{{ $homeAnchor }}" class="hover:text-[#087F78] transition-colors {{ request()->routeIs('home') ? 'text-slate-800' : 'text-slate-600' }}">
+                    <a href="{{ $homeAnchor }}" class="text-slate-600 transition-colors hover:text-[#087F78]">
                         Beranda
                     </a>
 
