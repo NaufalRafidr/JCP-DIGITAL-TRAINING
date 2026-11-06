@@ -59,6 +59,8 @@ it('separates homepage content from the JCP profile form', function () {
         ->assertSeeInOrder(['Beranda', 'Artikel'])
         ->assertSee('name="hero_image"', false)
         ->assertSee('name="travel_package_title"', false)
+        ->assertSee('name="travel_package_carousel_interval_seconds"', false)
+        ->assertSee('value="2.5"', false)
         ->assertSee('name="travel_package_background_images[]"', false)
         ->assertSee('name="travel_package_background_folder[]"', false)
         ->assertSee('name="travel_package_background_urls"', false)
@@ -116,6 +118,7 @@ it('updates homepage content from files folders and URLs without showing the def
         'travel_package_title' => 'Paket outing kreatif untuk tim Anda',
         'travel_package_description' => 'Pelatihan praktis yang dipadukan dengan perjalanan berkesan.',
         'travel_package_button_text' => 'Hubungi tim kami',
+        'travel_package_carousel_interval_seconds' => 1,
         'travel_package_background_images' => [
             UploadedFile::fake()->image('wisata-satu.jpg'),
         ],
@@ -131,6 +134,7 @@ it('updates homepage content from files folders and URLs without showing the def
     $response->assertRedirect(route('admin.dashboard', ['tab' => 'beranda']));
     expect($updatedProfile->travel_package_features)->toBe([])
         ->and($updatedProfile->travel_package_button_url)->toBeNull()
+        ->and($updatedProfile->travel_package_carousel_interval_ms)->toBe(1000)
         ->and($backgroundImages)->toHaveCount(3)
         ->and($backgroundImages[2])->toBe('https://example.com/wisata-tiga.jpg');
     Storage::disk('public')->assertExists(array_slice($backgroundImages, 0, 2));
@@ -146,9 +150,33 @@ it('updates homepage content from files folders and URLs without showing the def
         ->assertSee(Storage::disk('public')->url($backgroundImages[1]), false)
         ->assertSee('https://example.com/wisata-tiga.jpg', false)
         ->assertDontSee('images/training-travel-package-banner.png', false)
-        ->assertSee('data-travel-package-carousel', false);
+        ->assertSee('data-travel-package-carousel', false)
+        ->assertSee('data-carousel-interval="1000"', false);
     expect(substr_count($homeResponse->getContent(), 'data-travel-package-slide'))->toBe(3);
 });
+
+it('rejects an invalid homepage carousel interval', function (mixed $interval, string $message) {
+    $admin = User::factory()->create(['is_admin' => true]);
+    $profile = JcpProfile::query()->firstOrFail();
+
+    $response = $this->actingAs($admin)
+        ->from(route('admin.dashboard', ['tab' => 'beranda']))
+        ->put(route('admin.homepage.update'), [
+            'travel_package_badge' => 'Paket pelatihan + wisata',
+            'travel_package_title' => 'Pelatihan bersama JCP',
+            'travel_package_description' => 'Pelatihan dan perjalanan yang berkesan.',
+            'travel_package_button_text' => 'Konsultasikan paket',
+            'travel_package_carousel_interval_seconds' => $interval,
+        ]);
+
+    $response->assertRedirect(route('admin.dashboard', ['tab' => 'beranda']))
+        ->assertInvalid(['travel_package_carousel_interval_seconds' => $message]);
+    expect($profile->refresh()->travel_package_carousel_interval_ms)->toBe(2500);
+})->with([
+    'non-numeric interval' => ['cepat', 'Waktu pergantian gambar harus berupa angka.'],
+    'interval below one second' => [0.5, 'Waktu pergantian gambar minimal 1 detik.'],
+    'interval above sixty seconds' => [60.5, 'Waktu pergantian gambar maksimal 60 detik.'],
+]);
 
 it('rejects more than eight combined homepage backgrounds without storing new files', function () {
     Storage::fake('public');

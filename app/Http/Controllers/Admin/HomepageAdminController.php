@@ -30,11 +30,16 @@ class HomepageAdminController extends Controller
             'travel_package_title' => ['required', 'string', 'max:255'],
             'travel_package_description' => ['required', 'string', 'max:1000'],
             'travel_package_button_text' => ['required', 'string', 'max:100'],
+            'travel_package_carousel_interval_seconds' => ['nullable', 'numeric', 'min:1', 'max:60'],
             'travel_package_background_images' => ['nullable', 'array', 'max:8'],
             'travel_package_background_images.*' => ['image', 'mimes:jpg,jpeg,png,webp,avif', 'max:10240'],
             'travel_package_background_urls' => ['nullable', 'string', 'max:20000'],
             'remove_travel_package_background_images' => ['nullable', 'array', 'max:8'],
             'remove_travel_package_background_images.*' => ['string', 'max:2048'],
+        ], [
+            'travel_package_carousel_interval_seconds.numeric' => 'Waktu pergantian gambar harus berupa angka.',
+            'travel_package_carousel_interval_seconds.min' => 'Waktu pergantian gambar minimal 1 detik.',
+            'travel_package_carousel_interval_seconds.max' => 'Waktu pergantian gambar maksimal 60 detik.',
         ]);
 
         $profile = JcpProfile::query()->firstOrFail();
@@ -97,6 +102,9 @@ class HomepageAdminController extends Controller
                 'travel_package_features' => [],
                 'travel_package_button_text' => $validated['travel_package_button_text'],
                 'travel_package_button_url' => null,
+                'travel_package_carousel_interval_ms' => isset($validated['travel_package_carousel_interval_seconds'])
+                    ? (int) round((float) $validated['travel_package_carousel_interval_seconds'] * 1000)
+                    : $profile->travelPackageCarouselIntervalMilliseconds(),
                 'travel_package_background_images' => array_values(array_unique([
                     ...$retainedBackgroundImages,
                     ...$newBackgroundImagePaths,

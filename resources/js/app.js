@@ -74,7 +74,7 @@ const initializeTravelPackageCarousels = () => {
             return;
         }
 
-        const interval = Math.max(Number(carousel.dataset.carouselInterval) || 2500, 2000);
+        const interval = Math.max(Number(carousel.dataset.carouselInterval) || 2500, 1000);
         let activeIndex = 0;
         let intervalId = null;
 
@@ -124,14 +124,6 @@ const initializeTravelPackageCarousels = () => {
             });
         });
 
-        carousel.addEventListener('mouseenter', stopCarousel);
-        carousel.addEventListener('mouseleave', startCarousel);
-        carousel.addEventListener('focusin', stopCarousel);
-        carousel.addEventListener('focusout', (event) => {
-            if (!(event.relatedTarget instanceof Node) || ! carousel.contains(event.relatedTarget)) {
-                startCarousel();
-            }
-        });
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 stopCarousel();

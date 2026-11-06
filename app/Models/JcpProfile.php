@@ -19,6 +19,7 @@ class JcpProfile extends Model
         'travel_package_button_url',
         'travel_package_background_images',
         'travel_package_background_settings',
+        'travel_package_carousel_interval_ms',
         'vision_title',
         'vision_content',
         'programs_stat',
@@ -33,6 +34,7 @@ class JcpProfile extends Model
         'travel_package_features' => 'array',
         'travel_package_background_images' => 'array',
         'travel_package_background_settings' => 'array',
+        'travel_package_carousel_interval_ms' => 'integer',
     ];
 
     public static function travelPackageBackgroundSettingsKey(string $background): string
@@ -54,5 +56,12 @@ class JcpProfile extends Model
             'position_y' => max(0, min(100, (int) ($settings['position_y'] ?? 50))),
             'scale' => max(100, min(200, (int) ($settings['scale'] ?? 100))),
         ];
+    }
+
+    public function travelPackageCarouselIntervalMilliseconds(): int
+    {
+        $interval = $this->travel_package_carousel_interval_ms ?: 2500;
+
+        return max(1000, min(60000, $interval));
     }
 }

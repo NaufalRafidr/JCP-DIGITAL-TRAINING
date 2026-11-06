@@ -163,8 +163,9 @@
         $packageLink = $defaultPackageLink;
         $packageTarget = config('services.whatsapp.admin_number') ? '_blank' : '_self';
         $packageButtonText = $jcpProfile->travel_package_button_text ?: 'Konsultasikan paket';
+        $packageCarouselInterval = $jcpProfile->travelPackageCarouselIntervalMilliseconds();
     @endphp
-    <section data-travel-package-carousel data-carousel-interval="2500" aria-roledescription="carousel" aria-label="Paket pelatihan dan wisata" class="relative isolate overflow-hidden rounded-[28px] bg-[#10243A] text-white shadow-xl sm:rounded-3xl">
+    <section data-travel-package-carousel data-carousel-interval="{{ $packageCarouselInterval }}" aria-roledescription="carousel" aria-label="Paket pelatihan dan wisata" class="relative isolate overflow-hidden rounded-[28px] bg-[#10243A] text-white shadow-xl sm:rounded-3xl">
         <div class="absolute inset-0 z-0">
             @foreach($travelPackageBackgrounds as $background)
                 <img

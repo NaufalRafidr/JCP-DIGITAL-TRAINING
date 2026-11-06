@@ -290,6 +290,7 @@
                 $travelPackageBackgroundImages = collect($jcpProfile->travel_package_background_images ?: [])
                     ->filter(fn ($image) => is_string($image) && $image !== '')
                     ->values();
+                $travelPackageCarouselIntervalSeconds = $jcpProfile->travelPackageCarouselIntervalMilliseconds() / 1000;
             @endphp
             <div class="max-w-5xl">
                 <div class="pb-8">
@@ -363,6 +364,15 @@
                         <div>
                             <label for="travel_package_description" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Deskripsi banner</label>
                             <textarea id="travel_package_description" name="travel_package_description" rows="3" maxlength="1000" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">{{ old('travel_package_description', $jcpProfile->travel_package_description ?: 'Gabungkan pengalaman belajar, team building, dan eksplorasi destinasi dalam satu perjalanan yang berkesan.') }}</textarea>
+                        </div>
+
+                        <div class="max-w-sm">
+                            <label for="travel_package_carousel_interval_seconds" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Waktu pergantian gambar</label>
+                            <div class="relative">
+                                <input id="travel_package_carousel_interval_seconds" name="travel_package_carousel_interval_seconds" type="number" value="{{ old('travel_package_carousel_interval_seconds', $travelPackageCarouselIntervalSeconds) }}" min="1" max="60" step="0.5" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 pr-16 text-sm focus:border-[#087F78] focus:outline-none">
+                                <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-sm font-semibold text-slate-500">detik</span>
+                            </div>
+                            <p class="mt-1 text-xs leading-relaxed text-slate-500">Carousel tetap berjalan saat kursor berada di banner. Pilih waktu antara 1 sampai 60 detik.</p>
                         </div>
 
                         @if($travelPackageBackgroundImages->isNotEmpty())
