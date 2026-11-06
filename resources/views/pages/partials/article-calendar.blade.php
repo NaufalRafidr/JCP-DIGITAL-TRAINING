@@ -6,7 +6,7 @@
         </div>
         <div class="flex items-center gap-2">
             <button type="button" data-calendar-navigation="today" class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 hover:border-[#087F78] hover:text-[#087F78]">Hari ini</button>
-            <button type="button" data-calendar-navigation="previous" class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 hover:border-[#087F78] hover:text-[#087F78]" aria-label="Bulan sebelumnya">&larr;</button>
+            <button type="button" data-calendar-navigation="previous" class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 hover:border-[#087F78] hover:text-[#087F78]" aria-label="Bulan sebelumnya">Sebelumnya</button>
             <button type="button" data-calendar-navigation="next" class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 hover:border-[#087F78] hover:text-[#087F78]" aria-label="Bulan berikutnya">&rarr;</button>
         </div>
     </div>

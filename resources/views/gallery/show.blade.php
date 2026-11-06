@@ -63,7 +63,7 @@
 
         <div class="flex justify-center border-t border-slate-200 pt-8">
             <a href="{{ route('gallery.index') }}" class="inline-flex items-center gap-2 rounded-xl bg-[#087F78] px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#066761] focus:outline-none focus:ring-2 focus:ring-[#087F78] focus:ring-offset-2 focus:ring-offset-brand-ivory">
-                &larr; Kembali
+                Kembali
             </a>
         </div>
     </div>
@@ -75,7 +75,7 @@
 
     <button id="galleryLightboxClose" type="button" class="absolute right-4 top-4 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-white text-2xl text-[#10243A] shadow-sm transition hover:bg-[#087F78] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#087F78]" aria-label="Tutup foto">&times;</button>
 
-    <button id="galleryLightboxPrevious" type="button" class="absolute left-3 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-3xl text-[#10243A] shadow-sm transition hover:bg-[#087F78] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#087F78] sm:left-6" aria-label="Foto sebelumnya">&larr;</button>
+    <button id="galleryLightboxPrevious" type="button" class="absolute left-3 top-1/2 z-20 flex -translate-y-1/2 items-center justify-center rounded-full bg-white px-4 py-3 text-xs font-bold text-[#10243A] shadow-sm transition hover:bg-[#087F78] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#087F78] sm:left-6" aria-label="Foto sebelumnya">Sebelumnya</button>
     <button id="galleryLightboxNext" type="button" class="absolute right-3 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-3xl text-[#10243A] shadow-sm transition hover:bg-[#087F78] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#087F78] sm:right-6" aria-label="Foto berikutnya">&rarr;</button>
 
     <div class="relative z-10 flex max-h-full max-w-[92vw] flex-col items-center justify-center gap-4 px-10 sm:px-16">

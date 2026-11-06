@@ -65,11 +65,8 @@
 
                 <div class="pt-4">
                     @if(config('services.whatsapp.admin_number'))
-                        <a href="https://wa.me/{{ preg_replace('/\D+/', '', config('services.whatsapp.admin_number')) }}?text={{ rawurlencode('Halo Admin JCP, kami ingin konsultasi Corporate Training') }}" target="_blank" rel="noopener" class="btn-teal px-7 py-3.5 rounded-xl font-bold text-sm inline-flex items-center gap-2 shadow-lg">
+                        <a href="https://wa.me/{{ preg_replace('/\D+/', '', config('services.whatsapp.admin_number')) }}?text={{ rawurlencode('Halo Admin JCP, kami ingin konsultasi Corporate Training') }}" target="_blank" rel="noopener" class="btn-teal inline-flex items-center rounded-xl px-7 py-3.5 text-sm font-bold shadow-lg">
                             <span>Konsultasi Kebutuhan via WhatsApp</span>
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                            </svg>
                         </a>
                     @endif
                 </div>

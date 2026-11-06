@@ -52,9 +52,8 @@
 
             <div class="pt-4">
                 @if(config('services.whatsapp.admin_number'))
-                    <a href="https://wa.me/{{ preg_replace('/\D+/', '', config('services.whatsapp.admin_number')) }}?text={{ rawurlencode('Halo Admin JCP Training') }}" target="_blank" rel="noopener" class="btn-teal px-6 py-3 rounded-xl font-bold text-sm inline-flex items-center gap-2">
+                    <a href="https://wa.me/{{ preg_replace('/\D+/', '', config('services.whatsapp.admin_number')) }}?text={{ rawurlencode('Halo Admin JCP Training') }}" target="_blank" rel="noopener" class="btn-teal inline-flex items-center rounded-xl px-6 py-3 text-sm font-bold">
                         <span>Chat WhatsApp Sekarang</span>
-                        <span>&rarr;</span>
                     </a>
                 @endif
             </div>

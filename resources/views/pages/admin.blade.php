@@ -154,7 +154,7 @@
         <!-- Footer Kecil Sidebar -->
         <div class="border-t border-slate-800/80 pt-4 text-xs text-slate-400">
             <a href="{{ route('home') }}" class="flex items-center gap-1.5 font-bold text-[#087F78] hover:underline">
-                <span>&larr; Kembali ke Website</span>
+                <span>Kembali ke Website</span>
             </a>
             <form action="{{ route('admin.logout') }}" method="POST" class="mt-3" onsubmit="return confirm('Apakah Anda yakin ingin keluar dari dashboard admin?')">
                 @csrf
@@ -211,7 +211,7 @@
                         <p class="mt-2 text-sm text-slate-500">Pantau program, jadwal terdekat, dan jumlah peserta yang sudah terdaftar.</p>
                     </div>
                     <a href="{{ route('admin.dashboard', ['tab' => 'jadwal']) }}" class="inline-flex items-center justify-center rounded-xl bg-[#087F78] px-5 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#066761]">
-                        Kelola jadwal <span class="ml-2" aria-hidden="true">&rarr;</span>
+                        Kelola jadwal
                     </a>
                 </div>
 
@@ -272,7 +272,7 @@
                                         </span>
                                     </div>
                                 </div>
-                                <span class="whitespace-nowrap text-xs font-bold text-[#087F78]">Lihat pendaftar &rarr;</span>
+                                <span class="whitespace-nowrap text-xs font-bold text-[#087F78]">Lihat pendaftar</span>
                             </a>
                         @empty
                             <div class="rounded-2xl border border-dashed border-slate-300 p-10 text-center text-sm text-slate-500">
@@ -766,7 +766,7 @@
             <!-- Tautan Cepat ke Tabel Program -->
             <div class="pt-8 text-center">
                 <a href="{{ route('admin.dashboard', ['tab' => 'program']) }}" class="text-xs font-bold text-[#087F78] hover:underline">
-                    &rarr; Kelola Data Program Pelatihan
+                    Kelola Data Program Pelatihan
                 </a>
             </div>
 
@@ -1273,7 +1273,7 @@
                 <div class="mb-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                     <div class="flex flex-col gap-4 p-5">
                     <div class="flex items-center gap-3">
-                        <a href="{{ route('admin.dashboard', ['tab' => 'galeri']) }}" class="rounded-xl bg-slate-100 px-3 py-2 text-sm font-bold text-slate-600 hover:bg-slate-200" aria-label="Kembali ke daftar folder">&larr;</a>
+                        <a href="{{ route('admin.dashboard', ['tab' => 'galeri']) }}" class="rounded-xl bg-slate-100 px-3 py-2 text-sm font-bold text-slate-600 hover:bg-slate-200" aria-label="Kembali ke daftar folder">Kembali</a>
                         <div>
                             <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Pengaturan folder</p>
                             <p class="mt-1 text-sm text-slate-500">Kelola detail dan foto folder ini.</p>
@@ -1991,7 +1991,7 @@
                 </div>
                 <div class="flex justify-end gap-3 border-t border-slate-100 pt-4">
                     <button type="button" onclick="closeAddGalleryFolderModal()" class="rounded-xl px-5 py-2.5 text-xs font-bold text-slate-600 transition-all hover:bg-slate-100">Batal</button>
-                    <button type="submit" class="rounded-xl bg-[#087F78] px-6 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:bg-[#066761]">Buat folder &rarr;</button>
+                    <button type="submit" class="rounded-xl bg-[#087F78] px-6 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:bg-[#066761]">Buat folder</button>
                 </div>
             </form>
             </div>
@@ -2063,7 +2063,7 @@
                 </div>
                 <div class="flex justify-end gap-3 border-t border-slate-100 pt-4">
                     <button type="button" onclick="closeAddGalleryPhotosModal()" class="rounded-xl px-5 py-2.5 text-xs font-bold text-slate-600 transition-all hover:bg-slate-100">Batal</button>
-                    <button type="submit" class="rounded-xl bg-[#087F78] px-6 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:bg-[#066761]">Unggah foto &rarr;</button>
+                    <button type="submit" class="rounded-xl bg-[#087F78] px-6 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:bg-[#066761]">Unggah foto</button>
                 </div>
             </form>
             </div>
@@ -2247,7 +2247,7 @@
                     <button 
                         type="submit" 
                         class="px-6 py-2.5 rounded-xl text-xs font-bold bg-[#087F78] hover:bg-[#066761] text-white shadow-md transition-all cursor-pointer">
-                        Simpan Program &rarr;
+                        Simpan Program
                     </button>
                 </div>
             </form>
@@ -2418,7 +2418,7 @@
                     <button 
                         type="submit" 
                         class="px-6 py-2.5 rounded-xl text-xs font-bold bg-[#087F78] hover:bg-[#066761] text-white shadow-md transition-all cursor-pointer">
-                        Perbarui Program &rarr;
+                        Perbarui Program
                     </button>
                 </div>
             </form>
@@ -2561,7 +2561,7 @@
                     <button 
                         type="submit" 
                         class="px-6 py-2.5 rounded-xl text-xs font-bold bg-[#087F78] hover:bg-[#066761] text-white shadow-md transition-all cursor-pointer">
-                        Simpan Jadwal &rarr;
+                        Simpan Jadwal
                     </button>
                 </div>
             </form>
@@ -2703,7 +2703,7 @@
                     <button 
                         type="submit" 
                         class="px-6 py-2.5 rounded-xl text-xs font-bold bg-[#087F78] hover:bg-[#066761] text-white shadow-md transition-all cursor-pointer">
-                        Perbarui Jadwal &rarr;
+                        Perbarui Jadwal
                     </button>
                 </div>
             </form>
@@ -2769,7 +2769,7 @@
                 </div>
                 <div class="flex justify-end gap-3 border-t border-slate-100 pt-4">
                     <button type="button" onclick="closeAddArticleModal()" class="rounded-xl px-5 py-2.5 text-xs font-bold text-slate-600 transition-all hover:bg-slate-100">Batal</button>
-                    <button type="submit" class="rounded-xl bg-[#087F78] px-6 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:bg-[#066761]">Simpan artikel &rarr;</button>
+                    <button type="submit" class="rounded-xl bg-[#087F78] px-6 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:bg-[#066761]">Simpan artikel</button>
                 </div>
             </form>
             </div>
@@ -2834,7 +2834,7 @@
                 </div>
                 <div class="flex justify-end gap-3 border-t border-slate-100 pt-4">
                     <button type="button" onclick="closeEditArticleModal()" class="rounded-xl px-5 py-2.5 text-xs font-bold text-slate-600 transition-all hover:bg-slate-100">Batal</button>
-                    <button type="submit" class="rounded-xl bg-[#087F78] px-6 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:bg-[#066761]">Simpan perubahan &rarr;</button>
+                    <button type="submit" class="rounded-xl bg-[#087F78] px-6 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:bg-[#066761]">Simpan perubahan</button>
                 </div>
             </form>
             </div>

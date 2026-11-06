@@ -12,22 +12,22 @@
                 <span class="w-6 h-6 rounded-full bg-[#087F78] text-white flex items-center justify-center text-[11px]">1</span>
                 <span>Pilih kelas</span>
             </div>
-            <span class="text-slate-300">&rarr;</span>
+            <span class="text-slate-300">/</span>
             <div class="flex items-center gap-1.5 text-[#087F78] shrink-0">
                 <span class="w-6 h-6 rounded-full bg-[#087F78] text-white flex items-center justify-center text-[11px]">2</span>
                 <span>Lihat jadwal</span>
             </div>
-            <span class="text-slate-300">&rarr;</span>
+            <span class="text-slate-300">/</span>
             <div class="flex items-center gap-1.5 text-[#087F78] bg-[#E2F6F2] px-3 py-1.5 rounded-full shrink-0">
                 <span class="w-6 h-6 rounded-full bg-[#087F78] text-white flex items-center justify-center text-[11px]">3</span>
                 <span>Isi form</span>
             </div>
-            <span class="text-slate-300">&rarr;</span>
+            <span class="text-slate-300">/</span>
             <div class="flex items-center gap-1.5 shrink-0">
                 <span class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[11px]">4</span>
                 <span>Konfirmasi</span>
             </div>
-            <span class="text-slate-300">&rarr;</span>
+            <span class="text-slate-300">/</span>
             <div class="flex items-center gap-1.5 shrink-0">
                 <span class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[11px]">5</span>
                 <span>Follow-up admin</span>
@@ -199,11 +199,8 @@
                 </div>
 
                 <!-- Submit Button -->
-                <button type="submit" class="bg-[#087F78] hover:bg-[#066761] text-white w-full py-4 rounded-xl font-extrabold text-base tracking-wide shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                <button type="submit" class="flex w-full items-center justify-center rounded-xl bg-[#087F78] py-4 text-base font-extrabold tracking-wide text-white shadow-md transition-all hover:bg-[#066761] hover:shadow-lg">
                     <span>Kirim Data Pendaftaran</span>
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                    </svg>
                 </button>
             </form>
 

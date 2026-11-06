@@ -182,7 +182,7 @@
         </div>
         <div class="absolute inset-0 z-10 bg-gradient-to-r from-[#10243A]/95 via-[#10243A]/75 to-[#10243A]/15"></div>
 
-        <div class="relative z-20 max-w-2xl space-y-5 p-7 sm:p-10 lg:p-14">
+        <div class="relative z-20 max-w-2xl space-y-5 px-7 pb-20 pt-7 sm:p-10 lg:p-14">
             <span class="inline-flex rounded-full border border-teal-300/30 bg-[#087F78]/90 px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-teal-50 shadow-sm sm:text-xs">
                 {{ $travelPackageBadge }}
             </span>
@@ -192,14 +192,13 @@
             <p class="max-w-lg text-sm leading-relaxed text-slate-200 sm:text-base">
                 {{ $travelPackageDescription }}
             </p>
-            <a href="{{ $packageLink }}" target="{{ $packageTarget }}" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-xl bg-[#E5AD49] px-5 py-3 text-sm font-extrabold text-[#10243A] shadow-lg transition hover:bg-[#F1C36D] focus:outline-none focus:ring-2 focus:ring-[#E5AD49] focus:ring-offset-2 focus:ring-offset-[#10243A]">
+            <a href="{{ $packageLink }}" target="{{ $packageTarget }}" rel="noopener noreferrer" class="inline-flex items-center rounded-xl bg-[#E5AD49] px-5 py-3 text-sm font-extrabold text-[#10243A] shadow-lg transition hover:bg-[#F1C36D] focus:outline-none focus:ring-2 focus:ring-[#E5AD49] focus:ring-offset-2 focus:ring-offset-[#10243A]">
                 {{ $packageButtonText }}
-                <span aria-hidden="true">&rarr;</span>
             </a>
         </div>
 
         @if($travelPackageBackgrounds->count() > 1)
-            <div class="absolute bottom-5 right-5 z-30 flex items-center gap-2 rounded-full bg-[#10243A]/55 px-3 py-2 backdrop-blur-sm" aria-label="Pilih gambar background">
+            <div class="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-[#10243A]/55 px-3 py-2 backdrop-blur-sm sm:bottom-5 sm:left-auto sm:right-5 sm:translate-x-0" aria-label="Pilih gambar background">
                 @foreach($travelPackageBackgrounds as $background)
                     <button type="button" data-travel-package-dot data-slide-index="{{ $loop->index }}" aria-label="Tampilkan gambar {{ $loop->iteration }}" aria-current="{{ $loop->first ? 'true' : 'false' }}" class="h-2.5 rounded-full bg-white transition-[width,opacity] duration-300 motion-reduce:transition-none {{ $loop->first ? 'w-7 opacity-100' : 'w-2.5 opacity-55 hover:opacity-100' }}"></button>
                 @endforeach
@@ -331,11 +330,11 @@
 
             <div class="flex flex-col items-center justify-between gap-4 border-t border-slate-200 pt-6 sm:flex-row" data-schedule-pagination>
                 <button type="button" data-schedule-previous class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-[#087F78] hover:text-[#087F78] disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400">
-                    &larr; Sebelumnya
+                    Sebelumnya
                 </button>
                 <p class="text-sm font-semibold text-slate-500" data-schedule-page-status></p>
                 <button type="button" data-schedule-next class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-[#087F78] hover:text-[#087F78] disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400">
-                    Berikutnya &rarr;
+                    Berikutnya
                 </button>
             </div>
             </div>
@@ -346,7 +345,7 @@
                     💡 <em>Butuh jadwal khusus untuk tim perusahaan / instansi?</em>
                 </div>
                 <a href="{{ route('corporate') }}" class="font-bold text-[#087F78] hover:underline">
-                    Ajukan Jadwal In-House Training &rarr;
+                    Ajukan Jadwal In-House Training
                 </a>
             </div>
 

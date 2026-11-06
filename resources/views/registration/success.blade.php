@@ -79,9 +79,8 @@
         </p>
         <div class="pt-2">
             @if($whatsappAdminNumber)
-                <a href="https://wa.me/{{ preg_replace('/\D+/', '', $whatsappAdminNumber) }}?text={{ rawurlencode($whatsappMessage) }}" target="_blank" rel="noopener" class="btn-teal px-6 py-2.5 rounded-xl text-xs font-bold inline-flex items-center gap-2">
+                <a href="https://wa.me/{{ preg_replace('/\D+/', '', $whatsappAdminNumber) }}?text={{ rawurlencode($whatsappMessage) }}" target="_blank" rel="noopener" class="btn-teal inline-flex items-center rounded-xl px-6 py-2.5 text-xs font-bold">
                     <span>Hubungkan Admin via WhatsApp</span>
-                    <span>&rarr;</span>
                 </a>
             @else
                 <p class="rounded-xl bg-white/10 px-4 py-3 text-xs text-teal-100">Nomor WhatsApp admin belum dikonfigurasi.</p>
@@ -91,7 +90,7 @@
 
     <div class="pt-4">
         <a href="{{ route('home') }}" class="text-xs font-bold text-slate-500 hover:text-[#087F78] underline">
-            &larr; Kembali ke Beranda JCP Training
+            Kembali ke Beranda JCP Training
         </a>
     </div>
 

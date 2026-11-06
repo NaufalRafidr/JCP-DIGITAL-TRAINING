@@ -20,7 +20,7 @@
         </p>
         @if($category)
             <a href="{{ route('home') }}" class="mt-4 inline-flex items-center text-xs font-bold text-[#087F78] hover:underline">
-                &larr; Pilih bidang pelatihan lain
+                Pilih bidang pelatihan lain
             </a>
         @endif
     </div>
@@ -104,9 +104,8 @@
 
                             <div class="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between">
                                 <span class="text-xs font-semibold text-slate-500">{{ $course->level }} • {{ $course->format }}</span>
-                                <a href="{{ route('courses.show', $course->slug) }}" class="text-xs font-bold text-[#087F78] hover:text-[#066761] flex items-center gap-1 group">
+                                <a href="{{ route('courses.show', $course->slug) }}" class="flex items-center text-xs font-bold text-[#087F78] hover:text-[#066761]">
                                     <span>Lihat detail</span>
-                                    <span class="group-hover:translate-x-0.5 transition-transform">&rarr;</span>
                                 </a>
                             </div>
                         </div>

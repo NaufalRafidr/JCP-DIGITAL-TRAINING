@@ -35,7 +35,7 @@
                         @if($article->author)
                             <span class="truncate">{{ $article->author }}</span>
                         @endif
-                        <span class="whitespace-nowrap font-bold text-[#087F78]">Baca &rarr;</span>
+                        <span class="whitespace-nowrap font-bold text-[#087F78]">Baca</span>
                     </div>
                 </div>
             </a>
