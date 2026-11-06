@@ -470,14 +470,6 @@
                                     </label>
                                 </div>
 
-                                <div class="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-slate-50 p-4">
-                                    <p class="text-xs font-bold uppercase tracking-wider text-slate-600">Zoom cepat</p>
-                                    <div class="flex gap-2">
-                                        <button data-background-zoom="-5" type="button" class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 hover:border-[#087F78] hover:text-[#087F78]">&minus; Perkecil</button>
-                                        <button data-background-zoom="5" type="button" class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 hover:border-[#087F78] hover:text-[#087F78]">&plus; Perbesar</button>
-                                    </div>
-                                </div>
-
                                 <p data-background-editor-status class="mt-4 hidden rounded-xl px-4 py-3 text-sm font-semibold" role="status" aria-live="polite"></p>
                                 <div class="mt-5 flex justify-end gap-3 border-t border-slate-100 pt-5">
                                     <button data-background-editor-close type="button" class="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-100">Batal</button>

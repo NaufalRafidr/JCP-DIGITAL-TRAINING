@@ -668,16 +668,6 @@ const initializeHomepageBackgroundManagers = () => {
                 return;
             }
 
-            const zoomButton = event.target.closest('[data-background-zoom]');
-            if (zoomButton instanceof HTMLButtonElement && editorElementsAreValid) {
-                const nextScale = Number(scaleInput.value) + Number(zoomButton.dataset.backgroundZoom || 0);
-
-                scaleInput.value = String(Math.max(100, Math.min(200, nextScale)));
-                renderEditorPreview();
-
-                return;
-            }
-
             if (event.target.closest('[data-background-editor-close]') || event.target === modal) {
                 closeEditor();
             }
@@ -740,7 +730,8 @@ const initializeHomepageBackgroundManagers = () => {
                             },
                         },
                     }));
-                    showStatus(editorStatus, 'Pengaturan diterapkan dan akan disimpan bersama gambar.');
+                    showStatus(managerStatus, 'Pengaturan gambar diterapkan dan akan disimpan bersama gambar.');
+                    closeEditor();
 
                     return;
                 }
@@ -757,8 +748,8 @@ const initializeHomepageBackgroundManagers = () => {
                         ...settings,
                     });
                     updateActiveCard(response.settings);
-
-                    showStatus(editorStatus, response.message || 'Pengaturan gambar berhasil disimpan.');
+                    showStatus(managerStatus, response.message || 'Pengaturan gambar berhasil disimpan.');
+                    closeEditor();
                 } catch (error) {
                     showStatus(editorStatus, error instanceof Error ? error.message : 'Pengaturan gambar gagal disimpan.', true);
                 } finally {
