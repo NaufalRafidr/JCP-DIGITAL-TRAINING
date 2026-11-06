@@ -398,13 +398,18 @@
                                                 : Storage::disk('public')->url($backgroundImage);
                                             $backgroundSettings = $jcpProfile->travelPackageBackgroundSettings($backgroundImage);
                                         @endphp
-                                        <article data-background-card data-background-source="{{ $backgroundImage }}" class="overflow-hidden rounded-xl border border-slate-200 bg-white">
-                                            <div class="h-32 overflow-hidden bg-slate-100">
+                                        <article data-background-card data-background-source="{{ $backgroundImage }}" class="overflow-hidden rounded-xl border border-slate-200 bg-white [content-visibility:auto] [contain-intrinsic-size:220px]">
+                                            <div class="h-32 overflow-hidden bg-slate-100 [contain:paint]">
                                                 <img
                                                     data-background-card-image
                                                     src="{{ $backgroundPreview }}"
                                                     alt="Background paket wisata {{ $loop->iteration }}"
-                                                    style="object-position: {{ $backgroundSettings['position_x'] }}% {{ $backgroundSettings['position_y'] }}%; transform: scale({{ $backgroundSettings['scale'] / 100 }});"
+                                                    loading="lazy"
+                                                    decoding="async"
+                                                    fetchpriority="low"
+                                                    width="640"
+                                                    height="360"
+                                                    style="object-position: {{ $backgroundSettings['position_x'] }}% {{ $backgroundSettings['position_y'] }}%; transform-origin: {{ $backgroundSettings['position_x'] }}% {{ $backgroundSettings['position_y'] }}%; transform: scale({{ $backgroundSettings['scale'] / 100 }});"
                                                     class="h-full w-full object-cover"
                                                 >
                                             </div>
@@ -436,18 +441,18 @@
                         <p data-background-manager-status class="hidden rounded-xl px-4 py-3 text-sm font-semibold" role="status" aria-live="polite"></p>
 
                         <div data-background-editor-modal class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="backgroundEditorTitle">
-                            <div class="w-full max-w-4xl rounded-3xl bg-white p-5 shadow-2xl sm:p-7">
+                            <div class="max-h-[calc(100vh-2rem)] w-full max-w-4xl overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl sm:p-7">
                                 <div class="flex items-start justify-between gap-4">
                                     <div>
                                         <p class="text-xs font-bold uppercase tracking-wider text-[#087F78]">Editor banner</p>
                                         <h3 id="backgroundEditorTitle" class="mt-1 text-xl font-extrabold text-[#10243A]">Atur posisi dan ukuran gambar</h3>
-                                        <p class="mt-1 text-sm text-slate-500">Geser gambar langsung pada preview atau gunakan pengatur di bawahnya.</p>
+                                        <p class="mt-1 text-sm text-slate-500">Tarik gambar ke atas, bawah, kiri, atau kanan. Gunakan kontrol di bawah untuk menggeser dan memperbesar gambar.</p>
                                     </div>
                                     <button data-background-editor-close type="button" aria-label="Tutup editor" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xl font-bold text-slate-600 hover:bg-slate-200">&times;</button>
                                 </div>
 
                                 <div data-background-editor-canvas class="mt-5 aspect-[5/2] cursor-grab touch-none overflow-hidden rounded-2xl bg-[#10243A] active:cursor-grabbing">
-                                    <img data-background-editor-image src="" alt="Preview background banner" class="h-full w-full select-none object-cover" draggable="false">
+                                    <img data-background-editor-image src="" alt="Preview background banner" decoding="async" class="h-full w-full select-none object-cover" draggable="false">
                                 </div>
 
                                 <div class="mt-5 grid gap-4 sm:grid-cols-3">
@@ -463,6 +468,14 @@
                                         Ukuran: <output data-background-scale-output>100</output>%
                                         <input data-background-scale type="range" min="100" max="200" step="5" value="100" class="mt-2 w-full accent-[#087F78]">
                                     </label>
+                                </div>
+
+                                <div class="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-slate-50 p-4">
+                                    <p class="text-xs font-bold uppercase tracking-wider text-slate-600">Zoom cepat</p>
+                                    <div class="flex gap-2">
+                                        <button data-background-zoom="-5" type="button" class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 hover:border-[#087F78] hover:text-[#087F78]">&minus; Perkecil</button>
+                                        <button data-background-zoom="5" type="button" class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 hover:border-[#087F78] hover:text-[#087F78]">&plus; Perbesar</button>
+                                    </div>
                                 </div>
 
                                 <p data-background-editor-status class="mt-4 hidden rounded-xl px-4 py-3 text-sm font-semibold" role="status" aria-live="polite"></p>
@@ -493,7 +506,8 @@
                                 <textarea id="travel_package_background_urls" data-travel-package-image-urls name="travel_package_background_urls" rows="3" maxlength="20000" placeholder="Satu URL gambar per baris: https://contoh.com/background.jpg" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-[#087F78] focus:outline-none">{{ old('travel_package_background_urls') }}</textarea>
                             </div>
 
-                            <p class="mt-2 text-xs text-slate-500">Maksimal delapan background custom tersimpan, masing-masing file maksimal 10 MB. Klik Hapus pada preview untuk mengeluarkan gambar dari pilihan sebelum disimpan. Gambar bawaan tidak akan ikut ditampilkan setelah background custom tersimpan.</p>
+                            <p class="mt-2 text-xs text-slate-500">Maksimal delapan background custom tersimpan, masing-masing file maksimal 10 MB. Setelah gambar dipilih, klik Atur gambar untuk menggeser posisi atau mengubah zoom sebelum menyimpan beranda.</p>
+                            <div data-new-background-settings></div>
                             <div data-travel-package-image-preview class="mt-4 hidden grid gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
                         </div>
                     </section>

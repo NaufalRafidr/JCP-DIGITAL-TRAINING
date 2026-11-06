@@ -175,7 +175,7 @@
                     loading="{{ $loop->first ? 'eager' : 'lazy' }}"
                     decoding="async"
                     aria-hidden="{{ $loop->first ? 'false' : 'true' }}"
-                    style="object-position: {{ $background['settings']['position_x'] }}% {{ $background['settings']['position_y'] }}%; transform: scale({{ $background['settings']['scale'] / 100 }});"
+                    style="object-position: {{ $background['settings']['position_x'] }}% {{ $background['settings']['position_y'] }}%; transform-origin: {{ $background['settings']['position_x'] }}% {{ $background['settings']['position_y'] }}%; transform: scale({{ $background['settings']['scale'] / 100 }});"
                     class="absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out motion-reduce:transition-none {{ $loop->first ? 'opacity-100' : 'opacity-0' }}"
                 >
             @endforeach

@@ -146,100 +146,214 @@ const initializeTravelPackageImagePreviews = () => {
             .filter((input) => input instanceof HTMLInputElement);
         const urlsInput = editor.querySelector('[data-travel-package-image-urls]');
         const preview = editor.querySelector('[data-travel-package-image-preview]');
+        const settingsFields = editor.querySelector('[data-new-background-settings]');
 
-        if (!(preview instanceof HTMLElement)) {
+        if (!(preview instanceof HTMLElement) || !(settingsFields instanceof HTMLElement)) {
             return;
         }
 
         let previewUrls = [];
+        let urlRenderTimeout = null;
+        const fileSettings = new WeakMap();
+        const remoteSettings = new Map();
+
+        const defaultSettings = () => ({ positionX: 50, positionY: 50, scale: 100 });
+        const normalizeSettings = (settings) => ({
+            positionX: Math.max(0, Math.min(100, Number(settings?.positionX) || 0)),
+            positionY: Math.max(0, Math.min(100, Number(settings?.positionY) || 0)),
+            scale: Math.max(100, Math.min(200, Number(settings?.scale) || 100)),
+        });
+        const selectedFiles = () => inputs.flatMap((input) => Array.from(input.files || []).map((file, fileIndex) => ({
+            file,
+            fileIndex,
+            input,
+        })));
+        const selectedRemoteUrls = () => urlsInput instanceof HTMLTextAreaElement
+            ? Array.from(new Set(urlsInput.value.split(/\r?\n/).map((url) => url.trim()).filter(Boolean)))
+            : [];
+
+        const appendSettingsFields = (fragment, fieldName, index, settings) => {
+            Object.entries({
+                position_x: settings.positionX,
+                position_y: settings.positionY,
+                scale: settings.scale,
+            }).forEach(([settingName, value]) => {
+                const input = document.createElement('input');
+
+                input.type = 'hidden';
+                input.name = `${fieldName}[${index}][${settingName}]`;
+                input.value = String(value);
+                fragment.append(input);
+            });
+        };
+
+        const syncSettingsFields = () => {
+            const fragment = document.createDocumentFragment();
+
+            selectedFiles().forEach(({ file }, index) => {
+                appendSettingsFields(
+                    fragment,
+                    'travel_package_background_upload_settings',
+                    index,
+                    fileSettings.get(file) || defaultSettings(),
+                );
+            });
+            selectedRemoteUrls().forEach((url, index) => {
+                appendSettingsFields(
+                    fragment,
+                    'travel_package_background_url_settings',
+                    index,
+                    remoteSettings.get(url) || defaultSettings(),
+                );
+            });
+            settingsFields.replaceChildren(fragment);
+        };
+
+        const createPreviewCard = ({ imageUrl, labelText, alt, settings, draftKind, draftIndex, remove }) => {
+            const card = document.createElement('article');
+            const imageContainer = document.createElement('div');
+            const image = document.createElement('img');
+            const label = document.createElement('p');
+            const actions = document.createElement('div');
+            const editButton = document.createElement('button');
+            const removeButton = document.createElement('button');
+
+            card.className = 'overflow-hidden rounded-xl border border-slate-200 bg-white [content-visibility:auto] [contain-intrinsic-size:190px]';
+            imageContainer.className = 'h-32 overflow-hidden bg-slate-100 [contain:paint]';
+            image.src = imageUrl;
+            image.alt = alt;
+            image.loading = 'lazy';
+            image.decoding = 'async';
+            image.fetchPriority = 'low';
+            image.style.objectPosition = `${settings.positionX}% ${settings.positionY}%`;
+            image.style.transformOrigin = `${settings.positionX}% ${settings.positionY}%`;
+            image.style.transform = `scale(${settings.scale / 100})`;
+            image.className = 'h-full w-full object-cover';
+            label.textContent = labelText;
+            label.className = 'truncate px-3 pt-3 text-xs font-semibold text-slate-600';
+            actions.className = 'flex gap-2 p-3';
+            editButton.type = 'button';
+            editButton.textContent = 'Atur gambar';
+            editButton.dataset.backgroundEditorOpen = '';
+            editButton.dataset.backgroundDraftKind = draftKind;
+            editButton.dataset.backgroundDraftIndex = String(draftIndex);
+            editButton.dataset.backgroundUrl = imageUrl;
+            editButton.dataset.positionX = String(settings.positionX);
+            editButton.dataset.positionY = String(settings.positionY);
+            editButton.dataset.scale = String(settings.scale);
+            editButton.className = 'flex-1 rounded-lg bg-[#E2F6F2] px-2 py-2 text-xs font-bold text-[#087F78] hover:bg-[#C9EEE8]';
+            removeButton.type = 'button';
+            removeButton.textContent = 'Hapus';
+            removeButton.setAttribute('aria-label', `Hapus ${labelText} dari pilihan background`);
+            removeButton.className = 'rounded-lg bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition-colors hover:bg-rose-100 focus:outline-none focus:ring-2 focus:ring-rose-500/30';
+            removeButton.addEventListener('click', remove);
+            imageContainer.append(image);
+            actions.append(editButton, removeButton);
+            card.append(imageContainer, label, actions);
+
+            return card;
+        };
 
         const renderPreviews = () => {
             previewUrls.forEach((url) => URL.revokeObjectURL(url));
             previewUrls = [];
             preview.replaceChildren();
 
-            const selectedFiles = inputs.flatMap((input) => Array.from(input.files || []).map((file, fileIndex) => ({
-                file,
-                fileIndex,
-                input,
-            })));
-            const remoteUrls = urlsInput instanceof HTMLTextAreaElement
-                ? urlsInput.value.split(/\r?\n/).map((url) => url.trim()).filter(Boolean)
-                : [];
+            const files = selectedFiles();
+            const remoteUrls = selectedRemoteUrls();
 
-            selectedFiles.forEach(({ file, fileIndex, input }, index) => {
+            files.forEach(({ file, fileIndex, input }, index) => {
                 const imageUrl = URL.createObjectURL(file);
-                const card = document.createElement('div');
-                const image = document.createElement('img');
-                const label = document.createElement('p');
-                const removeButton = document.createElement('button');
+                const settings = fileSettings.get(file) || defaultSettings();
 
                 previewUrls.push(imageUrl);
-                card.className = 'relative overflow-hidden rounded-xl border border-slate-200 bg-white';
-                image.src = imageUrl;
-                image.alt = `Preview background baru ${index + 1}`;
-                image.className = 'h-28 w-full object-cover';
-                label.textContent = file.name;
-                label.className = 'truncate px-3 py-2 pr-16 text-xs font-semibold text-slate-600';
-                removeButton.type = 'button';
-                removeButton.textContent = 'Hapus';
-                removeButton.setAttribute('aria-label', `Hapus ${file.name} dari pilihan background`);
-                removeButton.className = 'absolute bottom-1.5 right-2 rounded-lg bg-rose-50 px-2 py-1 text-[11px] font-bold text-rose-700 transition-colors hover:bg-rose-100 focus:outline-none focus:ring-2 focus:ring-rose-500/30';
-                removeButton.addEventListener('click', () => {
-                    const retainedFiles = new DataTransfer();
+                preview.append(createPreviewCard({
+                    imageUrl,
+                    labelText: file.name,
+                    alt: `Preview background baru ${index + 1}`,
+                    settings,
+                    draftKind: 'file',
+                    draftIndex: index,
+                    remove: () => {
+                        const retainedFiles = new DataTransfer();
 
-                    Array.from(input.files || []).forEach((selectedFile, selectedFileIndex) => {
-                        if (selectedFileIndex !== fileIndex) {
-                            retainedFiles.items.add(selectedFile);
-                        }
-                    });
+                        Array.from(input.files || []).forEach((selectedFile, selectedFileIndex) => {
+                            if (selectedFileIndex !== fileIndex) {
+                                retainedFiles.items.add(selectedFile);
+                            }
+                        });
 
-                    input.files = retainedFiles.files;
-                    renderPreviews();
-                });
-                card.append(image, label, removeButton);
-                preview.append(card);
+                        input.files = retainedFiles.files;
+                        renderPreviews();
+                    },
+                }));
             });
 
             remoteUrls.forEach((url, index) => {
-                const card = document.createElement('div');
-                const image = document.createElement('img');
-                const label = document.createElement('p');
-                const removeButton = document.createElement('button');
+                const settings = remoteSettings.get(url) || defaultSettings();
 
-                card.className = 'relative overflow-hidden rounded-xl border border-slate-200 bg-white';
-                image.src = url;
-                image.alt = `Preview URL background ${index + 1}`;
-                image.className = 'h-28 w-full object-cover';
-                label.textContent = url;
-                label.className = 'truncate px-3 py-2 pr-16 text-xs font-semibold text-slate-600';
-                removeButton.type = 'button';
-                removeButton.textContent = 'Hapus';
-                removeButton.setAttribute('aria-label', `Hapus URL background ${index + 1}`);
-                removeButton.className = 'absolute bottom-1.5 right-2 rounded-lg bg-rose-50 px-2 py-1 text-[11px] font-bold text-rose-700 transition-colors hover:bg-rose-100 focus:outline-none focus:ring-2 focus:ring-rose-500/30';
-                removeButton.addEventListener('click', () => {
-                    if (!(urlsInput instanceof HTMLTextAreaElement)) {
-                        return;
-                    }
+                preview.append(createPreviewCard({
+                    imageUrl: url,
+                    labelText: url,
+                    alt: `Preview URL background ${index + 1}`,
+                    settings,
+                    draftKind: 'url',
+                    draftIndex: index,
+                    remove: () => {
+                        if (!(urlsInput instanceof HTMLTextAreaElement)) {
+                            return;
+                        }
 
-                    urlsInput.value = remoteUrls
-                        .filter((remoteUrl, remoteUrlIndex) => remoteUrlIndex !== index)
-                        .join('\n');
-                    renderPreviews();
-                });
-                card.append(image, label, removeButton);
-                preview.append(card);
+                        remoteSettings.delete(url);
+                        urlsInput.value = remoteUrls
+                            .filter((remoteUrl, remoteUrlIndex) => remoteUrlIndex !== index)
+                            .join('\n');
+                        renderPreviews();
+                    },
+                }));
             });
 
+            syncSettingsFields();
             preview.classList.toggle('hidden', preview.childElementCount === 0);
         };
+
+        editor.addEventListener('travel-package-draft-settings-updated', (event) => {
+            const detail = event.detail;
+
+            if (! detail || ! ['file', 'url'].includes(detail.kind)) {
+                return;
+            }
+
+            const settings = normalizeSettings(detail.settings);
+
+            if (detail.kind === 'file') {
+                const selectedFile = selectedFiles()[detail.index]?.file;
+
+                if (selectedFile instanceof File) {
+                    fileSettings.set(selectedFile, settings);
+                }
+            } else {
+                const selectedUrl = selectedRemoteUrls()[detail.index];
+
+                if (typeof selectedUrl === 'string') {
+                    remoteSettings.set(selectedUrl, settings);
+                }
+            }
+
+            syncSettingsFields();
+        });
 
         inputs.forEach((input) => input.addEventListener('change', renderPreviews));
 
         if (urlsInput instanceof HTMLTextAreaElement) {
-            urlsInput.addEventListener('input', renderPreviews);
-            renderPreviews();
+            urlsInput.addEventListener('input', () => {
+                window.clearTimeout(urlRenderTimeout);
+                urlRenderTimeout = window.setTimeout(renderPreviews, 250);
+            });
         }
+
+        editor.closest('form')?.addEventListener('submit', syncSettingsFields);
+        renderPreviews();
     });
 };
 
@@ -332,6 +446,8 @@ const initializeHomepageBackgroundManagers = () => {
         const editorSaveButton = manager.querySelector('[data-background-editor-save]');
         let activeEditorButton = null;
         let activeBackgroundSource = '';
+        let activeDraftKind = '';
+        let activeDraftIndex = -1;
         let dragState = null;
 
         const showStatus = (element, message, isError = false) => {
@@ -453,10 +569,34 @@ const initializeHomepageBackgroundManagers = () => {
             const scale = Number(scaleInput.value);
 
             editorImage.style.objectPosition = `${positionX}% ${positionY}%`;
+            editorImage.style.transformOrigin = `${positionX}% ${positionY}%`;
             editorImage.style.transform = `scale(${scale / 100})`;
             positionXOutput.value = String(positionX);
             positionYOutput.value = String(positionY);
             scaleOutput.value = String(scale);
+        };
+
+        const currentEditorSettings = () => ({
+            position_x: Number(positionXInput.value),
+            position_y: Number(positionYInput.value),
+            scale: Number(scaleInput.value),
+        });
+
+        const updateActiveCard = (settings) => {
+            const card = activeEditorButton?.closest('[data-background-card], article');
+            const cardImage = card?.querySelector('[data-background-card-image], img');
+
+            if (cardImage instanceof HTMLImageElement) {
+                cardImage.style.objectPosition = `${settings.position_x}% ${settings.position_y}%`;
+                cardImage.style.transformOrigin = `${settings.position_x}% ${settings.position_y}%`;
+                cardImage.style.transform = `scale(${settings.scale / 100})`;
+            }
+
+            if (activeEditorButton instanceof HTMLButtonElement) {
+                activeEditorButton.dataset.positionX = String(settings.position_x);
+                activeEditorButton.dataset.positionY = String(settings.position_y);
+                activeEditorButton.dataset.scale = String(settings.scale);
+            }
         };
 
         const closeEditor = () => {
@@ -468,6 +608,8 @@ const initializeHomepageBackgroundManagers = () => {
             modal.classList.remove('flex');
             activeEditorButton = null;
             activeBackgroundSource = '';
+            activeDraftKind = '';
+            activeDraftIndex = -1;
             dragState = null;
         };
 
@@ -511,14 +653,29 @@ const initializeHomepageBackgroundManagers = () => {
             if (editorButton instanceof HTMLButtonElement && editorElementsAreValid) {
                 activeEditorButton = editorButton;
                 activeBackgroundSource = editorButton.dataset.backgroundSource || '';
+                activeDraftKind = editorButton.dataset.backgroundDraftKind || '';
+                activeDraftIndex = Number(editorButton.dataset.backgroundDraftIndex ?? -1);
                 editorImage.src = editorButton.dataset.backgroundUrl || '';
                 positionXInput.value = editorButton.dataset.positionX || '50';
                 positionYInput.value = editorButton.dataset.positionY || '50';
                 scaleInput.value = editorButton.dataset.scale || '100';
+                editorSaveButton.textContent = activeDraftKind === '' ? 'Simpan posisi' : 'Terapkan pengaturan';
                 editorStatus?.classList.add('hidden');
                 renderEditorPreview();
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
+
+                return;
+            }
+
+            const zoomButton = event.target.closest('[data-background-zoom]');
+            if (zoomButton instanceof HTMLButtonElement && editorElementsAreValid) {
+                const nextScale = Number(scaleInput.value) + Number(zoomButton.dataset.backgroundZoom || 0);
+
+                scaleInput.value = String(Math.max(100, Math.min(200, nextScale)));
+                renderEditorPreview();
+
+                return;
             }
 
             if (event.target.closest('[data-background-editor-close]') || event.target === modal) {
@@ -532,12 +689,16 @@ const initializeHomepageBackgroundManagers = () => {
             });
 
             editorCanvas.addEventListener('pointerdown', (event) => {
+                const bounds = editorCanvas.getBoundingClientRect();
+
                 dragState = {
                     pointerId: event.pointerId,
                     startX: event.clientX,
                     startY: event.clientY,
                     positionX: Number(positionXInput.value),
                     positionY: Number(positionYInput.value),
+                    width: bounds.width,
+                    height: bounds.height,
                 };
                 editorCanvas.setPointerCapture(event.pointerId);
             });
@@ -547,9 +708,8 @@ const initializeHomepageBackgroundManagers = () => {
                     return;
                 }
 
-                const bounds = editorCanvas.getBoundingClientRect();
-                const nextX = dragState.positionX - ((event.clientX - dragState.startX) / bounds.width) * 100;
-                const nextY = dragState.positionY - ((event.clientY - dragState.startY) / bounds.height) * 100;
+                const nextX = dragState.positionX - ((event.clientX - dragState.startX) / dragState.width) * 100;
+                const nextY = dragState.positionY - ((event.clientY - dragState.startY) / dragState.height) * 100;
                 positionXInput.value = String(Math.max(0, Math.min(100, Math.round(nextX))));
                 positionYInput.value = String(Math.max(0, Math.min(100, Math.round(nextY))));
                 renderEditorPreview();
@@ -565,6 +725,26 @@ const initializeHomepageBackgroundManagers = () => {
             editorCanvas.addEventListener('pointercancel', endDrag);
 
             editorSaveButton.addEventListener('click', async () => {
+                const settings = currentEditorSettings();
+
+                if (activeDraftKind !== '' && activeDraftIndex >= 0) {
+                    updateActiveCard(settings);
+                    manager.dispatchEvent(new CustomEvent('travel-package-draft-settings-updated', {
+                        detail: {
+                            kind: activeDraftKind,
+                            index: activeDraftIndex,
+                            settings: {
+                                positionX: settings.position_x,
+                                positionY: settings.position_y,
+                                scale: settings.scale,
+                            },
+                        },
+                    }));
+                    showStatus(editorStatus, 'Pengaturan diterapkan dan akan disimpan bersama gambar.');
+
+                    return;
+                }
+
                 if (! updateUrl || activeBackgroundSource === '') {
                     return;
                 }
@@ -574,24 +754,9 @@ const initializeHomepageBackgroundManagers = () => {
                 try {
                     const response = await request(updateUrl, 'PUT', {
                         background: activeBackgroundSource,
-                        position_x: Number(positionXInput.value),
-                        position_y: Number(positionYInput.value),
-                        scale: Number(scaleInput.value),
+                        ...settings,
                     });
-                    const settings = response.settings;
-                    const card = activeEditorButton?.closest('[data-background-card]');
-                    const cardImage = card?.querySelector('[data-background-card-image]');
-
-                    if (cardImage instanceof HTMLImageElement) {
-                        cardImage.style.objectPosition = `${settings.position_x}% ${settings.position_y}%`;
-                        cardImage.style.transform = `scale(${settings.scale / 100})`;
-                    }
-
-                    if (activeEditorButton instanceof HTMLButtonElement) {
-                        activeEditorButton.dataset.positionX = String(settings.position_x);
-                        activeEditorButton.dataset.positionY = String(settings.position_y);
-                        activeEditorButton.dataset.scale = String(settings.scale);
-                    }
+                    updateActiveCard(response.settings);
 
                     showStatus(editorStatus, response.message || 'Pengaturan gambar berhasil disimpan.');
                 } catch (error) {

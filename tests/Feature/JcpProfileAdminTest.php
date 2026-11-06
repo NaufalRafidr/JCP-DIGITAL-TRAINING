@@ -64,6 +64,10 @@ it('separates homepage content from the JCP profile form', function () {
         ->assertSee('name="travel_package_background_images[]"', false)
         ->assertSee('name="travel_package_background_folder[]"', false)
         ->assertSee('name="travel_package_background_urls"', false)
+        ->assertSee('data-new-background-settings', false)
+        ->assertSee('data-background-zoom', false)
+        ->assertDontSee('Geser cepat')
+        ->assertDontSee('data-background-nudge', false)
         ->assertSee('data-background-delete-selected', false)
         ->assertSee('data-background-editor-canvas', false)
         ->assertDontSee('name="travel_package_features"', false)
@@ -125,7 +129,14 @@ it('updates homepage content from files folders and URLs without showing the def
         'travel_package_background_folder' => [
             UploadedFile::fake()->image('wisata-dua.jpg'),
         ],
+        'travel_package_background_upload_settings' => [
+            ['position_x' => 15, 'position_y' => 65, 'scale' => 125],
+            ['position_x' => 80, 'position_y' => 20, 'scale' => 150],
+        ],
         'travel_package_background_urls' => 'https://example.com/wisata-tiga.jpg',
+        'travel_package_background_url_settings' => [
+            ['position_x' => 35, 'position_y' => 45, 'scale' => 110],
+        ],
     ]);
 
     $updatedProfile = $profile->refresh();
@@ -138,6 +149,19 @@ it('updates homepage content from files folders and URLs without showing the def
         ->and($backgroundImages)->toHaveCount(3)
         ->and($backgroundImages[2])->toBe('https://example.com/wisata-tiga.jpg');
     Storage::disk('public')->assertExists(array_slice($backgroundImages, 0, 2));
+    expect($updatedProfile->travelPackageBackgroundSettings($backgroundImages[0]))->toBe([
+        'position_x' => 15,
+        'position_y' => 65,
+        'scale' => 125,
+    ])->and($updatedProfile->travelPackageBackgroundSettings($backgroundImages[1]))->toBe([
+        'position_x' => 80,
+        'position_y' => 20,
+        'scale' => 150,
+    ])->and($updatedProfile->travelPackageBackgroundSettings($backgroundImages[2]))->toBe([
+        'position_x' => 35,
+        'position_y' => 45,
+        'scale' => 110,
+    ]);
 
     $homeResponse = $this->get(route('home'));
 
@@ -151,8 +175,35 @@ it('updates homepage content from files folders and URLs without showing the def
         ->assertSee('https://example.com/wisata-tiga.jpg', false)
         ->assertDontSee('images/training-travel-package-banner.png', false)
         ->assertSee('data-travel-package-carousel', false)
-        ->assertSee('data-carousel-interval="1000"', false);
+        ->assertSee('data-carousel-interval="1000"', false)
+        ->assertSee('object-position: 15% 65%; transform-origin: 15% 65%; transform: scale(1.25);', false)
+        ->assertSee('object-position: 80% 20%; transform-origin: 80% 20%; transform: scale(1.5);', false)
+        ->assertSee('object-position: 35% 45%; transform-origin: 35% 45%; transform: scale(1.1);', false);
     expect(substr_count($homeResponse->getContent(), 'data-travel-package-slide'))->toBe(3);
+});
+
+it('rejects invalid settings for a new homepage background', function () {
+    Storage::fake('public');
+    $admin = User::factory()->create(['is_admin' => true]);
+
+    $response = $this->actingAs($admin)
+        ->from(route('admin.dashboard', ['tab' => 'beranda']))
+        ->put(route('admin.homepage.update'), [
+            'travel_package_badge' => 'Paket pelatihan + wisata',
+            'travel_package_title' => 'Pelatihan bersama JCP',
+            'travel_package_description' => 'Pelatihan dan perjalanan yang berkesan.',
+            'travel_package_button_text' => 'Konsultasikan paket',
+            'travel_package_background_images' => [
+                UploadedFile::fake()->image('wisata.jpg'),
+            ],
+            'travel_package_background_upload_settings' => [
+                ['position_x' => 101, 'position_y' => 50, 'scale' => 100],
+            ],
+        ]);
+
+    $response->assertRedirect(route('admin.dashboard', ['tab' => 'beranda']))
+        ->assertInvalid(['travel_package_background_upload_settings.0.position_x']);
+    expect(Storage::disk('public')->allFiles('jcp/travel-package'))->toBe([]);
 });
 
 it('rejects an invalid homepage carousel interval', function (mixed $interval, string $message) {
@@ -308,7 +359,7 @@ it('updates homepage background position and scale and renders them on the banne
     ]);
     $this->get(route('home'))
         ->assertOk()
-        ->assertSee('object-position: 20% 70%; transform: scale(1.35);', false);
+        ->assertSee('object-position: 20% 70%; transform-origin: 20% 70%; transform: scale(1.35);', false);
 });
 
 it('rejects homepage background settings for an unknown image', function () {

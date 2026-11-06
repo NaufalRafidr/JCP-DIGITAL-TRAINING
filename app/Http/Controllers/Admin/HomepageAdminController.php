@@ -33,7 +33,17 @@ class HomepageAdminController extends Controller
             'travel_package_carousel_interval_seconds' => ['nullable', 'numeric', 'min:1', 'max:60'],
             'travel_package_background_images' => ['nullable', 'array', 'max:8'],
             'travel_package_background_images.*' => ['image', 'mimes:jpg,jpeg,png,webp,avif', 'max:10240'],
+            'travel_package_background_upload_settings' => ['nullable', 'array', 'max:8'],
+            'travel_package_background_upload_settings.*' => ['array'],
+            'travel_package_background_upload_settings.*.position_x' => ['required', 'integer', 'between:0,100'],
+            'travel_package_background_upload_settings.*.position_y' => ['required', 'integer', 'between:0,100'],
+            'travel_package_background_upload_settings.*.scale' => ['required', 'integer', 'between:100,200'],
             'travel_package_background_urls' => ['nullable', 'string', 'max:20000'],
+            'travel_package_background_url_settings' => ['nullable', 'array', 'max:8'],
+            'travel_package_background_url_settings.*' => ['array'],
+            'travel_package_background_url_settings.*.position_x' => ['required', 'integer', 'between:0,100'],
+            'travel_package_background_url_settings.*.position_y' => ['required', 'integer', 'between:0,100'],
+            'travel_package_background_url_settings.*.scale' => ['required', 'integer', 'between:100,200'],
             'remove_travel_package_background_images' => ['nullable', 'array', 'max:8'],
             'remove_travel_package_background_images.*' => ['string', 'max:2048'],
         ], [
@@ -44,6 +54,8 @@ class HomepageAdminController extends Controller
 
         $profile = JcpProfile::query()->firstOrFail();
         $backgroundUrls = $this->parseBackgroundUrls($validated['travel_package_background_urls'] ?? '');
+        $backgroundUploadSettings = array_values($validated['travel_package_background_upload_settings'] ?? []);
+        $backgroundUrlSettings = array_values($validated['travel_package_background_url_settings'] ?? []);
         $existingBackgroundImages = array_values(array_filter(
             $profile->travel_package_background_images ?? [],
             fn (mixed $image): bool => is_string($image) && $image !== '',
@@ -90,6 +102,20 @@ class HomepageAdminController extends Controller
                     $backgroundImage,
                     'jcp/travel-package',
                     'Gambar background paket wisata gagal disimpan.',
+                );
+            }
+
+            foreach ($newBackgroundImagePaths as $index => $newBackgroundImagePath) {
+                $backgroundSettings[JcpProfile::travelPackageBackgroundSettingsKey($newBackgroundImagePath)] = $this->backgroundSettingsAt(
+                    $backgroundUploadSettings,
+                    $index,
+                );
+            }
+
+            foreach ($backgroundUrls as $index => $backgroundUrl) {
+                $backgroundSettings[JcpProfile::travelPackageBackgroundSettingsKey($backgroundUrl)] = $this->backgroundSettingsAt(
+                    $backgroundUrlSettings,
+                    $index,
                 );
             }
 
@@ -159,6 +185,21 @@ class HomepageAdminController extends Controller
     private function isRemoteImage(string $image): bool
     {
         return in_array(strtolower((string) parse_url($image, PHP_URL_SCHEME)), ['http', 'https'], true);
+    }
+
+    /**
+     * @param  array<int, array{position_x?: int, position_y?: int, scale?: int}>  $settings
+     * @return array{position_x: int, position_y: int, scale: int}
+     */
+    private function backgroundSettingsAt(array $settings, int $index): array
+    {
+        $backgroundSettings = $settings[$index] ?? [];
+
+        return [
+            'position_x' => (int) ($backgroundSettings['position_x'] ?? 50),
+            'position_y' => (int) ($backgroundSettings['position_y'] ?? 50),
+            'scale' => (int) ($backgroundSettings['scale'] ?? 100),
+        ];
     }
 
     private function storeImage(UploadedFile $image, string $directory, string $failureMessage): string
