@@ -13,7 +13,7 @@ class WebsiteBlueprintTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('JCP TRAINING');
-        $response->assertSee('Skill baru, peluang baru.');
+        $response->assertSee('Skill baru, peluang baru');
         $response->assertSee('Praktik langsung • mentor berpengalaman');
         $response->assertSee('UPGRADE YOUR SKILLS');
         $response->assertSee('15 PROGRAM');

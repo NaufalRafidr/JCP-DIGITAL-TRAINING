@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'JCP TRAINING • Skill baru, peluang baru.')
+@section('title', 'JCP TRAINING • Skill baru, peluang baru')
 
 @section('content')
 @php
@@ -38,9 +38,9 @@
                     </span>
                 </div>
 
-                <!-- Main H1: Skill baru, peluang baru. -->
+                <!-- Main H1: Skill baru, peluang baru -->
                 <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight drop-shadow-sm">
-                    Skill baru, peluang baru.
+                    Skill baru, peluang baru
                 </h1>
 
                 <!-- Subtitle: Praktik langsung • mentor berpengalaman -->
