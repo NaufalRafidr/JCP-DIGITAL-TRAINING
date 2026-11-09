@@ -51,6 +51,12 @@ document.addEventListener('click', (event) => {
 
         if (scheduleContainer instanceof HTMLElement && Number.isInteger(requestedPage)) {
             updateHomeSchedulePage(scheduleContainer, requestedPage);
+
+            const scheduleSection = scheduleContainer.closest('#home-training-schedule');
+
+            if (scheduleSection instanceof HTMLElement) {
+                scheduleSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
 
         return;
