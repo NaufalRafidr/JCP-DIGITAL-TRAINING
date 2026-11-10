@@ -50,7 +50,7 @@
                     </a>
                 </div>
 
-                <!-- Desktop Nav Items: Beranda, Pelatihan⌄, Jadwal, Corporate, Artikel, Tentang -->
+                <!-- Desktop Nav Items: Beranda, Pelatihan⌄, Jadwal, In-House Training, Artikel, Tentang -->
                 <nav class="hidden lg:flex items-center gap-7 lg:gap-9 text-[15px] font-semibold text-slate-700">
                     <a href="{{ $homeAnchor }}" class="text-slate-600 transition-colors hover:text-[#087F78]">
                         Beranda
@@ -112,7 +112,7 @@
                         Jadwal
                     </a>
                     <a href="{{ route('corporate') }}" class="hover:text-[#087F78] transition-colors {{ request()->routeIs('corporate') ? 'text-[#087F78]' : 'text-slate-600' }}">
-                        Corporate
+                        In-House Training
                     </a>
                     <a href="{{ route('gallery.index') }}" class="hover:text-[#087F78] transition-colors {{ request()->routeIs('gallery.*') ? 'text-[#087F78]' : 'text-slate-600' }}">
                         Galeri
@@ -157,7 +157,7 @@
                 </div>
                 <div class="pt-2 border-t border-slate-100 space-y-2">
                     <a href="{{ $scheduleAnchor }}" class="block text-sm font-semibold text-slate-800">Jadwal</a>
-                    <a href="{{ route('corporate') }}" class="block text-sm font-semibold text-slate-800">Corporate</a>
+                    <a href="{{ route('corporate') }}" class="block text-sm font-semibold text-slate-800">In-House Training</a>
                     <a href="{{ route('gallery.index') }}" class="block text-sm font-semibold text-slate-800">Galeri</a>
                     <a href="{{ route('artikel') }}" class="block text-sm font-semibold text-slate-800">Artikel</a>
                     <a href="{{ route('tentang') }}" class="block text-sm font-semibold text-slate-800">Tentang</a>
