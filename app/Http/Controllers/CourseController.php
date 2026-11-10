@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Course;
 use App\Models\CourseSession;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class CourseController extends Controller
@@ -34,10 +36,23 @@ class CourseController extends Controller
         }
 
         if ($searchQuery) {
-            $query->where(function ($q) use ($searchQuery) {
-                $q->where('title', 'like', "%{$searchQuery}%")
-                    ->orWhere('description', 'like', "%{$searchQuery}%");
-            });
+            $normalizedSearchQuery = Str::lower(trim($searchQuery));
+            $searchCategory = Category::query()
+                ->where(function (Builder $query) use ($normalizedSearchQuery, $searchQuery): void {
+                    $query->whereRaw('LOWER(name) = ?', [$normalizedSearchQuery])
+                        ->orWhereRaw('LOWER(short_name) = ?', [$normalizedSearchQuery])
+                        ->orWhere('slug', Str::slug($searchQuery));
+                })
+                ->first();
+
+            if ($searchCategory) {
+                $query->whereBelongsTo($searchCategory);
+            } else {
+                $query->where(function (Builder $query) use ($searchQuery): void {
+                    $query->where('title', 'like', "%{$searchQuery}%")
+                        ->orWhere('description', 'like', "%{$searchQuery}%");
+                });
+            }
         }
 
         $courses = $query->get();
