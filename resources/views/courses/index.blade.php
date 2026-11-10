@@ -41,7 +41,7 @@
                         type="text" 
                         name="q" 
                         value="{{ $searchQuery ?? '' }}"
-                        placeholder="Cari judul atau topik pelatihan..." 
+                        placeholder="Cari bidang atau judul pelatihan..." 
                         class="w-full text-sm text-slate-700 placeholder-slate-400 bg-transparent border-0 focus:outline-none focus:ring-0"
                     >
                 </div>

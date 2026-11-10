@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Course;
 use App\Models\CourseSession;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -36,28 +35,50 @@ class CourseController extends Controller
         }
 
         if ($searchQuery) {
-            $normalizedSearchQuery = Str::lower(trim($searchQuery));
-            $searchCategory = Category::query()
-                ->where(function (Builder $query) use ($normalizedSearchQuery, $searchQuery): void {
-                    $query->whereRaw('LOWER(name) = ?', [$normalizedSearchQuery])
-                        ->orWhereRaw('LOWER(short_name) = ?', [$normalizedSearchQuery])
-                        ->orWhere('slug', Str::slug($searchQuery));
-                })
-                ->first();
+            $searchCategory = $this->matchingSearchCategory($searchQuery);
 
             if ($searchCategory) {
                 $query->whereBelongsTo($searchCategory);
             } else {
-                $query->where(function (Builder $query) use ($searchQuery): void {
-                    $query->where('title', 'like', "%{$searchQuery}%")
-                        ->orWhere('description', 'like', "%{$searchQuery}%");
-                });
+                $query->where('title', 'like', "%{$searchQuery}%");
             }
         }
 
         $courses = $query->get();
 
         return view('courses.index', compact('category', 'courses', 'selectedCategorySlug', 'searchQuery'));
+    }
+
+    private function matchingSearchCategory(string $searchQuery): ?Category
+    {
+        $normalizedSearchQuery = Str::lower(trim($searchQuery));
+        $searchSlug = Str::slug($searchQuery);
+
+        $matchingCategories = Category::query()
+            ->get(['id', 'name', 'slug', 'short_name'])
+            ->filter(function (Category $category) use ($normalizedSearchQuery, $searchSlug): bool {
+                $aliases = [Str::lower($category->slug)];
+
+                foreach ([$category->name, $category->short_name] as $categoryLabel) {
+                    if (! is_string($categoryLabel) || $categoryLabel === '') {
+                        continue;
+                    }
+
+                    $normalizedCategoryLabel = Str::lower(trim($categoryLabel));
+                    $categoryWords = preg_split('/[^\p{L}\p{N}]+/u', $normalizedCategoryLabel, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+                    $aliases[] = $normalizedCategoryLabel;
+                    $aliases[] = Str::slug($categoryLabel);
+                    $aliases = [...$aliases, ...$categoryWords];
+                }
+
+                return in_array($normalizedSearchQuery, $aliases, true)
+                    || in_array($searchSlug, $aliases, true);
+            });
+
+        return $matchingCategories->count() === 1
+            ? $matchingCategories->first()
+            : null;
     }
 
     /**
