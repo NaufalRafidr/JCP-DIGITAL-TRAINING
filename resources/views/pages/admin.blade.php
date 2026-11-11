@@ -786,7 +786,7 @@
                 <div class="grid min-w-0 flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
                         <label for="registration_course_filter" class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Filter berdasarkan kelas</label>
-                        <select id="registration_course_filter" name="course_id" onchange="filterRegistrationBatches(this.value)" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-[#10243A] focus:border-[#087F78] focus:outline-none focus:ring-2 focus:ring-[#087F78]/20">
+                        <select id="registration_course_filter" name="course_id" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-[#10243A] focus:border-[#087F78] focus:outline-none focus:ring-2 focus:ring-[#087F78]/20">
                             <option value="">Semua kelas</option>
                             @foreach($courses->sortBy('title') as $course)
                                 <option value="{{ $course->id }}" @selected($selectedRegistrationCourseId === $course->id)>{{ $course->title }}</option>
@@ -2930,30 +2930,49 @@
             form.submit();
         }
 
-        // Batasi pilihan batch sesuai kelas yang dipilih sebelum filter dikirim.
+        const registrationCourseFilter = document.getElementById('registration_course_filter');
+        const registrationSessionFilter = document.getElementById('registration_session_filter');
+        const registrationBatchOptions = registrationSessionFilter
+            ? Array.from(registrationSessionFilter.options).map((option) => ({
+                courseId: option.dataset.courseId || '',
+                label: option.textContent,
+                value: option.value,
+            }))
+            : [];
+
         function filterRegistrationBatches(courseId) {
-            const batchSelect = document.getElementById('registration_session_filter');
-            if (!batchSelect) return;
+            if (!registrationSessionFilter) {
+                return;
+            }
 
-            const currentBatchId = batchSelect.value;
-            let currentBatchIsVisible = !currentBatchId;
+            const currentBatchId = registrationSessionFilter.value;
+            const availableBatchOptions = registrationBatchOptions.filter((option) => {
+                return !option.courseId || !courseId || option.courseId === String(courseId);
+            });
+            const optionsFragment = document.createDocumentFragment();
 
-            Array.from(batchSelect.options).forEach((option) => {
-                const optionCourseId = option.dataset.courseId;
-                const isVisible = !optionCourseId || !courseId || optionCourseId === String(courseId);
+            availableBatchOptions.forEach((batchOption) => {
+                const option = document.createElement('option');
 
-                option.hidden = !isVisible;
-                option.disabled = !isVisible;
+                option.value = batchOption.value;
+                option.textContent = batchOption.label;
 
-                if (option.value === currentBatchId && isVisible) {
-                    currentBatchIsVisible = true;
+                if (batchOption.courseId) {
+                    option.dataset.courseId = batchOption.courseId;
                 }
+
+                optionsFragment.appendChild(option);
             });
 
-            if (!currentBatchIsVisible) {
-                batchSelect.value = '';
-            }
+            registrationSessionFilter.replaceChildren(optionsFragment);
+            registrationSessionFilter.value = availableBatchOptions.some((option) => option.value === currentBatchId)
+                ? currentBatchId
+                : '';
         }
+
+        registrationCourseFilter?.addEventListener('change', (event) => {
+            filterRegistrationBatches(event.currentTarget.value);
+        });
 
         function updateSessionDuration(startId, endId, previewId) {
             const startValue = document.getElementById(startId)?.value;
@@ -4542,7 +4561,7 @@
 
             window.filterArticleList();
         }
-        filterRegistrationBatches(document.getElementById('registration_course_filter')?.value || '');
+        filterRegistrationBatches(registrationCourseFilter?.value || '');
     </script>
 
 </body>
