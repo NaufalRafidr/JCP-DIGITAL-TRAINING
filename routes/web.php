@@ -44,7 +44,7 @@ Route::post('/daftar', [RegistrationController::class, 'store'])->name('register
 Route::get('/daftar/berhasil/{id}', [RegistrationController::class, 'success'])->name('register.success');
 
 Route::get('/admin/login', [AdminLoginController::class, 'create'])->name('login');
-Route::post('/admin/login', [AdminLoginController::class, 'store'])->middleware('throttle:5,1')->name('login.store');
+Route::post('/admin/login', [AdminLoginController::class, 'store'])->name('login.store');
 Route::post('/admin/logout', [AdminLoginController::class, 'destroy'])->middleware('admin')->name('admin.logout');
 
 // Slide 3 & 16: Admin Back Office (Slide 16 Dedicated Layout)

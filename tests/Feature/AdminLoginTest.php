@@ -56,3 +56,51 @@ it('does not authenticate a non-admin with the same password', function () {
         ->assertSessionHasErrors('password');
     $this->assertGuest();
 });
+
+it('locks login for one minute after three incorrect passwords', function () {
+    $admin = User::factory()->create([
+        'is_admin' => true,
+        'password' => 'password',
+    ]);
+    $this->travelTo(now()->startOfMinute());
+
+    for ($attempt = 0; $attempt < 2; $attempt++) {
+        $this->from(route('login'))->post(route('login.store'), [
+            'password' => 'wrong-password',
+        ])->assertSessionHasErrors([
+            'password' => 'Kata sandi tidak cocok.',
+        ]);
+
+        $this->travel(10)->seconds();
+    }
+
+    $this->from(route('login'))->post(route('login.store'), [
+        'password' => 'wrong-password',
+    ])->assertSessionHasErrors([
+        'password' => 'Terlalu banyak percobaan login. Silakan coba lagi dalam 60 detik.',
+    ]);
+
+    $this->get(route('login'))
+        ->assertOk()
+        ->assertSee('data-admin-login-lockout', false)
+        ->assertSee('disabled', false);
+
+    $this->from(route('login'))->post(route('login.store'), [
+        'password' => 'password',
+    ])->assertSessionHasErrors('password');
+    $this->assertGuest();
+
+    $this->travel(59)->seconds();
+
+    $this->from(route('login'))->post(route('login.store'), [
+        'password' => 'password',
+    ])->assertSessionHasErrors('password');
+    $this->assertGuest();
+
+    $this->travel(1)->second();
+
+    $this->post(route('login.store'), [
+        'password' => 'password',
+    ])->assertRedirect(route('admin.dashboard'));
+    $this->assertAuthenticatedAs($admin);
+});

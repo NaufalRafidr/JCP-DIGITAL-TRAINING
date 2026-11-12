@@ -779,6 +779,35 @@ initializeTravelPackageImagePreviews();
 initializeHomepageHeroPreviews();
 initializeHomepageBackgroundManagers();
 
+const initializeAdminLoginLockout = () => {
+    const lockout = document.querySelector('[data-admin-login-lockout]');
+
+    if (!(lockout instanceof HTMLElement)) {
+        return;
+    }
+
+    let retryAfter = Number.parseInt(lockout.dataset.retryAfter || '0', 10);
+
+    if (! Number.isFinite(retryAfter) || retryAfter <= 0) {
+        return;
+    }
+
+    const countdowns = document.querySelectorAll('[data-admin-login-countdown]');
+    const intervalId = window.setInterval(() => {
+        retryAfter -= 1;
+        countdowns.forEach((countdown) => {
+            countdown.textContent = String(Math.max(retryAfter, 0));
+        });
+
+        if (retryAfter <= 0) {
+            window.clearInterval(intervalId);
+            window.location.reload();
+        }
+    }, 1000);
+};
+
+initializeAdminLoginLockout();
+
 document.addEventListener('click', (event) => {
     if (!(event.target instanceof Element)) {
         return;
