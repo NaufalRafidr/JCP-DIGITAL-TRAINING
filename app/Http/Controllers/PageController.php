@@ -126,6 +126,13 @@ class PageController extends Controller
         }
 
         $courses = Course::with('category')->latest()->get();
+        $programCourses = request()->query('tab') === 'program'
+            ? Course::with('category')
+                ->latest()
+                ->latest('id')
+                ->paginate(10, ['*'], 'program_page')
+                ->withQueryString()
+            : collect();
         $sessions = CourseSession::with('course')->latest()->get();
         $scheduleSessions = request()->query('tab') === 'jadwal'
             ? CourseSession::with('course')->latest()->paginate(10)->withQueryString()
@@ -190,7 +197,7 @@ class PageController extends Controller
                 ->withQueryString();
         }
 
-        return view('pages.admin', compact('jcpProfile', 'categories', 'totalCourses', 'totalSessions', 'totalRegistrations', 'articles', 'articleStatusFilter', 'articleSearch', 'articleCalendarMonth', 'articleCalendarArticles', 'articleCalendarLeadingDays', 'courses', 'sessions', 'scheduleSessions', 'upcomingSessions', 'recentRegistrations', 'selectedRegistrationCourseId', 'selectedRegistrationSessionId', 'selectedRegistration', 'selectedCourse', 'selectedSession', 'selectedArticle', 'galleryCategories', 'galleryFolders', 'selectedGalleryFolder', 'selectedGalleryPhotos'));
+        return view('pages.admin', compact('jcpProfile', 'categories', 'totalCourses', 'totalSessions', 'totalRegistrations', 'articles', 'articleStatusFilter', 'articleSearch', 'articleCalendarMonth', 'articleCalendarArticles', 'articleCalendarLeadingDays', 'courses', 'programCourses', 'sessions', 'scheduleSessions', 'upcomingSessions', 'recentRegistrations', 'selectedRegistrationCourseId', 'selectedRegistrationSessionId', 'selectedRegistration', 'selectedCourse', 'selectedSession', 'selectedArticle', 'galleryCategories', 'galleryFolders', 'selectedGalleryFolder', 'selectedGalleryPhotos'));
     }
 
     private function resolveArticleCalendarMonth(): Carbon

@@ -56,14 +56,14 @@
             <!-- List Header: Count Program -->
             <div class="flex items-center justify-between px-1 text-sm">
                 <div class="font-extrabold text-[#10243A]">
-                    <span>{{ $courses->count() }} program</span>
+                    <span>{{ $courses->total() }} program</span>
                     @if($category)
                         <span class="text-slate-400 font-normal">dalam kategori ini</span>
                     @endif
                 </div>
             </div>
 
-            <!-- Courses Grid (Slide 7: Card Design) -->
+            <!-- Courses List -->
             @if($courses->isEmpty())
                 <div class="bg-white rounded-2xl p-12 text-center border border-slate-200">
                     <div class="text-4xl mb-3">🔍</div>
@@ -76,40 +76,57 @@
                     </a>
                 </div>
             @else
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div class="overflow-hidden border-y border-slate-200 bg-white">
                     @foreach($courses as $course)
                         @php
                             $courseSession = $course->sessions->firstWhere('status', '!=', 'Penuh') ?? $course->sessions->first();
+                            $programNumber = ($courses->firstItem() ?? 1) + $loop->index;
                         @endphp
-                        <div class="bg-white rounded-2xl border border-slate-200/90 hover:border-[#087F78]/60 shadow-xs hover:shadow-md transition-all flex flex-col justify-between p-6">
-                            <div class="space-y-3">
-                                <!-- Chip Tag Mini Kategori -->
-                                <div class="flex items-center justify-between">
-                                    <span class="inline-block px-2.5 py-1 rounded-md text-[11px] font-extrabold uppercase tracking-wider bg-[#E2F6F2] text-[#087F78]">
-                                        {{ $course->category->short_name ?? $course->category->name }}
-                                    </span>
-                                    <span class="text-xs text-slate-400 font-medium">⏱ {{ $courseSession?->duration ?? 'Belum ditentukan' }}</span>
-                                </div>
+                        <a
+                            href="{{ route('courses.show', $course->slug) }}"
+                            class="group grid grid-cols-[2.5rem_minmax(0,1fr)_2rem] items-center gap-x-3 border-b border-slate-200 px-3 py-5 transition-colors last:border-b-0 hover:bg-[#F2FAF8] focus-visible:bg-[#F2FAF8] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#087F78] sm:grid-cols-[3.5rem_minmax(0,1fr)_2.5rem] sm:gap-x-5 sm:px-5 sm:py-6 lg:grid-cols-[3.5rem_minmax(0,1fr)_minmax(15rem,auto)_2.5rem]"
+                            aria-label="Lihat detail program {{ $course->title }}"
+                        >
+                            <span class="self-start pt-0.5 font-mono text-xs font-bold tracking-wider text-[#087F78] sm:self-center sm:pt-0 sm:text-sm" data-program-number="{{ $programNumber }}">
+                                {{ str_pad((string) $programNumber, 2, '0', STR_PAD_LEFT) }}
+                            </span>
 
-                                <h3 class="font-bold text-base text-[#10243A] leading-snug hover:text-[#087F78] transition-colors">
-                                    <a href="{{ route('courses.show', $course->slug) }}">
-                                        {{ $course->title }}
-                                    </a>
+                            <div class="min-w-0">
+                                <h3 class="text-base font-extrabold leading-snug text-[#10243A] transition-colors group-hover:text-[#087F78] sm:text-lg lg:text-xl">
+                                    {{ $course->title }}
                                 </h3>
 
-                                <p class="text-xs text-slate-600 line-clamp-2 leading-relaxed">
-                                    {{ $course->description }}
-                                </p>
+                                <div class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500 lg:hidden">
+                                    <span class="text-[#087F78]">{{ $course->category->short_name ?? $course->category->name }}</span>
+                                    <span class="text-slate-300">/</span>
+                                    <span>{{ $course->level }}</span>
+                                    <span class="text-slate-300">/</span>
+                                    <span>{{ $course->format }}</span>
+                                    <span class="basis-full normal-case tracking-normal text-slate-400">⏱ {{ $courseSession?->duration ?? 'Belum ditentukan' }}</span>
+                                </div>
                             </div>
 
-                            <div class="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between">
-                                <span class="text-xs font-semibold text-slate-500">{{ $course->level }} • {{ $course->format }}</span>
-                                <a href="{{ route('courses.show', $course->slug) }}" class="flex items-center text-xs font-bold text-[#087F78] hover:text-[#066761]">
-                                    <span>Lihat detail</span>
-                                </a>
+                            <div class="hidden items-end justify-self-end text-right lg:flex lg:flex-col lg:gap-1.5">
+                                <span class="text-xs font-bold uppercase tracking-[0.16em] text-[#087F78]">
+                                    {{ $course->category->short_name ?? $course->category->name }}
+                                </span>
+                                <span class="max-w-xs text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                    {{ $course->level }} / {{ $course->format }}
+                                </span>
+                                <span class="text-xs font-medium text-slate-400">⏱ {{ $courseSession?->duration ?? 'Belum ditentukan' }}</span>
                             </div>
-                        </div>
+
+                            <span class="flex h-8 w-8 items-center justify-center justify-self-end rounded-full border border-slate-200 text-[#087F78] transition-all group-hover:border-[#087F78] group-hover:bg-[#087F78] group-hover:text-white motion-safe:group-hover:translate-x-0.5" aria-hidden="true">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6 6 6-6 6"></path>
+                                </svg>
+                            </span>
+                        </a>
                     @endforeach
+                </div>
+
+                <div class="pt-2">
+                    {{ $courses->onEachSide(1)->links('pagination.courses') }}
                 </div>
             @endif
 

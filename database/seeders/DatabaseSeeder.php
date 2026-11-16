@@ -338,6 +338,9 @@ class DatabaseSeeder extends Seeder
         // 09 / JADWAL PELATIHAN
         // Buat seluruh jadwal dummy sampai Desember 2027.
         // ========================================================
-        $this->call(DummyScheduleSeeder::class);
+        $this->call([
+            TrainingProgramSeeder::class,
+            DummyScheduleSeeder::class,
+        ]);
     }
 }

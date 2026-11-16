@@ -1636,7 +1636,10 @@
                     </p>
                 </div>
 
-                <div class="flex w-full sm:w-auto">
+                <div class="flex w-full items-center gap-3 sm:w-auto">
+                    <span class="hidden rounded-full bg-[#E2F6F2] px-3.5 py-2 text-xs font-bold text-[#087F78] sm:inline-flex">
+                        {{ number_format($programCourses->total()) }} program
+                    </span>
                     <button type="button" onclick="openAddProgramModal()" class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[#087F78] px-7 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#066761] focus:outline-none sm:w-auto">
                         <span class="text-base font-bold leading-none">+</span>
                         <span>Tambah program</span>
@@ -1654,9 +1657,10 @@
 
             <!-- List Baris Program Card Rounded -->
             <div class="space-y-4">
-                @forelse($courses as $c)
+                @forelse($programCourses as $c)
                     @php
-                        $courseEditorQuery = ['tab' => 'program', 'course_id' => $c->id];
+                        $programListQuery = ['tab' => 'program', 'program_page' => $programCourses->currentPage()];
+                        $courseEditorQuery = [...$programListQuery, 'course_id' => $c->id];
                     @endphp
                     <article class="admin-editor-card cursor-pointer rounded-2xl border bg-white px-5 py-5 text-sm shadow-[0_1px_3px_rgba(0,0,0,0.03)] transition-all hover:border-[#087F78]/50 hover:shadow-md md:grid md:grid-cols-12 md:items-center md:px-8 {{ $selectedCourse?->id === $c->id ? 'border-[#087F78] ring-2 ring-[#087F78]/10' : 'border-slate-200/90' }}" data-editor-url="{{ route('admin.dashboard', $courseEditorQuery) }}" tabindex="0" role="button" aria-expanded="{{ $selectedCourse?->id === $c->id ? 'true' : 'false' }}" aria-label="Edit program {{ $c->title }}">
                         
@@ -1699,7 +1703,7 @@
                                         <p class="text-xs font-bold uppercase tracking-wider text-[#087F78]">Pengaturan program</p>
                                         <h3 class="mt-1 text-xl font-extrabold text-[#10243A]">Edit {{ $c->title }}</h3>
                                     </div>
-                                    <a href="{{ route('admin.dashboard', ['tab' => 'program']) }}" data-close-editor class="inline-flex w-fit items-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:border-[#087F78]/40 hover:bg-[#E2F6F2] hover:text-[#087F78]">Tutup</a>
+                                    <a href="{{ route('admin.dashboard', $programListQuery) }}" data-close-editor class="inline-flex w-fit items-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:border-[#087F78]/40 hover:bg-[#E2F6F2] hover:text-[#087F78]">Tutup</a>
                                 </div>
 
                                 <form action="{{ route('admin.courses.update', $c) }}" method="POST" enctype="multipart/form-data" class="mt-5 space-y-5">
@@ -1799,7 +1803,7 @@
                                         </div>
                                     </div>
                                     <div class="flex justify-end gap-3 border-t border-slate-100 pt-5">
-                                        <a href="{{ route('admin.dashboard', ['tab' => 'program']) }}" data-close-editor class="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-100">Batal</a>
+                                        <a href="{{ route('admin.dashboard', $programListQuery) }}" data-close-editor class="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-100">Batal</a>
                                         <button type="submit" class="rounded-xl bg-[#087F78] px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#066761]">Simpan program</button>
                                     </div>
                                 </form>
@@ -1812,6 +1816,12 @@
                     </div>
                 @endforelse
             </div>
+
+            @if($programCourses->hasPages())
+                <div class="mt-6 border-t border-slate-100 pt-6">
+                    {{ $programCourses->links('pagination.schedule') }}
+                </div>
+            @endif
         @endif
 
     </main>

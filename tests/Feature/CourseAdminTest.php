@@ -9,6 +9,38 @@ use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
+it('shows every program across paginated admin program pages', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+    $category = Category::query()->create([
+        'name' => 'Program Admin',
+        'slug' => 'program-admin-pagination',
+    ]);
+
+    foreach (range(1, 11) as $programNumber) {
+        Course::query()->create([
+            'category_id' => $category->id,
+            'title' => sprintf('Program Admin %02d', $programNumber),
+            'slug' => sprintf('program-admin-%02d', $programNumber),
+            'description' => 'Program untuk menguji daftar admin.',
+            'duration' => '2 hari',
+            'level' => 'Basic',
+            'format' => 'Offline',
+            'status' => 'Publish',
+        ]);
+    }
+
+    $response = $this->actingAs($admin)->get(route('admin.dashboard', [
+        'tab' => 'program',
+        'program_page' => 2,
+    ]));
+
+    $response->assertOk()
+        ->assertSee('11 program')
+        ->assertSee('aria-label="Edit program Program Admin 01"', false)
+        ->assertDontSee('aria-label="Edit program Program Admin 11"', false)
+        ->assertSee('Halaman 2 dari 2');
+});
+
 it('creates a program with detail content and a background image', function () {
     Storage::fake('public');
     $admin = User::factory()->create(['is_admin' => true]);

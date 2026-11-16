@@ -44,7 +44,10 @@ class CourseController extends Controller
             }
         }
 
-        $courses = $query->get();
+        $courses = $query
+            ->orderBy('id')
+            ->paginate(10)
+            ->withQueryString();
 
         return view('courses.index', compact('category', 'courses', 'selectedCategorySlug', 'searchQuery'));
     }
