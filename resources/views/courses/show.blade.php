@@ -44,7 +44,15 @@
         'drone-technology' => asset('images/course-activity-drone.png'),
         'information-technology' => asset('images/course-activity-it.png'),
     ];
-    $activityImage = $activityImages[$course->category->slug] ?? asset('images/course-activity-ai.png');
+    $programArtwork = config('course_artwork.programs.'.$course->slug);
+    $activityImage = ($course->image || $course->image_url)
+        ? $backgroundImage
+        : ($programArtwork
+            ? asset('images/course-programs/'.$programArtwork['image'])
+            : ($activityImages[$course->category->slug] ?? asset('images/course-activity-ai.png')));
+    $activityImagePosition = ($course->image || $course->image_url)
+        ? $backgroundPosition
+        : ($programArtwork['position'] ?? 'center');
 @endphp
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
 
@@ -178,11 +186,12 @@
             <div class="relative aspect-video w-full overflow-hidden bg-[#061D2E]">
                 <img
                     src="{{ $activityImage }}"
-                    alt="Ilustrasi kegiatan {{ $course->category->name }}"
+                    alt="Ilustrasi program {{ $course->title }}"
+                    style="object-position: {{ $activityImagePosition }}"
                     class="absolute inset-0 h-full w-full object-cover"
                     loading="lazy"
                 >
-                <div class="absolute inset-0 bg-gradient-to-t from-[#061D2E]/25 via-transparent to-transparent"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-[#061D2E]/15 via-transparent to-transparent" aria-hidden="true"></div>
             </div>
 
             <div class="space-y-6 p-6 sm:p-7">
